@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LMS Platform - Вход</title>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-storage-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+    .auth-container { background: white; border-radius: 16px; padding: 40px; max-width: 420px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+    h1 { text-align: center; margin-bottom: 8px; color: #1a202c; }
+    .subtitle { text-align: center; color: #718096; margin-bottom: 32px; font-size: 14px; }
+    .tabs { display: flex; margin-bottom: 24px; border-bottom: 2px solid #e2e8f0; }
+    .tab { flex: 1; padding: 12px; text-align: center; cursor: pointer; border: none; background: none; font-size: 16px; font-weight: 600; color: #a0aec0; transition: all 0.3s; }
+    .tab.active { color: #667eea; border-bottom: 2px solid #667eea; margin-bottom: -2px; }
+    .form-group { margin-bottom: 20px; }
+    label { display: block; margin-bottom: 6px; color: #4a5568; font-weight: 500; font-size: 14px; }
+    input, select { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 15px; transition: border-color 0.3s; }
+    input:focus, select:focus { outline: none; border-color: #667eea; }
+    button.submit { width: 100%; padding: 14px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: transform 0.2s; }
+    button.submit:hover { transform: translateY(-2px); }
+    button.submit:disabled { opacity: 0.6; cursor: not-allowed; }
+    .error { background: #fed7d7; color: #c53030; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="auth-container">
+    <h1>📚 LMS Platform</h1>
+    <p class="subtitle">Платформа для преподавателей и студентов</p>
+    
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('login')">Вход</button>
+      <button class="tab" onclick="switchTab('register')">Регистрация</button>
+    </div>
+
+    <div id="error" class="error hidden"></div>
+
+    <!-- Форма входа -->
+    <form id="loginForm" onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="loginEmail" required>
+      </div>
+      <div class="form-group">
+        <label>Пароль</label>
+        <input type="password" id="loginPassword" required>
+      </div>
+      <button type="submit" class="submit">Войти</button>
+    </form>
+
+    <!-- Форма регистрации -->
+    <form id="registerForm" class="hidden" onsubmit="handleRegister(event)">
+      <div class="form-group">
+        <label>Имя</label>
+        <input type="text" id="regName" required>
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="regEmail" required>
+      </div>
+      <div class="form-group">
+        <label>Пароль (мин. 6 символов)</label>
+        <input type="password" id="regPassword" required minlength="6">
+      </div>
+      <div class="form-group">
+        <label>Роль</label>
+        <select id="regRole" required>
+          <option value="teacher">Преподаватель</option>
+          <option value="student">Студент</option>
+        </select>
+      </div>
+      <button type="submit" class="submit">Зарегистрироваться</button>
+    </form>
+  </div>
+
+  <script>
+    function switchTab(tab) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('loginForm').classList.toggle('hidden', tab !== 'login');
+      document.getElementById('registerForm').classList.toggle('hidden', tab !== 'register');
+      document.getElementById('error').classList.add('hidden');
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('error');
+      el.textContent = msg;
+      el.classList.remove('hidden');
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      
+      try {
+        const userCredential = await auth.signInWithEmailAndPassword(email, password);
+        const userDoc = await db.collection('users').doc(userCredential.user.uid).get();
+        const userData = userDoc.data();
+        
+        localStorage.setItem('currentUser', JSON.stringify({
+          uid: userCredential.user.uid,
+          email: email,
+          name: userData.name,
+          role: userData.role
+        }));
+        
+        window.location.href = userData.role === 'teacher' ? 'teacher.html' : 'student.html';
+      } catch (error) {
+        showError('Ошибка входа: ' + error.message);
+      }
+    }
+
+    async function handleRegister(e) {
+      e.preventDefault();
+      const name = document.getElementById('regName').value;
+      const email = document.getElementById('regEmail').value;
+      const password = document.getElementById('regPassword').value;
+      const role = document.getElementById('regRole').value;
+      
+      try {
+        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+        await db.collection('users').doc(userCredential.user.uid).set({
+          name: name,
+          email: email,
+          role: role,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        localStorage.setItem('currentUser', JSON.stringify({
+          uid: userCredential.user.uid,
+          email: email,
+          name: name,
+          role: roleteacher.html
+        }));
+        
+        window.location.href = role === 'teacher' ? 'teacher.html' : 'student.html';
+      } catch (error) {
+        showError('Ошибка регистрации: ' + error.message);
+      }
+    }
+
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        db.collection('users').doc(user.uid).get().then(doc => {
+          if (doc.exists) {
+            const userData = doc.data();
+            localStorage.setItem('currentUser', JSON.stringify({
+              uid: user.uid,
+              email: user.email,
+              name: userData.name,
+              role: userData.role
+            }));
+            window.location.href = userData.role === 'teacher' ? 'teacher.html' : 'student.html';
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>

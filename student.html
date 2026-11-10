@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Кабинет студента</title>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-storage-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #f7fafc; }
+    header { background: white; padding: 16px 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
+    header h1 { font-size: 20px; color: #2d3748; }
+    .user-info { display: flex; align-items: center; gap: 12px; }
+    button.logout { background: #e53e3e; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
+    main { max-width: 1200px; margin: 24px auto; padding: 0 24px; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+    .tab-btn { background: white; border: 2px solid #e2e8f0; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+    .tab-btn.active { background: #48bb78; color: white; border-color: #48bb78; }
+    .content { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .item { border: 2px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+    .item h3 { color: #2d3748; margin-bottom: 8px; }
+    .item .meta { color: #718096; font-size: 13px; margin-bottom: 8px; }
+    button.primary { background: #48bb78; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+    .quiz-option { display: block; padding: 12px; background: #f7fafc; border: 2px solid #e2e8f0; border-radius: 6px; margin-bottom: 8px; cursor: pointer; }
+    .quiz-option:hover { background: #edf2f7; }
+    .timer { background: #fed7d7; color: #c53030; padding: 12px; border-radius: 6px; text-align: center; font-weight: 600; margin-bottom: 16px; }
+    .result { padding: 16px; border-radius: 8px; margin-top: 16px; font-weight: 600; text-align: center; }
+    .result.good { background: #c6f6d5; color: #22543d; }
+    .result.bad { background: #fed7d7; color: #742a2a; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🎓 Кабинет студента</h1>
+    <div class="user-info">
+      <span id="userName"></span>
+      <button class="logout" onclick="logout()">Выйти</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('lectures')">📖 Лекции</button>
+      <button class="tab-btn" onclick="switchTab('books')">📚 Книги</button>
+      <button class="tab-btn" onclick="switchTab('tests')">✅ Тесты</button>
+    </div>
+
+    <div id="content" class="content"></div>
+  </main>
+
+  <script>
+    const user = JSON.parse(localStorage.getItem('currentUser'));
+    if (!user || user.role !== 'student') {
+      window.location.href = 'index.html';
+    }
+
+    document.getElementById('userName').textContent = user.name;
+    let currentTab = 'lectures';
+    let currentTest = null;
+    let answers = {};
+    let timerInterval = null;
+
+    function logout() {
+      auth.signOut();
+      localStorage.removeItem('currentUser');
+      window.location.href = 'index.html';
+    }
+
+    function switchTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+      render();
+    }
+
+    async function render() {
+      const content = document.getElementById('content');
+      
+      if (currentTab === 'lectures') {
+        content.innerHTML = `<h2 style="margin-bottom:16px">Доступные лекции</h2><div id="lecturesList"></div>`;
+        await loadLectures();
+      }
+      
+      if (currentTab === 'books') {
+        content.innerHTML = `<h2 style="margin-bottom:16px">Доступные книги</h2><div id="booksList"></div>`;
+        await loadBooks();
+      }
+      
+      if (currentTab === 'tests') {
+        if (currentTest) {
+          renderTest();
+        } else {
+          content.innerHTML = `<h2 style="margin-bottom:16px">Доступные тесты</h2><div id="testsList"></div>`;
+          await loadTests();
+        }
+      }
+    }
+
+    async function loadLectures() {
+      const snapshot = await db.collection('lectures').orderBy('createdAt', 'desc').get();
+      const list = document.getElementById('lecturesList');
+      list.innerHTML = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return `<div class="item">
+          <h3>${data.title}</h3>
+          <div class="meta">Преподаватель: ${data.teacherName} • ${new Date(data.createdAt?.toDate()).toLocaleString('ru')}</div>
+          <p>${data.text}</p>
+          ${data.files.length ? `<p style="margin-top:8px">📎 <a href="${data.files[0]}" target="_blank">Скачать файл</a></p>` : ''}
+        </div>`;
+      }).join('') || '<p>Нет лекций</p>';
+    }
+
+    async function loadBooks() {
+      const snapshot = await db.collection('books').orderBy('createdAt', 'desc').get();
+      const list = document.getElementById('booksList');
+      list.innerHTML = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return `<div class="item">
+          <h3>${data.title}</h3>
+          <div class="meta">Автор: ${data.author}</div>
+          <p>${data.description || ''}</p>
+          ${data.fileUrl ? `<p style="margin-top:8px">📖 <a href="${data.fileUrl}" target="_blank">Читать PDF</a></p>` : ''}
+        </div>`;
+      }).join('') || '<p>Нет книг</p>';
+    }
+
+    async function loadTests() {
+      const snapshot = await db.collection('tests').orderBy('createdAt', 'desc').get();
+      const list = document.getElementById('testsList');
+      list.innerHTML = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return `<div class="item">
+          <h3>${data.title}</h3>
+          <div class="meta">Преподаватель: ${data.teacherName} • ${data.questions.length} вопросов ${data.timer ? `• Таймер: ${data.timer} мин` : ''}</div>
+          <button class="primary" onclick="startTest('${doc.id}')">Пройти тест</button>
+        </div>`;
+      }).join('') || '<p>Нет тестов</p>';
+    }
+
+    async function startTest(id) {
+      const doc = await db.collection('tests').doc(id).get();
+      currentTest = { id: doc.id, ...doc.data() };
+      answers = {};
+      render();
+      
+      if (currentTest.timer > 0) {
+        startTimer(currentTest.timer * 60);
+      }
+    }
+
+    function startTimer(seconds) {
+      let remaining = seconds;
+      const timerDiv = document.createElement('div');
+      timerDiv.className = 'timer';
+      document.getElementById('content').prepend(timerDiv);
+      
+      timerInterval = setInterval(() => {
+        remaining--;
+        const min = Math.floor(remaining / 60);
+        const sec = remaining % 60;
+        timerDiv.textContent = `⏱ Осталось: ${min}:${sec.toString().padStart(2, '0')}`;
+        
+        if (remaining <= 0) {
+          clearInterval(timerInterval);
+          submitTest();
+        }
+      }, 1000);
+    }
+
+    function renderTest() {
+      const content = document.getElementById('content');
+      let html = `<h2>${currentTest.title}</h2>`;
+      
+      currentTest.questions.forEach((q, i) => {
+        html += `<div style="margin:20px 0; padding:16px; border:2px solid #e2e8f0; border-radius:8px">
+          <h4>${i + 1}. ${q.text}</h4>`;
+        
+        if (q.type === 'choice') {
+          q.options.forEach((opt, j) => {
+            html += `<label class="quiz-option">
+              <input type="radio" name="q${i}" value="${j}" onchange="answers[${i}]=${j}"> ${opt}
+            </label>`;
+          });
+        } else if (q.type === 'text') {
+          html += `<textarea id="answer_${i}" style="width:100%; padding:10px; border:2px solid #e2e8f0; border-radius:6px; min-height:80px" onchange="answers[${i}]=this.value"></textarea>`;
+        } else if (q.type === 'photo') {
+          html += `<input type="file" id="photo_${i}" accept="image/*" onchange="uploadPhoto(${i}, this)">`;
+        }
+        
+        html += `</div>`;
+      });
+      
+      html += `<button class="primary" onclick="submitTest()">Завершить тест</button>`;
+      content.innerHTML = html;
+    }
+
+    async function uploadPhoto(questionIdx, input) {
+      const file = input.files[0];
+      if (!file) return;
+      
+      const ref = storage.ref(`test_answers/${user.uid}/${Date.now()}_${file.name}`);
+      await ref.put(file);
+      answers[questionIdx] = await ref.getDownloadURL();
+    }
+
+    async function submitTest() {
+      if (timerInterval) clearInterval(timerInterval);
+      
+      let correct = 0;
+      currentTest.questions.forEach((q, i) => {
+        if (q.type === 'choice' && answers[i] === q.correct) correct++;
+      });
+      
+      const total = currentTest.questions.length;
+      const pct = Math.round(correct / total * 100);
+      
+      await db.collection('test_results').add({
+        testId: currentTest.id,
+        testTitle: currentTest.title,
+        studentId: user.uid,
+        studentName: user.name,
+        answers: answers,
+        score: correct,
+        total: total,
+        percentage: pct,
+        submittedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      
+      const resultClass = pct >= 60 ? 'good' : 'bad';
+      const resultText = pct >= 60 ? '✅ Зачёт!' : '❌ Нужно повторить';
+      
+      document.getElementById('content').innerHTML = `
+        <div class="result ${resultClass}">
+          <h2>Результат: ${correct} из ${total} (${pct}%)</h2>
+          <p>${resultText}</p>
+          <button class="primary" onclick="currentTest=null;render()" style="margin-top:16px">Вернуться к тестам</button>
+        </div>
+      `;
+    }
+
+    render();
+  </script>
+</body>
+</html>

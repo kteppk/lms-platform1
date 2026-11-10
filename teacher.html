@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Кабинет преподавателя</title>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-storage-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #f7fafc; }
+    header { background: white; padding: 16px 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
+    header h1 { font-size: 20px; color: #2d3748; }
+    .user-info { display: flex; align-items: center; gap: 12px; }
+    .user-info span { color: #4a5568; }
+    button.logout { background: #e53e3e; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
+    main { max-width: 1200px; margin: 24px auto; padding: 0 24px; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+    .tab-btn { background: white; border: 2px solid #e2e8f0; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.3s; }
+    .tab-btn.active { background: #667eea; color: white; border-color: #667eea; }
+    .content { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .form-group { margin-bottom: 20px; }
+    label { display: block; margin-bottom: 6px; color: #4a5568; font-weight: 500; }
+    input, textarea, select { width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 6px; font-size: 14px; }
+    textarea { resize: vertical; min-height: 100px; }
+    button.primary { background: #667eea; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+    button.secondary { background: #a0aec0; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 600; margin-left: 8px; }
+    .item { border: 2px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+    .item h3 { color: #2d3748; margin-bottom: 8px; }
+    .item .meta { color: #718096; font-size: 13px; margin-bottom: 8px; }
+    .item-actions { display: flex; gap: 8px; margin-top: 12px; }
+    .question-block { border: 2px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+    .hidden { display: none; }
+    @media (max-width: 768px) {
+      main { padding: 0 12px; }
+      .content { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🧑‍🏫 Кабинет преподавателя</h1>
+    <div class="user-info">
+      <span id="userName"></span>
+      <button class="logout" onclick="logout()">Выйти</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('lectures')">📖 Лекции</button>
+      <button class="tab-btn" onclick="switchTab('books')">📚 Книги</button>
+      <button class="tab-btn" onclick="switchTab('tests')">✅ Тесты</button>
+      <button class="tab-btn" onclick="switchTab('students')">👥 Студенты</button>
+    </div>
+
+    <div id="content" class="content"></div>
+  </main>
+
+  <script>
+    const user = JSON.parse(localStorage.getItem('currentUser'));
+    if (!user || user.role !== 'teacher') {
+      window.location.href = 'index.html';
+    }
+
+    document.getElementById('userName').textContent = user.name;
+    let currentTab = 'lectures';
+
+    function logout() {
+      auth.signOut();
+      localStorage.removeItem('currentUser');
+      window.location.href = 'index.html';
+    }
+
+    function switchTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+      render();
+    }
+
+    async function render() {
+      const content = document.getElementById('content');
+      
+      if (currentTab === 'lectures') {
+        content.innerHTML = `
+          <h2 style="margin-bottom:20px">Добавить лекцию</h2>
+          <form onsubmit="addLecture(event)">
+            <div class="form-group">
+              <label>Название</label>
+              <input type="text" id="lectureTitle" required>
+            </div>
+            <div class="form-group">
+              <label>Текст лекции</label>
+              <textarea id="lectureText" required></textarea>
+            </div>
+            <div class="form-group">
+              <label>Файлы (PDF, DOCX, видео)</label>
+              <input type="file" id="lectureFiles" multiple accept=".pdf,.doc,.docx,.mp4,.html">
+            </div>
+            <button type="submit" class="primary">Сохранить</button>
+          </form>
+          <hr style="margin:24px 0">
+          <h2 style="margin-bottom:16px">Мои лекции</h2>
+          <div id="lecturesList"></div>
+        `;
+        await loadLectures();
+      }
+      
+      if (currentTab === 'books') {
+        content.innerHTML = `
+          <h2 style="margin-bottom:20px">Добавить книгу</h2>
+          <form onsubmit="addBook(event)">
+            <div class="form-group">
+              <label>Название</label>
+              <input type="text" id="bookTitle" required>
+            </div>
+            <div class="form-group">
+              <label>Автор</label>
+              <input type="text" id="bookAuthor" required>
+            </div>
+            <div class="form-group">
+              <label>Описание</label>
+              <textarea id="bookDesc"></textarea>
+            </div>
+            <div class="form-group">
+              <label>Файл книги (PDF)</label>
+              <input type="file" id="bookFile" accept=".pdf">
+            </div>
+            <button type="submit" class="primary">Сохранить</button>
+          </form>
+          <hr style="margin:24px 0">
+          <h2 style="margin-bottom:16px">Мои книги</h2>
+          <div id="booksList"></div>
+        `;
+        await loadBooks();
+      }
+      
+      if (currentTab === 'tests') {
+        content.innerHTML = `
+          <h2 style="margin-bottom:20px">Создать тест</h2>
+          <form onsubmit="createTest(event)">
+            <div class="form-group">
+              <label>Название теста</label>
+              <input type="text" id="testTitle" required>
+            </div>
+            <div class="form-group">
+              <label>Таймер (минуты, 0 = без таймера)</label>
+              <input type="number" id="testTimer" value="0" min="0">
+            </div>
+            <div id="questionsContainer"></div>
+            <button type="button" class="secondary" onclick="addQuestion()">+ Добавить вопрос</button>
+            <button type="submit" class="primary">Сохранить тест</button>
+          </form>
+          <hr style="margin:24px 0">
+          <h2 style="margin-bottom:16px">Мои тесты</h2>
+          <div id="testsList"></div>
+        `;
+        addQuestion();
+        await loadTests();
+      }
+      
+      if (currentTab === 'students') {
+        content.innerHTML = `<h2>Список студентов</h2><div id="studentsList"></div>`;
+        await loadStudents();
+      }
+    }
+
+    function addQuestion() {
+      const container = document.getElementById('questionsContainer');
+      const idx = container.children.length;
+      const div = document.createElement('div');
+      div.className = 'question-block';
+      div.innerHTML = `
+        <h4>Вопрос ${idx + 1}</h4>
+        <div class="form-group">
+          <label>Текст вопроса</label>
+          <input type="text" class="q-text" required>
+        </div>
+        <div class="form-group">
+          <label>Тип ответа</label>
+          <select class="q-type" onchange="toggleAnswerType(this, ${idx})">
+            <option value="choice">Варианты ответа</option>
+            <option value="text">Текстовый ответ</option>
+            <option value="photo">Фото-ответ</option>
+          </select>
+        </div>
+        <div class="q-options">
+          <div class="form-group">
+            <label>Вариант 1</label>
+            <input type="text" class="q-opt">
+          </div>
+          <div class="form-group">
+            <label>Вариант 2</label>
+            <input type="text" class="q-opt">
+          </div>
+          <div class="form-group">
+            <label>Вариант 3</label>
+            <input type="text" class="q-opt">
+          </div>
+          <div class="form-group">
+            <label>Вариант 4</label>
+            <input type="text" class="q-opt">
+          </div>
+          <div class="form-group">
+            <label>Правильный вариант (1-4)</label>
+            <input type="number" class="q-correct" min="1" max="4" value="1">
+          </div>
+        </div>
+      `;
+      container.appendChild(div);
+    }
+
+    function toggleAnswerType(select, idx) {
+      const block = select.closest('.question-block');
+      const optionsDiv = block.querySelector('.q-options');
+      if (select.value === 'choice') {
+        optionsDiv.classList.remove('hidden');
+      } else {
+        optionsDiv.classList.add('hidden');
+      }
+    }
+
+    async function addLecture(e) {
+      e.preventDefault();
+      const title = document.getElementById('lectureTitle').value;
+      const text = document.getElementById('lectureText').value;
+      const files = document.getElementById('lectureFiles').files;
+      
+      let fileUrls = [];
+      for (let file of files) {
+        const ref = storage.ref(`lectures/${user.uid}/${Date.now()}_${file.name}`);
+        await ref.put(file);
+        fileUrls.push(await ref.getDownloadURL());
+      }
+      
+      await db.collection('lectures').add({
+        teacherId: user.uid,
+        teacherName: user.name,
+        title: title,
+        text: text,
+        files: fileUrls,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      
+      alert('Лекция добавлена!');
+      render();
+    }
+
+    async function loadLectures() {
+      const snapshot = await db.collection('lectures').where('teacherId', '==', user.uid).orderBy('createdAt', 'desc').get();
+      const list = document.getElementById('lecturesList');
+      list.innerHTML = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return `<div class="item">
+          <h3>${data.title}</h3>
+          <div class="meta">${new Date(data.createdAt?.toDate()).toLocaleString('ru')}</div>
+          <p>${data.text.substring(0, 100)}...</p>
+          ${data.files.length ? `<p style="margin-top:8px">📎 Файлов: ${data.files.length}</p>` : ''}
+          <div class="item-actions">
+            <button class="secondary" onclick="deleteLecture('${doc.id}')">Удалить</button>
+          </div>
+        </div>`;
+      }).join('') || '<p>Нет лекций</p>';
+    }
+
+    async function deleteLecture(id) {
+      if (confirm('Удалить лекцию?')) {
+        await db.collection('lectures').doc(id).delete();
+        render();
+      }
+    }
+
+    async function addBook(e) {
+      e.preventDefault();
+      const title = document.getElementById('bookTitle').value;
+      const author = document.getElementById('bookAuthor').value;
+      const desc = document.getElementById('bookDesc').value;
+      const file = document.getElementById('bookFile').files[0];
+      
+      let fileUrl = '';
+      if (file) {
+        const ref = storage.ref(`books/${user.uid}/${Date.now()}_${file.name}`);
+        await ref.put(file);
+        fileUrl = await ref.getDownloadURL();
+      }
+      
+      await db.collection('books').add({
+        teacherId: user.uid,
+        teacherName: user.name,
+        title: title,
+        author: author,
+        description: desc,
+        fileUrl: fileUrl,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      
+      alert('Книга добавлена!');
+      render();
+    }
+
+    async function loadBooks() {
+      const snapshot = await db.collection('books').where('teacherId', '==', user.uid).orderBy('createdAt', 'desc').get();
+      const list = document.getElementById('booksList');
+      list.innerHTML = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return `<div class="item">
+          <h3>${data.title}</h3>
+          <div class="meta">${data.author}</div>
+          <p>${data.description || ''}</p>
+          <div class="item-actions">
+            <button class="secondary" onclick="deleteBook('${doc.id}')">Удалить</button>
+          </div>
+        </div>`;
+      }).join('') || '<p>Нет книг</p>';
+    }
+
+    async function deleteBook(id) {
+      if (confirm('Удалить книгу?')) {
+        await db.collection('books').doc(id).delete();
+        render();
+      }
+    }
+
+    async function createTest(e) {
+      e.preventDefault();
+      const title = document.getElementById('testTitle').value;
+      const timer = parseInt(document.getElementById('testTimer').value);
+      
+      const questions = [...document.querySelectorAll('.question-block')].map(block => {
+        const type = block.querySelector('.q-type').value;
+        const q = {
+          text: block.querySelector('.q-text').value,
+          type: type
+        };
+        
+        if (type === 'choice') {
+          q.options = [...block.querySelectorAll('.q-opt')].map(i => i.value);
+          q.correct = parseInt(block.querySelector('.q-correct').value) - 1;
+        }
+        
+        return q;
+      });
+      
+      await db.collection('tests').add({
+        teacherId: user.uid,
+        teacherName: user.name,
+        title: title,
+        timer: timer,
+        questions: questions,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      
+      alert('Тест создан!');
+      render();
+    }
+
+    async function loadTests() {
+      const snapshot = await db.collection('tests').where('teacherId', '==', user.uid).orderBy('createdAt', 'desc').get();
+      const list = document.getElementById('testsList');
+      list.innerHTML = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return `<div class="item">
+          <h3>${data.title}</h3>
+          <div class="meta">${data.questions.length} вопросов ${data.timer ? `• Таймер: ${data.timer} мин` : ''}</div>
+          <div class="item-actions">
+            <button class="secondary" onclick="deleteTest('${doc.id}')">Удалить</button>
+          </div>
+        </div>`;
+      }).join('') || '<p>Нет тестов</p>';
+    }
+
+    async function deleteTest(id) {
+      if (confirm('Удалить тест?')) {
+        await db.collection('tests').doc(id).delete();
+        render();
+      }
+    }
+
+    async function loadStudents() {
+      const snapshot = await db.collection('users').where('role', '==', 'student').get();
+      const list = document.getElementById('studentsList');
+      list.innerHTML = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return `<div class="item">
+          <h3>${data.name}</h3>
+          <div class="meta">${data.email}</div>
+        </div>`;
+      }).join('') || '<p>Нет студентов</p>';
+    }
+
+    render();
+  </script>
+</body>
+</html>
