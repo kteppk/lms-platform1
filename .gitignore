@@ -1,5 +1,6 @@
 node_modules/
 *-debug.log
 .firebase/
-functions/.env*
-functions/.secret.local
+supabase/.temp/
+supabase/.branches/
+supabase/functions/.env*

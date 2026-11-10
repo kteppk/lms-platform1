@@ -6,10 +6,7 @@
   <title>Кабинет преподавателя</title>
   <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-storage-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-functions-compat.js"></script>
-  <script src="firebase-config.js"></script>
+  <script src="firebase-config.js?v=supabase"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: system-ui, -apple-system, sans-serif; background: #f7fafc; }
@@ -63,7 +60,6 @@
   </main>
 
   <script>
-    let user;
     let currentTab = 'lectures';
 
     async function runAction(action) {
@@ -233,27 +229,11 @@
       optionsDiv.querySelectorAll('input').forEach(input => { input.disabled = !choice; });
     }
 
-    async function saveMaterial(collection, fields, files, attach) {
+    async function saveMaterial(kind, fields, files) {
+      if (files.length > 20) throw new Error('Добавьте не более 20 вложений.');
       const uploaded = [];
-      try {
-        const urls = [];
-        for (const file of files) {
-          const ref = storage.ref(`${collection}/${user.uid}/${crypto.randomUUID()}_${file.name}`);
-          await ref.put(file, { contentDisposition: 'attachment' });
-          uploaded.push(ref);
-          urls.push(await ref.getDownloadURL());
-        }
-        await db.collection(collection).add({
-          ...fields,
-          ...attach(urls),
-          teacherId: user.uid,
-          teacherName: user.name,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-      } catch (error) {
-        await Promise.allSettled(uploaded.map(ref => ref.delete()));
-        throw error;
-      }
+      for (const file of files) uploaded.push(await uploadAttachment(kind, file));
+      await callFunction('createMaterial', { kind, ...fields, files: uploaded });
       await render();
     }
 
@@ -262,21 +242,20 @@
       const text = document.getElementById('lectureText').value;
       const files = document.getElementById('lectureFiles').files;
       
-      await saveMaterial('lectures', { title, text }, files, urls => ({ files: urls }));
+      await saveMaterial('lectures', { title, text }, files);
     }
 
     async function loadLectures() {
       const list = document.getElementById('lecturesList');
-      const snapshot = await db.collection('lectures').where('teacherId', '==', user.uid).orderBy('createdAt', 'desc').get();
-      list.innerHTML = snapshot.docs.map(doc => {
-        const data = doc.data();
+      const lectures = await callFunction('listMaterials', { kind: 'lectures', mine: true });
+      list.innerHTML = lectures.map(data => {
         return `<div class="item">
           <h3>${escapeHtml(data.title)}</h3>
-          <div class="meta">${data.createdAt?.toDate().toLocaleString('ru') || ''}</div>
+          <div class="meta">${new Date(data.createdAt).toLocaleString('ru')}</div>
           <p>${escapeHtml(data.text?.substring(0, 100))}...</p>
           ${data.files?.length ? `<p style="margin-top:8px">📎 Файлов: ${data.files.length}</p>` : ''}
           <div class="item-actions">
-            <button class="secondary" data-id="${escapeHtml(doc.id)}" onclick="deleteItem('lectures', this.dataset.id, 'Удалить лекцию?')">Удалить</button>
+            <button class="secondary" data-id="${escapeHtml(data.id)}" onclick="deleteItem('lectures', this.dataset.id, 'Удалить лекцию?')">Удалить</button>
           </div>
         </div>`;
       }).join('') || '<p>Нет лекций</p>';
@@ -285,7 +264,7 @@
     function deleteItem(collection, id, message) {
       if (!confirm(message)) return;
       return runAction(async () => {
-        await db.collection(collection).doc(id).delete();
+        await callFunction('deleteItem', { kind: collection, id });
         await render();
       });
     }
@@ -296,22 +275,19 @@
       const desc = document.getElementById('bookDesc').value;
       const file = document.getElementById('bookFile').files[0];
       
-      await saveMaterial('books', { title, author, description: desc }, file ? [file] : [], urls => ({
-        fileUrl: urls[0] || ''
-      }));
+      await saveMaterial('books', { title, author, description: desc }, file ? [file] : []);
     }
 
     async function loadBooks() {
       const list = document.getElementById('booksList');
-      const snapshot = await db.collection('books').where('teacherId', '==', user.uid).orderBy('createdAt', 'desc').get();
-      list.innerHTML = snapshot.docs.map(doc => {
-        const data = doc.data();
+      const books = await callFunction('listMaterials', { kind: 'books', mine: true });
+      list.innerHTML = books.map(data => {
         return `<div class="item">
           <h3>${escapeHtml(data.title)}</h3>
           <div class="meta">${escapeHtml(data.author)}</div>
           <p>${escapeHtml(data.description)}</p>
           <div class="item-actions">
-            <button class="secondary" data-id="${escapeHtml(doc.id)}" onclick="deleteItem('books', this.dataset.id, 'Удалить книгу?')">Удалить</button>
+            <button class="secondary" data-id="${escapeHtml(data.id)}" onclick="deleteItem('books', this.dataset.id, 'Удалить книгу?')">Удалить</button>
           </div>
         </div>`;
       }).join('') || '<p>Нет книг</p>';
@@ -342,14 +318,13 @@
 
     async function loadTests() {
       const list = document.getElementById('testsList');
-      const snapshot = await db.collection('tests').where('teacherId', '==', user.uid).orderBy('createdAt', 'desc').get();
-      list.innerHTML = snapshot.docs.map(doc => {
-        const data = doc.data();
+      const tests = await callFunction('listTeacherTests');
+      list.innerHTML = tests.map(data => {
         return `<div class="item">
           <h3>${escapeHtml(data.title)}</h3>
-          <div class="meta">${data.questions?.length ?? 0} вопросов ${data.timer ? `• Таймер: ${escapeHtml(data.timer)} мин` : ''}</div>
+          <div class="meta">${data.questionCount} вопросов ${data.timer ? `• Таймер: ${escapeHtml(data.timer)} мин` : ''}</div>
           <div class="item-actions">
-            <button class="secondary" data-id="${escapeHtml(doc.id)}" onclick="deleteItem('tests', this.dataset.id, 'Удалить тест?')">Удалить</button>
+            <button class="secondary" data-id="${escapeHtml(data.id)}" onclick="deleteItem('tests', this.dataset.id, 'Удалить тест?')">Удалить</button>
           </div>
         </div>`;
       }).join('') || '<p>Нет тестов</p>';
@@ -357,9 +332,8 @@
 
     async function loadStudents() {
       const list = document.getElementById('studentsList');
-      const snapshot = await db.collection('users').where('role', '==', 'student').get();
-      list.innerHTML = snapshot.docs.map(doc => {
-        const data = doc.data();
+      const students = await callFunction('listStudents');
+      list.innerHTML = students.map(data => {
         return `<div class="item">
           <h3>${escapeHtml(data.name)}</h3>
           <div class="meta">${escapeHtml(data.email)}</div>
@@ -367,10 +341,7 @@
       }).join('') || '<p>Нет студентов</p>';
     }
 
-    watchCabinet('teacher', (profile) => {
-      user = profile;
-      return render();
-    });
+    watchCabinet('teacher', render);
   </script>
 </body>
 </html>

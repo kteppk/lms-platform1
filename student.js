@@ -1,4 +1,3 @@
-let user;
 let currentTab = 'lectures';
 let attempt = null;
 let startingTest = false;
@@ -41,11 +40,10 @@ async function render() {
     return;
   }
 
-  const snapshot = await db.collection(tab).orderBy('createdAt', 'desc').get();
+  const materials = await callFunction('listMaterials', { kind: tab });
   if (tab === 'lectures') {
-    list.innerHTML = snapshot.docs.map(doc => {
-      const data = doc.data();
-      const date = data.createdAt?.toDate().toLocaleString('ru') || '';
+    list.innerHTML = materials.map(data => {
+      const date = new Date(data.createdAt).toLocaleString('ru');
       const files = (data.files ?? []).map((file, index) => materialLink(file, 'Скачать файл ' + (index + 1)));
       return `<div class="item">
         <h3>${escapeHtml(data.title)}</h3>
@@ -55,8 +53,7 @@ async function render() {
       </div>`;
     }).join('') || '<p>Нет лекций</p>';
   } else {
-    list.innerHTML = snapshot.docs.map(doc => {
-      const data = doc.data();
+    list.innerHTML = materials.map(data => {
       const link = data.fileUrl ? materialLink(data.fileUrl, 'Читать PDF') : '';
       return `<div class="item">
         <h3>${escapeHtml(data.title)}</h3>
@@ -137,26 +134,26 @@ async function uploadPhoto(index, input) {
   const file = input.files[0];
   if (!file) return;
   const active = attempt;
-  const ref = storage.ref(`test_answers/${user.uid}/${active.attemptId}/${crypto.randomUUID()}`);
-  active.pendingPhotos.set(index, ref.fullPath);
+  const pending = Symbol();
+  active.pendingPhotos.set(index, pending);
   delete active.answers[index];
   document.getElementById('photo-status-' + index).textContent = 'Загрузка…';
   try {
-    await ref.put(file);
-    if (active.pendingPhotos.get(index) === ref.fullPath) {
-      active.answers[index] = ref.fullPath;
+    const path = await uploadAttachment('photo', file, active.attemptId);
+    if (active.pendingPhotos.get(index) === pending) {
+      active.answers[index] = path;
       const status = document.getElementById('photo-status-' + index);
       if (attempt === active && status) status.textContent = 'Фото загружено';
     }
   } catch (error) {
-    if (attempt === active && active.pendingPhotos.get(index) === ref.fullPath) {
+    if (attempt === active && active.pendingPhotos.get(index) === pending) {
       input.value = '';
       const status = document.getElementById('photo-status-' + index);
       if (status) status.textContent = '';
       showStatus('Не удалось загрузить фото. ' + error.message);
     }
   } finally {
-    if (active.pendingPhotos.get(index) === ref.fullPath) active.pendingPhotos.delete(index);
+    if (active.pendingPhotos.get(index) === pending) active.pendingPhotos.delete(index);
   }
 }
 
@@ -207,7 +204,4 @@ function returnToTests() {
   render().catch(showError);
 }
 
-watchCabinet('student', (profile) => {
-  user = profile;
-  return render();
-});
+watchCabinet('student', render);

@@ -1,0 +1,8 @@
+project_id = "lms-platform"
+
+[functions.lms]
+# The handler verifies Firebase ID tokens before reading or writing data.
+verify_jwt = false
+
+[storage]
+file_size_limit = "50MiB"
