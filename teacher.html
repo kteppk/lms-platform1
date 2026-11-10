@@ -4,10 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Кабинет преподавателя</title>
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-functions-compat.js"></script>
   <script src="firebase-config.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -49,37 +50,47 @@
     </div>
   </header>
 
-  <main>
+  <p id="status" role="alert" hidden style="padding:12px 24px;color:#c53030"></p>
+  <main hidden>
     <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('lectures')">📖 Лекции</button>
-      <button class="tab-btn" onclick="switchTab('books')">📚 Книги</button>
-      <button class="tab-btn" onclick="switchTab('tests')">✅ Тесты</button>
-      <button class="tab-btn" onclick="switchTab('students')">👥 Студенты</button>
+      <button class="tab-btn active" onclick="switchTab('lectures', this)">📖 Лекции</button>
+      <button class="tab-btn" onclick="switchTab('books', this)">📚 Книги</button>
+      <button class="tab-btn" onclick="switchTab('tests', this)">✅ Тесты</button>
+      <button class="tab-btn" onclick="switchTab('students', this)">👥 Студенты</button>
     </div>
 
     <div id="content" class="content"></div>
   </main>
 
   <script>
-    const user = JSON.parse(localStorage.getItem('currentUser'));
-    if (!user || user.role !== 'teacher') {
-      window.location.href = 'index.html';
-    }
-
-    document.getElementById('userName').textContent = user.name;
+    let user;
     let currentTab = 'lectures';
 
-    function logout() {
-      auth.signOut();
-      localStorage.removeItem('currentUser');
-      window.location.href = 'index.html';
+    async function runAction(action) {
+      showStatus('');
+      try {
+        await action();
+      } catch (error) {
+        showStatus(error.message);
+      }
     }
 
-    function switchTab(tab) {
+    async function submitForm(event, action) {
+      event.preventDefault();
+      const button = event.currentTarget.querySelector('[type="submit"]');
+      if (button.disabled) return;
+      button.disabled = true;
+      try {
+        await runAction(action);
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    function switchTab(tab, button) {
       currentTab = tab;
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      event.target.classList.add('active');
-      render();
+      document.querySelectorAll('.tab-btn').forEach(item => item.classList.toggle('active', item === button));
+      runAction(render);
     }
 
     async function render() {
@@ -88,7 +99,7 @@
       if (currentTab === 'lectures') {
         content.innerHTML = `
           <h2 style="margin-bottom:20px">Добавить лекцию</h2>
-          <form onsubmit="addLecture(event)">
+          <form onsubmit="submitForm(event, addLecture)">
             <div class="form-group">
               <label>Название</label>
               <input type="text" id="lectureTitle" required>
@@ -113,7 +124,7 @@
       if (currentTab === 'books') {
         content.innerHTML = `
           <h2 style="margin-bottom:20px">Добавить книгу</h2>
-          <form onsubmit="addBook(event)">
+          <form onsubmit="submitForm(event, addBook)">
             <div class="form-group">
               <label>Название</label>
               <input type="text" id="bookTitle" required>
@@ -142,14 +153,14 @@
       if (currentTab === 'tests') {
         content.innerHTML = `
           <h2 style="margin-bottom:20px">Создать тест</h2>
-          <form onsubmit="createTest(event)">
+          <form onsubmit="submitForm(event, createTest)">
             <div class="form-group">
               <label>Название теста</label>
-              <input type="text" id="testTitle" required>
+              <input type="text" id="testTitle" maxlength="200" required>
             </div>
             <div class="form-group">
               <label>Таймер (минуты, 0 = без таймера)</label>
-              <input type="number" id="testTimer" value="0" min="0">
+              <input type="number" id="testTimer" value="0" min="0" max="1440" required>
             </div>
             <div id="questionsContainer"></div>
             <button type="button" class="secondary" onclick="addQuestion()">+ Добавить вопрос</button>
@@ -178,11 +189,11 @@
         <h4>Вопрос ${idx + 1}</h4>
         <div class="form-group">
           <label>Текст вопроса</label>
-          <input type="text" class="q-text" required>
+          <input type="text" class="q-text" maxlength="2000" required>
         </div>
         <div class="form-group">
           <label>Тип ответа</label>
-          <select class="q-type" onchange="toggleAnswerType(this, ${idx})">
+          <select class="q-type" onchange="toggleAnswerType(this)">
             <option value="choice">Варианты ответа</option>
             <option value="text">Текстовый ответ</option>
             <option value="photo">Фото-ответ</option>
@@ -191,142 +202,122 @@
         <div class="q-options">
           <div class="form-group">
             <label>Вариант 1</label>
-            <input type="text" class="q-opt">
+            <input type="text" class="q-opt" maxlength="500" required>
           </div>
           <div class="form-group">
             <label>Вариант 2</label>
-            <input type="text" class="q-opt">
+            <input type="text" class="q-opt" maxlength="500" required>
           </div>
           <div class="form-group">
             <label>Вариант 3</label>
-            <input type="text" class="q-opt">
+            <input type="text" class="q-opt" maxlength="500" required>
           </div>
           <div class="form-group">
             <label>Вариант 4</label>
-            <input type="text" class="q-opt">
+            <input type="text" class="q-opt" maxlength="500" required>
           </div>
           <div class="form-group">
             <label>Правильный вариант (1-4)</label>
-            <input type="number" class="q-correct" min="1" max="4" value="1">
+            <input type="number" class="q-correct" min="1" max="4" value="1" required>
           </div>
         </div>
       `;
       container.appendChild(div);
     }
 
-    function toggleAnswerType(select, idx) {
+    function toggleAnswerType(select) {
       const block = select.closest('.question-block');
       const optionsDiv = block.querySelector('.q-options');
-      if (select.value === 'choice') {
-        optionsDiv.classList.remove('hidden');
-      } else {
-        optionsDiv.classList.add('hidden');
-      }
+      const choice = select.value === 'choice';
+      optionsDiv.classList.toggle('hidden', !choice);
+      optionsDiv.querySelectorAll('input').forEach(input => { input.disabled = !choice; });
     }
 
-    async function addLecture(e) {
-      e.preventDefault();
+    async function saveMaterial(collection, fields, files, attach) {
+      const uploaded = [];
+      try {
+        const urls = [];
+        for (const file of files) {
+          const ref = storage.ref(`${collection}/${user.uid}/${crypto.randomUUID()}_${file.name}`);
+          await ref.put(file, { contentDisposition: 'attachment' });
+          uploaded.push(ref);
+          urls.push(await ref.getDownloadURL());
+        }
+        await db.collection(collection).add({
+          ...fields,
+          ...attach(urls),
+          teacherId: user.uid,
+          teacherName: user.name,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      } catch (error) {
+        await Promise.allSettled(uploaded.map(ref => ref.delete()));
+        throw error;
+      }
+      await render();
+    }
+
+    async function addLecture() {
       const title = document.getElementById('lectureTitle').value;
       const text = document.getElementById('lectureText').value;
       const files = document.getElementById('lectureFiles').files;
       
-      let fileUrls = [];
-      for (let file of files) {
-        const ref = storage.ref(`lectures/${user.uid}/${Date.now()}_${file.name}`);
-        await ref.put(file);
-        fileUrls.push(await ref.getDownloadURL());
-      }
-      
-      await db.collection('lectures').add({
-        teacherId: user.uid,
-        teacherName: user.name,
-        title: title,
-        text: text,
-        files: fileUrls,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-      
-      alert('Лекция добавлена!');
-      render();
+      await saveMaterial('lectures', { title, text }, files, urls => ({ files: urls }));
     }
 
     async function loadLectures() {
-      const snapshot = await db.collection('lectures').where('teacherId', '==', user.uid).orderBy('createdAt', 'desc').get();
       const list = document.getElementById('lecturesList');
+      const snapshot = await db.collection('lectures').where('teacherId', '==', user.uid).orderBy('createdAt', 'desc').get();
       list.innerHTML = snapshot.docs.map(doc => {
         const data = doc.data();
         return `<div class="item">
-          <h3>${data.title}</h3>
-          <div class="meta">${new Date(data.createdAt?.toDate()).toLocaleString('ru')}</div>
-          <p>${data.text.substring(0, 100)}...</p>
-          ${data.files.length ? `<p style="margin-top:8px">📎 Файлов: ${data.files.length}</p>` : ''}
+          <h3>${escapeHtml(data.title)}</h3>
+          <div class="meta">${data.createdAt?.toDate().toLocaleString('ru') || ''}</div>
+          <p>${escapeHtml(data.text?.substring(0, 100))}...</p>
+          ${data.files?.length ? `<p style="margin-top:8px">📎 Файлов: ${data.files.length}</p>` : ''}
           <div class="item-actions">
-            <button class="secondary" onclick="deleteLecture('${doc.id}')">Удалить</button>
+            <button class="secondary" data-id="${escapeHtml(doc.id)}" onclick="deleteItem('lectures', this.dataset.id, 'Удалить лекцию?')">Удалить</button>
           </div>
         </div>`;
       }).join('') || '<p>Нет лекций</p>';
     }
 
-    async function deleteLecture(id) {
-      if (confirm('Удалить лекцию?')) {
-        await db.collection('lectures').doc(id).delete();
-        render();
-      }
+    function deleteItem(collection, id, message) {
+      if (!confirm(message)) return;
+      return runAction(async () => {
+        await db.collection(collection).doc(id).delete();
+        await render();
+      });
     }
 
-    async function addBook(e) {
-      e.preventDefault();
+    async function addBook() {
       const title = document.getElementById('bookTitle').value;
       const author = document.getElementById('bookAuthor').value;
       const desc = document.getElementById('bookDesc').value;
       const file = document.getElementById('bookFile').files[0];
       
-      let fileUrl = '';
-      if (file) {
-        const ref = storage.ref(`books/${user.uid}/${Date.now()}_${file.name}`);
-        await ref.put(file);
-        fileUrl = await ref.getDownloadURL();
-      }
-      
-      await db.collection('books').add({
-        teacherId: user.uid,
-        teacherName: user.name,
-        title: title,
-        author: author,
-        description: desc,
-        fileUrl: fileUrl,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-      
-      alert('Книга добавлена!');
-      render();
+      await saveMaterial('books', { title, author, description: desc }, file ? [file] : [], urls => ({
+        fileUrl: urls[0] || ''
+      }));
     }
 
     async function loadBooks() {
-      const snapshot = await db.collection('books').where('teacherId', '==', user.uid).orderBy('createdAt', 'desc').get();
       const list = document.getElementById('booksList');
+      const snapshot = await db.collection('books').where('teacherId', '==', user.uid).orderBy('createdAt', 'desc').get();
       list.innerHTML = snapshot.docs.map(doc => {
         const data = doc.data();
         return `<div class="item">
-          <h3>${data.title}</h3>
-          <div class="meta">${data.author}</div>
-          <p>${data.description || ''}</p>
+          <h3>${escapeHtml(data.title)}</h3>
+          <div class="meta">${escapeHtml(data.author)}</div>
+          <p>${escapeHtml(data.description)}</p>
           <div class="item-actions">
-            <button class="secondary" onclick="deleteBook('${doc.id}')">Удалить</button>
+            <button class="secondary" data-id="${escapeHtml(doc.id)}" onclick="deleteItem('books', this.dataset.id, 'Удалить книгу?')">Удалить</button>
           </div>
         </div>`;
       }).join('') || '<p>Нет книг</p>';
     }
 
-    async function deleteBook(id) {
-      if (confirm('Удалить книгу?')) {
-        await db.collection('books').doc(id).delete();
-        render();
-      }
-    }
-
-    async function createTest(e) {
-      e.preventDefault();
+    async function createTest() {
       const title = document.getElementById('testTitle').value;
       const timer = parseInt(document.getElementById('testTimer').value);
       
@@ -345,54 +336,41 @@
         return q;
       });
       
-      await db.collection('tests').add({
-        teacherId: user.uid,
-        teacherName: user.name,
-        title: title,
-        timer: timer,
-        questions: questions,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-      
-      alert('Тест создан!');
-      render();
+      await callFunction('createTest', { title, timer, questions });
+      await render();
     }
 
     async function loadTests() {
-      const snapshot = await db.collection('tests').where('teacherId', '==', user.uid).orderBy('createdAt', 'desc').get();
       const list = document.getElementById('testsList');
+      const snapshot = await db.collection('tests').where('teacherId', '==', user.uid).orderBy('createdAt', 'desc').get();
       list.innerHTML = snapshot.docs.map(doc => {
         const data = doc.data();
         return `<div class="item">
-          <h3>${data.title}</h3>
-          <div class="meta">${data.questions.length} вопросов ${data.timer ? `• Таймер: ${data.timer} мин` : ''}</div>
+          <h3>${escapeHtml(data.title)}</h3>
+          <div class="meta">${data.questions?.length ?? 0} вопросов ${data.timer ? `• Таймер: ${escapeHtml(data.timer)} мин` : ''}</div>
           <div class="item-actions">
-            <button class="secondary" onclick="deleteTest('${doc.id}')">Удалить</button>
+            <button class="secondary" data-id="${escapeHtml(doc.id)}" onclick="deleteItem('tests', this.dataset.id, 'Удалить тест?')">Удалить</button>
           </div>
         </div>`;
       }).join('') || '<p>Нет тестов</p>';
     }
 
-    async function deleteTest(id) {
-      if (confirm('Удалить тест?')) {
-        await db.collection('tests').doc(id).delete();
-        render();
-      }
-    }
-
     async function loadStudents() {
-      const snapshot = await db.collection('users').where('role', '==', 'student').get();
       const list = document.getElementById('studentsList');
+      const snapshot = await db.collection('users').where('role', '==', 'student').get();
       list.innerHTML = snapshot.docs.map(doc => {
         const data = doc.data();
         return `<div class="item">
-          <h3>${data.name}</h3>
-          <div class="meta">${data.email}</div>
+          <h3>${escapeHtml(data.name)}</h3>
+          <div class="meta">${escapeHtml(data.email)}</div>
         </div>`;
       }).join('') || '<p>Нет студентов</p>';
     }
 
-    render();
+    watchCabinet('teacher', (profile) => {
+      user = profile;
+      return render();
+    });
   </script>
 </body>
 </html>

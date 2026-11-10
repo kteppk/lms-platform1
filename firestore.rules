@@ -1,0 +1,62 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function own(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function teacher() {
+      return signedIn() &&
+        exists(/databases/$(database)/documents/teachers/$(request.auth.uid));
+    }
+
+    function profileRole() {
+      return teacher() ? 'teacher' : 'student';
+    }
+
+    match /teachers/{uid} {
+      allow get: if own(uid);
+    }
+
+    match /users/{uid} {
+      allow get: if own(uid) || (teacher() && resource.data.role == 'student');
+      allow list: if teacher() && resource.data.role == 'student';
+      allow create: if own(uid) &&
+        request.resource.data.keys().hasAll(['name', 'email', 'role', 'createdAt']) &&
+        request.resource.data.keys().hasOnly(['name', 'email', 'role', 'createdAt']) &&
+        request.resource.data.name is string &&
+        request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 120 &&
+        request.resource.data.email == request.auth.token.email &&
+        request.resource.data.role == profileRole() &&
+        request.resource.data.createdAt == request.time;
+      allow update: if own(uid) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role']) &&
+        request.resource.data.role == profileRole();
+    }
+
+    match /{material}/{id} {
+      allow read: if material in ['lectures', 'books'] && signedIn();
+      allow create: if material in ['lectures', 'books'] && teacher() &&
+        own(request.resource.data.teacherId) &&
+        request.resource.data.teacherName ==
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.name &&
+        request.resource.data.createdAt == request.time;
+      allow delete: if material in ['lectures', 'books'] && teacher() &&
+        own(resource.data.teacherId);
+    }
+
+    match /tests/{id} {
+      allow read, delete: if teacher() && own(resource.data.teacherId);
+    }
+
+    match /test_results/{id} {
+      allow read: if own(resource.data.studentId) ||
+        (teacher() && own(resource.data.get('teacherId', '')));
+    }
+  }
+}
