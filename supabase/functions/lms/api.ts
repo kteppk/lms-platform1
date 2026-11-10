@@ -20,6 +20,8 @@ const uploads = {
     maxBytes: 50 * 1024 * 1024,
     types: [pdf, "application/msword",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.ms-powerpoint",
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation",
       "video/mp4", "text/html"],
   },
   books: { bucket: "lms-books", maxBytes: 50 * 1024 * 1024, types: [pdf] },
@@ -35,9 +37,14 @@ type Input = Record<string, unknown>;
 type Identity = { uid: string; email: string; name?: string };
 type Actor = Identity & { name: string; teacher: boolean };
 type Kind = "lectures" | "books";
+type ContentScope = { teacherId?: string; subjectId?: string | null };
+type AttachmentDetails = { name: string; mime: string };
 type Question = { type: "text" | "photo"; text: string } |
   { type: "choice"; text: string; options: string[]; correct: number };
-type Test = { id: string; title: string; teacher_name: string; timer: number; questions: Question[] };
+type Test = {
+  id: string; title: string; teacher_name: string; timer: number; questions: Question[];
+  subject_id: string | null; teacher_id: string;
+};
 
 class ApiError extends Error {
   constructor(readonly status: number, readonly code: string, message: string) {
@@ -83,8 +90,15 @@ function text(value: unknown, limit: number, field: string, optional = false): s
   return value.trim();
 }
 
-async function dataOf<T>(query: PromiseLike<{ data: T; error: { message: string } | null }>): Promise<T> {
+async function dataOf<T>(query: PromiseLike<{ data: T; error: { message: string; code?: string } | null }>): Promise<T> {
   const { data, error } = await query;
+  if (error?.code === "23505" && error.message.includes("subjects_active_title")) {
+    throw new ApiError(409, "already-exists", "Предмет с таким названием уже есть. Присоединитесь к нему в каталоге.");
+  }
+  if (error?.code === "42501" && error.message === "Вы не ведёте этот предмет.") {
+    throw new ApiError(403, "permission-denied", error.message);
+  }
+  if (error?.code === "P0002" && error.message === "Предмет недоступен.") missing(error.message);
   if (error) throw new Error(error.message);
   return data;
 }
@@ -139,6 +153,101 @@ function storagePath(url: string): string {
   return pathname + search;
 }
 
+async function activeSubject(db: SupabaseClient, subjectId: string) {
+  const subject = await dataOf(db.from("subjects").select("id,title,description")
+    .eq("id", subjectId).is("archived_at", null).maybeSingle());
+  if (!subject) missing("Предмет недоступен.");
+  return subject;
+}
+
+async function findInstructor(db: SupabaseClient, subjectId: string, teacherId: string) {
+  return await dataOf(db.from("subject_instructors").select("teacher_id,teacher_name")
+    .eq("subject_id", subjectId).eq("teacher_id", teacherId).maybeSingle());
+}
+
+async function publishingSubject(db: SupabaseClient, actor: Actor, value: unknown) {
+  if (value == null) return null;
+  const subjectId = id(value);
+  if (!await findInstructor(db, subjectId, actor.uid)) {
+    throw new ApiError(403, "permission-denied", "Вы не ведёте этот предмет.");
+  }
+  return subjectId;
+}
+
+async function listSubjects(db: SupabaseClient, actor: Actor) {
+  const rows = (await dataOf(db.from("subjects").select("id,title,description,created_by,subject_teachers(teacher_id)")
+    .is("archived_at", null).order("title"))) ?? [];
+  return rows.map(({ id, title, description, created_by, subject_teachers }) => ({
+    id, title, description, teacherCount: subject_teachers.length,
+    ...(actor.teacher ? {
+      canEdit: created_by === actor.uid,
+      joined: subject_teachers.some(({ teacher_id }) => teacher_id === actor.uid),
+    } : {}),
+  }));
+}
+
+async function saveSubject(db: SupabaseClient, actor: Actor, input: Input) {
+  requireRole(actor, true);
+  const title = text(input.title, 120, "Название предмета");
+  const description = text(input.description ?? "", 1000, "Описание предмета", true);
+  if (input.subjectId == null) {
+    const subjectId = await dataOf(db.rpc("create_subject", {
+      p_teacher_id: actor.uid, p_title: title, p_description: description,
+    }));
+    return { id: subjectId };
+  }
+  return await updateOwnSubject(db, actor, id(input.subjectId), { title, description });
+}
+
+async function updateOwnSubject(db: SupabaseClient, actor: Actor, subjectId: string, fields: Input) {
+  requireRole(actor, true);
+  const subject = await dataOf(db.from("subjects").update(fields)
+    .eq("id", subjectId).eq("created_by", actor.uid).is("archived_at", null).select("id").maybeSingle());
+  if (!subject) missing("Предмет недоступен для изменений.");
+  return subject;
+}
+
+async function changeSubjectMembership(db: SupabaseClient, actor: Actor, input: Input, join: boolean) {
+  requireRole(actor, true);
+  const subjectId = id(input.subjectId);
+  if (join) {
+    await dataOf(db.from("subject_teachers").upsert({
+      subject_id: subjectId, teacher_id: actor.uid,
+    }, { onConflict: "subject_id,teacher_id", ignoreDuplicates: true }));
+  } else {
+    await dataOf(db.from("subject_teachers").delete().eq("subject_id", subjectId).eq("teacher_id", actor.uid));
+  }
+  return null;
+}
+
+async function listSubjectTeachers(db: SupabaseClient, actor: Actor, input: Input) {
+  requireRole(actor, false);
+  const subjectId = id(input.subjectId);
+  const subject = await activeSubject(db, subjectId);
+  const rows = (await dataOf(db.from("subject_instructors").select("teacher_id,teacher_name")
+    .eq("subject_id", subjectId).order("teacher_name"))) ?? [];
+  return {
+    subject,
+    teachers: rows.map(({ teacher_id, teacher_name }) => ({ id: teacher_id, name: teacher_name })),
+  };
+}
+
+async function getSubjectContent(db: SupabaseClient, actor: Actor, input: Input) {
+  requireRole(actor, false);
+  const subjectId = id(input.subjectId);
+  const teacherId = id(input.teacherId);
+  const instructor = await findInstructor(db, subjectId, teacherId);
+  if (!instructor) missing("Преподаватель больше не ведёт этот предмет.");
+  const scope = { subjectId, teacherId };
+  const [subject, lectures, books, tests] = await Promise.all([
+    activeSubject(db, subjectId),
+    readMaterials(db, "lectures", scope, false),
+    readMaterials(db, "books", scope, false),
+    readTests(db, scope),
+  ]);
+  return { subject, teacher: { id: teacherId, name: instructor.teacher_name }, lectures, books, tests };
+}
+
 async function getAttempt(db: SupabaseClient, actor: Actor, attemptId: string) {
   const attempt = await dataOf(db.from("test_attempts").select("id,test_id,expires_at")
     .eq("id", attemptId).eq("student_id", actor.uid).maybeSingle());
@@ -163,6 +272,8 @@ async function createUpload(db: SupabaseClient, actor: Actor, input: Input) {
     if (result) missing("Попытка уже завершена.");
     if (attempt.expires_at && Date.now() > Date.parse(attempt.expires_at)) deadline();
     folder += attempt.id + "/";
+  } else {
+    await publishingSubject(db, actor, input.subjectId);
   }
 
   const path = folder + crypto.randomUUID();
@@ -175,22 +286,42 @@ async function listMaterials(db: SupabaseClient, actor: Actor, input: Input) {
   const kind = materialKind(input.kind);
   const mine = input.mine === true;
   if (mine) requireRole(actor, true);
-  let query = db.from("materials").select("id,title,teacher_name,body,author,files,created_at").eq("kind", kind);
-  if (mine) query = query.eq("teacher_id", actor.uid);
+  return await readMaterials(db, kind, mine ? { teacherId: actor.uid } : { subjectId: null }, mine);
+}
+
+async function readMaterials(db: SupabaseClient, kind: Kind, scope: ContentScope, mine: boolean) {
+  let query = db.from("materials")
+    .select("id,title,teacher_name,body,author,files,created_at,subject_id,attachment_details")
+    .eq("kind", kind);
+  if (scope.teacherId) query = query.eq("teacher_id", scope.teacherId);
+  if (scope.subjectId === null) query = query.is("subject_id", null);
+  if (scope.subjectId) query = query.eq("subject_id", scope.subjectId);
   const rows = (await dataOf(query.order("created_at", { ascending: false }))) ?? [];
 
   const paths = mine ? [] : [...new Set(rows.flatMap((row) => row.files as string[]))];
   const links = new Map<string, string>();
   if (paths.length) {
-    const signed = await dataOf(db.storage.from(uploads[kind].bucket).createSignedUrls(paths, 3600, { download: true }));
+    const signed = await dataOf(db.storage.from(uploads[kind].bucket).createSignedUrls(paths, 3600));
     for (const file of signed ?? []) {
-      if (file.path && file.signedUrl && !file.error) links.set(file.path, storagePath(file.signedUrl));
+      if (file.path && file.signedUrl && !file.error) links.set(file.path, file.signedUrl);
     }
   }
   return rows.map((row) => {
-    const files: string[] = mine ? row.files : row.files.map((path: string) => links.get(path)).filter(Boolean);
+    const details = row.attachment_details as AttachmentDetails[];
+    const attachments = (row.files as string[]).flatMap((path, index) => {
+      const url = links.get(path);
+      if (!url) return [];
+      const name = details[index]?.name || "";
+      const mime = details[index]?.mime || (kind === "books" ? pdf : "");
+      const download = new URL(url);
+      download.searchParams.set("download", name);
+      return [{ name, mime, downloadUrl: storagePath(download.href),
+        viewUrl: mime === pdf || mime === "video/mp4" ? storagePath(url) : null }];
+    });
+    const files: string[] = mine ? row.files : attachments.map((file) => file.downloadUrl);
     return {
       id: row.id, title: row.title, teacherName: row.teacher_name, createdAt: row.created_at,
+      subjectId: row.subject_id, attachments,
       ...(kind === "lectures" ? { text: row.body, files } :
         { author: row.author, description: row.body, fileUrl: files[0] || "" }),
     };
@@ -200,21 +331,36 @@ async function listMaterials(db: SupabaseClient, actor: Actor, input: Input) {
 async function createMaterial(db: SupabaseClient, actor: Actor, input: Input) {
   requireRole(actor, true);
   const kind = materialKind(input.kind);
+  const subjectId = await publishingSubject(db, actor, input.subjectId);
   const title = text(input.title, 300, "Название");
-  const body = kind === "lectures" ? text(input.text, 100000, "Текст лекции") :
-    text(input.description, 100000, "Описание", true);
   const author = kind === "books" ? text(input.author, 300, "Автор") : null;
   const files = input.files;
   if (!Array.isArray(files) || files.length > (kind === "books" ? 1 : 20) ||
       files.some((path) => !ownedPath(path, actor.uid + "/")) || new Set(files).size !== files.length) {
     invalid("Некорректный список вложений.");
   }
+  const body = kind === "lectures"
+    ? text(input.text, 100000, "Текст лекции", subjectId !== null && files.length > 0)
+    : text(input.description, 100000, "Описание", true);
   const bucket = db.storage.from(uploads[kind].bucket);
-  const exists = await Promise.all(files.map((path) => dataOf(bucket.exists(path))));
-  if (exists.some((value) => !value)) invalid("Вложение ещё не загружено.");
+  let attachmentDetails: AttachmentDetails[] = [];
+  if (subjectId || input.fileNames !== undefined) {
+    const names = input.fileNames ?? files.map(() => "");
+    if (!Array.isArray(names) || names.length !== files.length) invalid("Некорректные имена вложений.");
+    attachmentDetails = await Promise.all(files.map(async (path, index) => {
+      const name = text(names[index], 255, "Имя файла", true);
+      const info = await dataOf(bucket.info(path));
+      if (!info) invalid("Вложение ещё не загружено.");
+      return { name, mime: info.contentType ?? "" };
+    }));
+  } else {
+    const exists = await Promise.all(files.map((path) => dataOf(bucket.exists(path))));
+    if (exists.some((value) => !value)) invalid("Вложение ещё не загружено.");
+  }
 
   return await dataOf(db.from("materials").insert({
     kind, title, body, author, files, teacher_id: actor.uid, teacher_name: actor.name,
+    subject_id: subjectId, attachment_details: attachmentDetails,
   }).select("id").single());
 }
 
@@ -242,12 +388,13 @@ async function deleteItem(db: SupabaseClient, actor: Actor, input: Input) {
 function testSummary(test: Test) {
   return {
     id: test.id, title: test.title, teacherName: test.teacher_name,
-    questionCount: test.questions.length, timer: test.timer,
+    questionCount: test.questions.length, timer: test.timer, subjectId: test.subject_id,
   };
 }
 
 async function createTest(db: SupabaseClient, actor: Actor, input: Input) {
   requireRole(actor, true);
+  const subjectId = await publishingSubject(db, actor, input.subjectId);
   const title = text(input.title, 200, "Название теста");
   const { timer, questions } = input;
   if (typeof timer !== "number" || !Number.isInteger(timer) || timer < 0 || timer > 1440) {
@@ -267,20 +414,26 @@ async function createTest(db: SupabaseClient, actor: Actor, input: Input) {
     return { type, text: cleanText, options: options.map((option) => text(option, 500, "Вариант ответа")), correct };
   });
   return await dataOf(db.from("tests").insert({
-    title, timer, questions: clean, teacher_id: actor.uid, teacher_name: actor.name,
+    title, timer, questions: clean, teacher_id: actor.uid, teacher_name: actor.name, subject_id: subjectId,
   }).select("id").single());
 }
 
 async function listTests(db: SupabaseClient, actor: Actor, mine: boolean) {
   requireRole(actor, mine);
-  let query = db.from("tests").select("id,title,teacher_name,timer,questions");
-  if (mine) query = query.eq("teacher_id", actor.uid);
+  return await readTests(db, mine ? { teacherId: actor.uid } : { subjectId: null });
+}
+
+async function readTests(db: SupabaseClient, scope: ContentScope) {
+  let query = db.from("tests").select("id,title,teacher_name,timer,questions,subject_id,teacher_id");
+  if (scope.teacherId) query = query.eq("teacher_id", scope.teacherId);
+  if (scope.subjectId === null) query = query.is("subject_id", null);
+  if (scope.subjectId) query = query.eq("subject_id", scope.subjectId);
   const rows = (await dataOf(query.order("created_at", { ascending: false }))) ?? [];
   return rows.map(testSummary);
 }
 
 async function getTest(db: SupabaseClient, testId: string): Promise<Test> {
-  const test = await dataOf(db.from("tests").select("id,title,teacher_name,timer,questions")
+  const test = await dataOf(db.from("tests").select("id,title,teacher_name,timer,questions,subject_id,teacher_id")
     .eq("id", testId).maybeSingle());
   if (!test) missing("Тест недоступен.");
   return test;
@@ -289,6 +442,9 @@ async function getTest(db: SupabaseClient, testId: string): Promise<Test> {
 async function startStudentTest(db: SupabaseClient, actor: Actor, input: Input) {
   requireRole(actor, false);
   const test = await getTest(db, id(input.testId));
+  if (test.subject_id && !await findInstructor(db, test.subject_id, test.teacher_id)) {
+    missing("Тест недоступен.");
+  }
   const expiresAt = test.timer ? Date.now() + test.timer * 60000 : null;
   const attempt = await dataOf(db.from("test_attempts").insert({
     test_id: test.id, student_id: actor.uid,
@@ -367,6 +523,15 @@ export function createHandler(db: SupabaseClient, verify = verifyFirebase) {
       let result;
       switch (action) {
         case "profile": result = { uid: actor.uid, name: actor.name, role: actor.teacher ? "teacher" : "student" }; break;
+        case "listSubjects": result = await listSubjects(db, actor); break;
+        case "saveSubject": result = await saveSubject(db, actor, input); break;
+        case "deleteSubject":
+          result = await updateOwnSubject(db, actor, id(input.subjectId), { archived_at: new Date().toISOString() });
+          break;
+        case "joinSubject": result = await changeSubjectMembership(db, actor, input, true); break;
+        case "leaveSubject": result = await changeSubjectMembership(db, actor, input, false); break;
+        case "listSubjectTeachers": result = await listSubjectTeachers(db, actor, input); break;
+        case "getSubjectContent": result = await getSubjectContent(db, actor, input); break;
         case "listMaterials": result = await listMaterials(db, actor, input); break;
         case "createMaterial": result = await createMaterial(db, actor, input); break;
         case "createUpload": result = await createUpload(db, actor, input); break;

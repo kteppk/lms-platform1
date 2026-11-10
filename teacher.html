@@ -6,7 +6,8 @@
   <title>Кабинет преподавателя</title>
   <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-auth-compat.js"></script>
-  <script src="firebase-config.js?v=supabase"></script>
+  <script src="firebase-config.js?v=subjects"></script>
+  <link rel="stylesheet" href="subjects.css">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: system-ui, -apple-system, sans-serif; background: #f7fafc; }
@@ -50,7 +51,8 @@
   <p id="status" role="alert" hidden style="padding:12px 24px;color:#c53030"></p>
   <main hidden>
     <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('lectures', this)">📖 Лекции</button>
+      <button class="tab-btn" onclick="switchTab('subjects', this)">📘 Предметы</button>
+      <button class="tab-btn active" id="lecturesTab" onclick="switchTab('lectures', this)">📖 Лекции</button>
       <button class="tab-btn" onclick="switchTab('books', this)">📚 Книги</button>
       <button class="tab-btn" onclick="switchTab('tests', this)">✅ Тесты</button>
       <button class="tab-btn" onclick="switchTab('students', this)">👥 Студенты</button>
@@ -61,6 +63,8 @@
 
   <script>
     let currentTab = 'lectures';
+    let subjectCatalog = [];
+    let selectedSubjectId = '';
 
     async function runAction(action) {
       showStatus('');
@@ -91,22 +95,29 @@
 
     async function render() {
       const content = document.getElementById('content');
+
+      if (currentTab === 'subjects') {
+        await renderSubjects(content);
+        return;
+      }
       
       if (currentTab === 'lectures') {
         content.innerHTML = `
           <h2 style="margin-bottom:20px">Добавить лекцию</h2>
           <form onsubmit="submitForm(event, addLecture)">
+            ${subjectPicker()}
             <div class="form-group">
               <label>Название</label>
               <input type="text" id="lectureTitle" required>
             </div>
             <div class="form-group">
-              <label>Текст лекции</label>
-              <textarea id="lectureText" required></textarea>
+              <label for="lectureText">Текст лекции</label>
+              <textarea id="lectureText" aria-describedby="lectureTextHint"></textarea>
+              <small id="lectureTextHint">Для материала по предмету можно загрузить файл без текста.</small>
             </div>
             <div class="form-group">
-              <label>Файлы (PDF, DOCX, видео)</label>
-              <input type="file" id="lectureFiles" multiple accept=".pdf,.doc,.docx,.mp4,.html">
+              <label for="lectureFiles">Файлы (PDF, документы, презентации, MP4)</label>
+              <input type="file" id="lectureFiles" multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.mp4,.html">
             </div>
             <button type="submit" class="primary">Сохранить</button>
           </form>
@@ -121,6 +132,7 @@
         content.innerHTML = `
           <h2 style="margin-bottom:20px">Добавить книгу</h2>
           <form onsubmit="submitForm(event, addBook)">
+            ${subjectPicker()}
             <div class="form-group">
               <label>Название</label>
               <input type="text" id="bookTitle" required>
@@ -150,6 +162,7 @@
         content.innerHTML = `
           <h2 style="margin-bottom:20px">Создать тест</h2>
           <form onsubmit="submitForm(event, createTest)">
+            ${subjectPicker()}
             <div class="form-group">
               <label>Название теста</label>
               <input type="text" id="testTitle" maxlength="200" required>
@@ -174,6 +187,140 @@
         content.innerHTML = `<h2>Список студентов</h2><div id="studentsList"></div>`;
         await loadStudents();
       }
+    }
+
+    function subjectPicker() {
+      return `<div class="form-group">
+        <label for="materialSubject">Предмет</label>
+        <select id="materialSubject" onchange="selectedSubjectId = this.value">
+          <option value="">Без предмета</option>
+          ${subjectCatalog.filter(subject => subject.joined).map(subject => `
+            <option value="${escapeHtml(subject.id)}" ${subject.id === selectedSubjectId ? 'selected' : ''}>
+              ${escapeHtml(subject.title)}
+            </option>`).join('')}
+        </select>
+      </div>`;
+    }
+
+    async function loadSubjectOptions() {
+      const select = document.getElementById('materialSubject');
+      const subjects = await callFunction('listSubjects');
+      if (!select.isConnected) return;
+      subjectCatalog = subjects;
+      const available = subjects.filter(subject => subject.joined);
+      select.replaceChildren(new Option('Без предмета', ''),
+        ...available.map(subject => new Option(subject.title, subject.id)));
+      select.value = available.some(subject => subject.id === selectedSubjectId) ? selectedSubjectId : '';
+      selectedSubjectId = select.value;
+    }
+
+    function subjectLabel(subjectId) {
+      if (!subjectId) return '';
+      const title = subjectCatalog.find(subject => subject.id === subjectId)?.title || 'Предмет недоступен';
+      return `<div class="meta">${escapeHtml(title)}</div>`;
+    }
+
+    async function renderSubjects(content) {
+      content.innerHTML = `
+        <h2 id="subjectFormTitle" style="margin-bottom:20px">Добавить предмет</h2>
+        <form id="subjectForm" onsubmit="submitForm(event, saveSubject)">
+          <div class="form-group">
+            <label for="subjectTitle">Название предмета</label>
+            <input id="subjectTitle" required maxlength="120">
+          </div>
+          <div class="form-group">
+            <label for="subjectDescription">Описание</label>
+            <textarea id="subjectDescription" maxlength="1000"></textarea>
+          </div>
+          <div class="subject-actions">
+            <button type="submit" class="primary">Сохранить предмет</button>
+            <button type="button" id="cancelSubjectEdit" class="secondary" hidden onclick="resetSubjectForm()">Отменить</button>
+          </div>
+        </form>
+        <div id="teacherSubjects" class="subject-section">Загрузка…</div>`;
+      const list = document.getElementById('teacherSubjects');
+      const subjects = await callFunction('listSubjects');
+      if (!list.isConnected) return;
+      subjectCatalog = subjects;
+      const mine = subjects.filter(subject => subject.joined || subject.canEdit);
+      const others = subjects.filter(subject => !subject.joined && !subject.canEdit);
+      list.innerHTML = `
+        <h2>Мои предметы</h2>
+        <div class="subjects-grid">${mine.map(subjectCard).join('') || '<p>У вас пока нет предметов.</p>'}</div>
+        <section class="subject-section">
+          <h2>Другие предметы</h2>
+          <div class="subjects-grid">${others.map(subjectCard).join('') || '<p>Других предметов пока нет.</p>'}</div>
+        </section>`;
+    }
+
+    function subjectCard(subject) {
+      const id = escapeHtml(subject.id);
+      return `<article class="item subject-card">
+        <h3>${escapeHtml(subject.title)}</h3>
+        <p class="subject-description">${escapeHtml(subject.description)}</p>
+        <p class="meta">Преподавателей: ${escapeHtml(subject.teacherCount)}</p>
+        <div class="subject-actions">
+          ${subject.joined ? `
+            <button class="primary" data-id="${id}" onclick="openSubjectPublication(this)">Добавить материал</button>
+            <button class="secondary" data-id="${id}" onclick="changeSubject(this, 'leaveSubject')">Перестать вести</button>
+          ` : `<button class="primary" data-id="${id}" onclick="changeSubject(this, 'joinSubject')">Присоединиться</button>`}
+          ${subject.canEdit ? `
+            <button class="secondary" data-id="${id}" onclick="editSubject(this)">Редактировать</button>
+            <button class="secondary" data-id="${id}" onclick="changeSubject(this, 'deleteSubject')">Удалить предмет</button>
+          ` : ''}
+        </div>
+      </article>`;
+    }
+
+    async function saveSubject() {
+      await callFunction('saveSubject', {
+        subjectId: document.getElementById('subjectForm').dataset.id,
+        title: document.getElementById('subjectTitle').value,
+        description: document.getElementById('subjectDescription').value
+      });
+      if (currentTab === 'subjects') await render();
+    }
+
+    function editSubject(button) {
+      const subject = subjectCatalog.find(item => item.id === button.dataset.id);
+      if (!subject) return;
+      document.getElementById('subjectForm').dataset.id = subject.id;
+      document.getElementById('subjectFormTitle').textContent = 'Редактировать предмет';
+      document.getElementById('subjectDescription').value = subject.description;
+      document.getElementById('cancelSubjectEdit').hidden = false;
+      const title = document.getElementById('subjectTitle');
+      title.value = subject.title;
+      title.focus();
+    }
+
+    function resetSubjectForm() {
+      const form = document.getElementById('subjectForm');
+      delete form.dataset.id;
+      form.reset();
+      document.getElementById('subjectFormTitle').textContent = 'Добавить предмет';
+      document.getElementById('cancelSubjectEdit').hidden = true;
+    }
+
+    async function changeSubject(button, action) {
+      const messages = {
+        leaveSubject: 'Перестать вести предмет? Ваши материалы по нему скроются для студентов.',
+        deleteSubject: 'Удалить предмет из каталога? Материалы и результаты сохранятся в базе.'
+      };
+      if (messages[action] && !confirm(messages[action])) return;
+      button.disabled = true;
+      try {
+        await runAction(async () => {
+          await callFunction(action, { subjectId: button.dataset.id });
+          if (currentTab === 'subjects') await render();
+        });
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    function openSubjectPublication(button) {
+      selectedSubjectId = button.dataset.id;
+      switchTab('lectures', document.getElementById('lecturesTab'));
     }
 
     function addQuestion() {
@@ -231,9 +378,12 @@
 
     async function saveMaterial(kind, fields, files) {
       if (files.length > 20) throw new Error('Добавьте не более 20 вложений.');
+      const subjectId = document.getElementById('materialSubject').value || null;
       const uploaded = [];
-      for (const file of files) uploaded.push(await uploadAttachment(kind, file));
-      await callFunction('createMaterial', { kind, ...fields, files: uploaded });
+      for (const file of files) uploaded.push(await uploadAttachment(kind, file, { subjectId }));
+      await callFunction('createMaterial', {
+        kind, ...fields, subjectId, files: uploaded, fileNames: Array.from(files, file => file.name)
+      });
       await render();
     }
 
@@ -241,17 +391,23 @@
       const title = document.getElementById('lectureTitle').value;
       const text = document.getElementById('lectureText').value;
       const files = document.getElementById('lectureFiles').files;
+      if (!text.trim() && (!document.getElementById('materialSubject').value || !files.length)) {
+        throw new Error('Введите текст лекции или выберите предмет и прикрепите файл.');
+      }
       
       await saveMaterial('lectures', { title, text }, files);
     }
 
     async function loadLectures() {
       const list = document.getElementById('lecturesList');
-      const lectures = await callFunction('listMaterials', { kind: 'lectures', mine: true });
+      const [lectures] = await Promise.all([
+        callFunction('listMaterials', { kind: 'lectures', mine: true }), loadSubjectOptions()
+      ]);
       list.innerHTML = lectures.map(data => {
         return `<div class="item">
           <h3>${escapeHtml(data.title)}</h3>
           <div class="meta">${new Date(data.createdAt).toLocaleString('ru')}</div>
+          ${subjectLabel(data.subjectId)}
           <p>${escapeHtml(data.text?.substring(0, 100))}...</p>
           ${data.files?.length ? `<p style="margin-top:8px">📎 Файлов: ${data.files.length}</p>` : ''}
           <div class="item-actions">
@@ -280,11 +436,14 @@
 
     async function loadBooks() {
       const list = document.getElementById('booksList');
-      const books = await callFunction('listMaterials', { kind: 'books', mine: true });
+      const [books] = await Promise.all([
+        callFunction('listMaterials', { kind: 'books', mine: true }), loadSubjectOptions()
+      ]);
       list.innerHTML = books.map(data => {
         return `<div class="item">
           <h3>${escapeHtml(data.title)}</h3>
           <div class="meta">${escapeHtml(data.author)}</div>
+          ${subjectLabel(data.subjectId)}
           <p>${escapeHtml(data.description)}</p>
           <div class="item-actions">
             <button class="secondary" data-id="${escapeHtml(data.id)}" onclick="deleteItem('books', this.dataset.id, 'Удалить книгу?')">Удалить</button>
@@ -312,17 +471,19 @@
         return q;
       });
       
-      await callFunction('createTest', { title, timer, questions });
+      const subjectId = document.getElementById('materialSubject').value || null;
+      await callFunction('createTest', { title, timer, questions, subjectId });
       await render();
     }
 
     async function loadTests() {
       const list = document.getElementById('testsList');
-      const tests = await callFunction('listTeacherTests');
+      const [tests] = await Promise.all([callFunction('listTeacherTests'), loadSubjectOptions()]);
       list.innerHTML = tests.map(data => {
         return `<div class="item">
           <h3>${escapeHtml(data.title)}</h3>
           <div class="meta">${data.questionCount} вопросов ${data.timer ? `• Таймер: ${escapeHtml(data.timer)} мин` : ''}</div>
+          ${subjectLabel(data.subjectId)}
           <div class="item-actions">
             <button class="secondary" data-id="${escapeHtml(data.id)}" onclick="deleteItem('tests', this.dataset.id, 'Удалить тест?')">Удалить</button>
           </div>

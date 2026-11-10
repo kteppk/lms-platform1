@@ -38,18 +38,20 @@ async function callFunction(action, data, account = auth.currentUser) {
   return result.data;
 }
 
-async function uploadAttachment(kind, file, attemptId) {
+async function uploadAttachment(kind, file, context = {}) {
   const extension = file.name.split('.').pop().toLowerCase();
   const knownTypes = {
     pdf: 'application/pdf', doc: 'application/msword',
     docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ppt: 'application/vnd.ms-powerpoint',
+    pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
     mp4: 'video/mp4', html: 'text/html',
     jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp',
     gif: 'image/gif', heic: 'image/heic', heif: 'image/heif',
     avif: 'image/avif', bmp: 'image/bmp', tif: 'image/tiff', tiff: 'image/tiff'
   };
   const mime = file.type || knownTypes[extension];
-  const grant = await callFunction('createUpload', { kind, mime, size: file.size, attemptId });
+  const grant = await callFunction('createUpload', { kind, mime, size: file.size, ...context });
   const body = new FormData();
   body.append('cacheControl', '3600');
   body.append('', new Blob([file], { type: mime }), file.name);
@@ -107,14 +109,21 @@ function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, (character) => entities[character]);
 }
 
-function materialLink(url, label) {
+function safeMaterialUrl(url) {
+  if (typeof url !== 'string' || !url) return '';
   try {
     const link = new URL(url, lmsBaseUrl);
     if (link.protocol === 'https:' || (isLocal && link.hostname === '127.0.0.1')) {
-      return '<a href="' + escapeHtml(link.href) + '" target="_blank" rel="noopener noreferrer">' + label + '</a>';
+      return link.href;
     }
   } catch {
     return '';
   }
   return '';
+}
+
+function materialLink(url, label) {
+  const href = safeMaterialUrl(url);
+  return href ? '<a href="' + escapeHtml(href) + '" target="_blank" rel="noopener noreferrer">' +
+    escapeHtml(label) + '</a>' : '';
 }
