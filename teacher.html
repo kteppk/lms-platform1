@@ -6,7 +6,9 @@
   <title>Кабинет преподавателя</title>
   <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-auth-compat.js"></script>
-  <script src="firebase-config.js?v=subjects"></script>
+  <script src="firebase-config.js?v=assessment1"></script>
+  <script src="gradebook.js?v=assessment1"></script>
+  <link rel="stylesheet" href="assessment.css">
   <link rel="stylesheet" href="subjects.css">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -56,6 +58,7 @@
       <button class="tab-btn" onclick="switchTab('books', this)">📚 Книги</button>
       <button class="tab-btn" onclick="switchTab('tests', this)">✅ Тесты</button>
       <button class="tab-btn" onclick="switchTab('students', this)">👥 Студенты</button>
+      <button class="tab-btn" onclick="switchTab('journal', this)">📋 Журнал оценок</button>
     </div>
 
     <div id="content" class="content"></div>
@@ -95,6 +98,8 @@
 
     async function render() {
       const content = document.getElementById('content');
+
+      if (currentTab === 'journal') { await Gradebook.render(content, true); return; }
 
       if (currentTab === 'subjects') {
         await renderSubjects(content);
@@ -482,10 +487,10 @@
       list.innerHTML = tests.map(data => {
         return `<div class="item">
           <h3>${escapeHtml(data.title)}</h3>
-          <div class="meta">${data.questionCount} вопросов ${data.timer ? `• Таймер: ${escapeHtml(data.timer)} мин` : ''}</div>
+          <div class="meta">${data.questionCount} вопросов ${data.timer ? `• Таймер: ${escapeHtml(data.timer)} мин` : ''} ${data.archived ? '• В архиве' : ''}</div>
           ${subjectLabel(data.subjectId)}
           <div class="item-actions">
-            <button class="secondary" data-id="${escapeHtml(data.id)}" onclick="deleteItem('tests', this.dataset.id, 'Удалить тест?')">Удалить</button>
+            ${data.archived ? '' : `<button class="secondary" data-id="${escapeHtml(data.id)}" onclick="deleteItem('tests', this.dataset.id, 'Убрать тест в архив? Начатые попытки и оценки сохранятся.')">В архив</button>`}
           </div>
         </div>`;
       }).join('') || '<p>Нет тестов</p>';

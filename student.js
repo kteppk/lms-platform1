@@ -5,6 +5,8 @@ let subjectView = null;
 let startingTest = false;
 let submitting = false;
 let timerInterval;
+let draftTimer;
+let draftPromise = null;
 const content = document.getElementById('content');
 
 function switchTab(tab, button) {
@@ -24,6 +26,8 @@ async function render() {
     else renderTest();
     return;
   }
+
+  if (currentTab === 'results') { await Gradebook.render(content, false); return; }
 
   if (currentTab === 'subjects') {
     const back = subjectView?.fromChooser ? 'К преподавателям' : 'К предметам';
@@ -213,24 +217,112 @@ async function startTest(button) {
   showStatus('');
   try {
     const test = await callFunction('startStudentTest', { testId: button.dataset.id });
-    attemptTab = sourceTab;
-    if (sourceTab === 'subjects') subjectView = sourceSubject;
-    attempt = {
-      ...test,
-      endsAt: test.remainingMs === null ? null : performance.now() + test.remainingMs,
-      answers: {},
-      pendingPhotos: new Map()
-    };
-    if (attempt.endsAt !== null) {
-      timerInterval = setInterval(updateTimer, 250);
-    }
-    if (currentTab === attemptTab) await render();
+    await adoptAttempt(test, sourceTab, sourceSubject);
   } catch (error) {
     showError(error);
   } finally {
     startingTest = false;
     button.disabled = false;
   }
+}
+
+function sessionKey() { return 'lms-attempt-' + auth.currentUser.uid; }
+function draftKey(id) { return sessionKey() + '-' + id; }
+function draftMessage(message) {
+  const el = document.getElementById('draftStatus');
+  if (el) el.textContent = message;
+}
+function cacheDraft(active) {
+  try {
+    if (active.dirty) localStorage.setItem(draftKey(active.attemptId), JSON.stringify({ revision: active.revision, answers: active.answers }));
+    else localStorage.removeItem(draftKey(active.attemptId));
+  } catch { draftMessage('Браузер не смог сохранить локальную копию. Дождитесь сохранения на сервере.'); }
+}
+function setAnswer(index, value) {
+  if (!attempt || attempt.result || submitting) return;
+  attempt.answers[index] = value;
+  attempt.dirty = true;
+  cacheDraft(attempt);
+  draftMessage('Сохранение…');
+  clearTimeout(draftTimer);
+  draftTimer = setTimeout(() => saveDraftNow().catch(showError), 300);
+}
+async function saveDraftNow() {
+  clearTimeout(draftTimer);
+  if (draftPromise) await draftPromise;
+  const active = attempt;
+  if (!active || active.result || !active.dirty) return;
+  draftPromise = (async () => {
+    while (attempt === active && active.dirty && !active.result) {
+      const answers = { ...active.answers };
+      const response = await callFunction('saveStudentDraft', { attemptId: active.attemptId, revision: active.revision, answers });
+      active.revision = response.revision;
+      active.dirty = JSON.stringify(answers) !== JSON.stringify(active.answers);
+      cacheDraft(active);
+      draftMessage(active.dirty ? 'Сохранение…' : 'Ответы сохранены на сервере.');
+    }
+  })();
+  try { await draftPromise; }
+  catch (e) { draftMessage('Ответы не сохранены на сервере. Локальная копия остаётся в этом браузере.'); throw e; }
+  finally { draftPromise = null; }
+}
+async function adoptAttempt(data, tab, selection) {
+  clearInterval(timerInterval);
+  attempt = { ...data, answers: data.answers ?? {}, pendingPhotos: new Map(), dirty: false,
+    endsAt: data.remainingMs === null ? null : performance.now() + data.remainingMs };
+  attemptTab = tab;
+  subjectView = selection;
+  let conflict = false;
+  try {
+    const local = JSON.parse(localStorage.getItem(draftKey(data.attemptId)) || 'null');
+    if (!data.result && local && (data.remainingMs === null || data.remainingMs > 0)) {
+      if (local.revision === data.revision) { attempt.answers = local.answers; attempt.dirty = true; }
+      else if (JSON.stringify(local.answers) !== JSON.stringify(data.answers)) conflict = true;
+    }
+    if (data.result) localStorage.removeItem(draftKey(data.attemptId));
+    sessionStorage.setItem(sessionKey(), JSON.stringify({ id: data.attemptId, tab, selection }));
+  } catch { /* Server restoration still works when browser storage is disabled. */ }
+  currentTab = tab;
+  document.querySelectorAll('.tabs .tab-btn').forEach(b => b.classList.toggle('active', b.getAttribute('onclick')?.includes("'" + tab + "'")));
+  await render();
+  if (conflict) showStatus('На сервере более новая версия ответов. Локальная копия сохранена; перед продолжением скачайте её для сверки.');
+  if (attempt.dirty) saveDraftNow().catch(showError);
+  if (!data.result && attempt.endsAt !== null) timerInterval = setInterval(updateTimer, 250);
+  await refreshActiveAttempts();
+}
+async function resumeSavedAttempt(button) {
+  button.disabled = true;
+  try {
+    if (attempt && !attempt.result) await saveDraftNow();
+    const data = await callFunction('getStudentAttempt', { attemptId: button.dataset.id });
+    const selection = data.subjectId ? { subjectId: data.subjectId, teacherId: data.teacherId, fromChooser: true } : null;
+    await adoptAttempt(data, selection ? 'subjects' : 'tests', selection);
+  } catch (e) { showError(e); } finally { button.disabled = false; }
+}
+async function refreshActiveAttempts() {
+  const active = await callFunction('listActiveAttempts');
+  const el = document.getElementById('resumeNotice');
+  el.hidden = !active.length;
+  el.innerHTML = `<p>Незавершённые работы</p>${active.map(a => `<button class="tab-btn" data-id="${escapeHtml(a.attemptId)}" onclick="resumeSavedAttempt(this)">Продолжить: ${escapeHtml(a.title)}</button>`).join('')}`;
+}
+function downloadLocalDraft() {
+  const raw = localStorage.getItem(draftKey(attempt.attemptId));
+  if (!raw) { showStatus('Локальных несохранённых ответов нет.'); return; }
+  const url = URL.createObjectURL(new Blob([raw], { type: 'application/json' }));
+  const a = document.createElement('a'); a.href = url; a.download = 'my-draft.json'; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+async function initializeStudent() {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(sessionKey()) || 'null');
+    if (saved) {
+      const data = await callFunction('getStudentAttempt', { attemptId: saved.id });
+      await adoptAttempt(data, saved.tab === 'subjects' ? 'subjects' : 'tests', saved.selection);
+      return;
+    }
+  } catch { try { sessionStorage.removeItem(sessionKey()); } catch {} }
+  await render();
+  await refreshActiveAttempts();
 }
 
 function updateTimer() {
@@ -252,11 +344,11 @@ function renderTest() {
     if (question.type === 'choice') {
       input = question.options.map((option, choice) => `
         <label class="quiz-option">
-          <input type="radio" name="q${index}" ${saved === choice ? 'checked' : ''} onchange="attempt.answers[${index}]=${choice}">
+          <input type="radio" name="q${index}" ${saved === choice ? 'checked' : ''} onchange="setAnswer(${index},${choice})">
           ${escapeHtml(option)}
         </label>`).join('');
     } else if (question.type === 'text') {
-      input = `<textarea maxlength="5000" aria-label="Ответ ${index + 1}" style="width:100%;padding:10px;min-height:80px" oninput="attempt.answers[${index}]=this.value">${escapeHtml(saved)}</textarea>`;
+      input = `<textarea maxlength="5000" aria-label="Ответ ${index + 1}" style="width:100%;padding:10px;min-height:80px" oninput="setAnswer(${index},this.value)">${escapeHtml(saved)}</textarea>`;
     } else {
       input = `<input type="file" accept="image/*" aria-label="Фото ${index + 1}" onchange="uploadPhoto(${index}, this)">
         <small id="photo-status-${index}">${saved ? 'Фото загружено' : ''}</small>`;
@@ -267,9 +359,11 @@ function renderTest() {
   content.innerHTML = `
     ${attempt.endsAt !== null ? '<div id="timer" class="timer"></div>' : ''}
     <h2>${escapeHtml(attempt.title)}</h2>
+    <p id="draftStatus" role="status">${attempt.dirty ? 'Есть несохранённые изменения.' : 'Ответы сохранены на сервере.'}</p>
     <fieldset id="test-answers" style="border:0" ${submitting ? 'disabled' : ''}>${questions}</fieldset>
     <button id="submit-test" class="primary" onclick="submitTest()" ${submitting ? 'disabled' : ''}>Завершить тест</button>
-    <button id="leave-test" class="tab-btn" onclick="returnToTests()" ${submitting ? 'disabled' : ''}>${testReturnLabel()}</button>`;
+    <button id="leave-test" class="tab-btn" onclick="returnToTests()" ${submitting ? 'disabled' : ''}>Сохранить и выйти</button>
+    <button class="tab-btn" onclick="downloadLocalDraft()">Скачать локальный черновик</button>`;
   if (attempt.endsAt !== null) updateTimer();
 }
 
@@ -279,12 +373,11 @@ async function uploadPhoto(index, input) {
   const active = attempt;
   const pending = Symbol();
   active.pendingPhotos.set(index, pending);
-  delete active.answers[index];
   document.getElementById('photo-status-' + index).textContent = 'Загрузка…';
   try {
     const path = await uploadAttachment('photo', file, { attemptId: active.attemptId });
     if (active.pendingPhotos.get(index) === pending) {
-      active.answers[index] = path;
+      if (attempt === active) setAnswer(index, path);
       const status = document.getElementById('photo-status-' + index);
       if (attempt === active && status) status.textContent = 'Фото загружено';
     }
@@ -317,12 +410,16 @@ async function submitTest(timedOut = false) {
   toggleTestControls(true);
   showStatus('');
   try {
+    try { await saveDraftNow(); } catch (error) { if (!timedOut || error.code !== 'deadline-exceeded') throw error; }
     attempt.result = await callFunction('submitStudentTest', {
       attemptId: attempt.attemptId,
-      answers: { ...attempt.answers }
+      answers: { ...attempt.answers }, revision: attempt.revision
     });
+    attempt.dirty = false;
+    cacheDraft(attempt);
     clearInterval(timerInterval);
     if (currentTab === attemptTab) renderResult(attempt.result);
+    await refreshActiveAttempts();
   } catch (error) {
     showError(error);
   } finally {
@@ -331,12 +428,14 @@ async function submitTest(timedOut = false) {
   }
 }
 
-function renderResult({ score, total, percentage }) {
+function renderResult({ score, total, percentage, status, feedback }) {
+  const pending = status === 'pending_review';
   const passed = percentage >= 60;
   content.innerHTML = `
-    <div class="result ${passed ? 'good' : 'bad'}">
-      <h2>Результат: ${score} из ${total} (${percentage}%)</h2>
-      <p>${passed ? '✅ Зачёт!' : '❌ Нужно повторить'}</p>
+    <div class="result ${pending ? '' : passed ? 'good' : 'bad'}">
+      <h2>${pending ? 'Работа отправлена' : `Результат: ${score} из ${total} (${percentage}%)`}</h2>
+      <p>${pending ? 'Ожидает проверки преподавателем. Итог появится в разделе «Мои результаты».' : passed ? '✅ Зачёт!' : '❌ Нужно повторить'}</p>
+      ${feedback ? `<p class="review-answer">${escapeHtml(feedback)}</p>` : ''}
       <button class="primary" onclick="returnToTests()" style="margin-top:16px">
         ${attemptTab === 'subjects' ? testReturnLabel() : 'Вернуться к тестам'}
       </button>
@@ -347,11 +446,17 @@ function testReturnLabel() {
   return attemptTab === 'subjects' ? 'К материалам предмета' : 'К списку тестов';
 }
 
-function returnToTests() {
+async function returnToTests() {
+  if (attempt && !attempt.result) {
+    if (attempt.pendingPhotos.size) { showStatus('Дождитесь загрузки фото.'); return; }
+    try { await saveDraftNow(); } catch (e) { showError(e); return; }
+  }
   clearInterval(timerInterval);
   attempt = null;
   attemptTab = null;
-  render().catch(showError);
+  try { sessionStorage.removeItem(sessionKey()); } catch {}
+  await render().catch(showError);
+  await refreshActiveAttempts().catch(showError);
 }
 
-watchCabinet('student', render);
+watchCabinet('student', initializeStudent);

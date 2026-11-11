@@ -6,7 +6,6 @@ const firebaseKeys = createRemoteJWKSet(new URL(
   "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com",
 ));
 const idPattern = /^[A-Za-z0-9_-]{1,128}$/;
-const graceMs = 15000;
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -43,8 +42,11 @@ type Question = { type: "text" | "photo"; text: string } |
   { type: "choice"; text: string; options: string[]; correct: number };
 type Test = {
   id: string; title: string; teacher_name: string; timer: number; questions: Question[];
-  subject_id: string | null; teacher_id: string;
+  subject_id: string | null; teacher_id: string; archived_at?: string | null;
 };
+type AttemptRow = { id: string; test_snapshot: Test; answers: Input; revision: number; state: string; expires_at: string | null };
+type ResultSummaryRow = { id: string; score: number; total: number; percentage: number | null; status: string;
+  feedback?: string; graded_at?: string | null; review_revision?: number };
 
 class ApiError extends Error {
   constructor(readonly status: number, readonly code: string, message: string) {
@@ -98,7 +100,10 @@ async function dataOf<T>(query: PromiseLike<{ data: T; error: { message: string;
   if (error?.code === "42501" && error.message === "Вы не ведёте этот предмет.") {
     throw new ApiError(403, "permission-denied", error.message);
   }
-  if (error?.code === "P0002" && error.message === "Предмет недоступен.") missing(error.message);
+  if (error?.code === "P0002") missing(error.message);
+  if (error?.code === "P0001") deadline();
+  if (error?.code === "22023") invalid(error.message);
+  if (error?.code === "40001") throw new ApiError(409, "conflict", error.message);
   if (error) throw new Error(error.message);
   return data;
 }
@@ -249,7 +254,7 @@ async function getSubjectContent(db: SupabaseClient, actor: Actor, input: Input)
 }
 
 async function getAttempt(db: SupabaseClient, actor: Actor, attemptId: string) {
-  const attempt = await dataOf(db.from("test_attempts").select("id,test_id,expires_at")
+  const attempt = await dataOf(db.from("test_attempts").select("id,test_id,expires_at,test_snapshot,revision,state")
     .eq("id", attemptId).eq("student_id", actor.uid).maybeSingle());
   if (!attempt) missing("Попытка недоступна.");
   return attempt;
@@ -268,6 +273,7 @@ async function createUpload(db: SupabaseClient, actor: Actor, input: Input) {
   let folder = actor.uid + "/";
   if (kind === "photo") {
     const attempt = await getAttempt(db, actor, id(input.attemptId));
+    if (attempt.state !== "active") missing("Попытка уже завершена.");
     const result = await dataOf(db.from("test_results").select("id").eq("id", attempt.id).maybeSingle());
     if (result) missing("Попытка уже завершена.");
     if (attempt.expires_at && Date.now() > Date.parse(attempt.expires_at)) deadline();
@@ -368,7 +374,8 @@ async function deleteItem(db: SupabaseClient, actor: Actor, input: Input) {
   requireRole(actor, true);
   const itemId = id(input.id);
   if (input.kind === "tests") {
-    await dataOf(db.from("tests").delete().eq("id", itemId).eq("teacher_id", actor.uid));
+    await dataOf(db.from("tests").update({ archived_at: new Date().toISOString() })
+      .eq("id", itemId).eq("teacher_id", actor.uid));
     return null;
   }
   const kind = materialKind(input.kind);
@@ -389,6 +396,7 @@ function testSummary(test: Test) {
   return {
     id: test.id, title: test.title, teacherName: test.teacher_name,
     questionCount: test.questions.length, timer: test.timer, subjectId: test.subject_id,
+    archived: Boolean(test.archived_at),
   };
 }
 
@@ -420,11 +428,12 @@ async function createTest(db: SupabaseClient, actor: Actor, input: Input) {
 
 async function listTests(db: SupabaseClient, actor: Actor, mine: boolean) {
   requireRole(actor, mine);
-  return await readTests(db, mine ? { teacherId: actor.uid } : { subjectId: null });
+  return await readTests(db, mine ? { teacherId: actor.uid } : { subjectId: null }, mine);
 }
 
-async function readTests(db: SupabaseClient, scope: ContentScope) {
-  let query = db.from("tests").select("id,title,teacher_name,timer,questions,subject_id,teacher_id");
+async function readTests(db: SupabaseClient, scope: ContentScope, includeArchived = false) {
+  let query = db.from("tests").select("id,title,teacher_name,timer,questions,subject_id,teacher_id,archived_at");
+  if (!includeArchived) query = query.is("archived_at", null);
   if (scope.teacherId) query = query.eq("teacher_id", scope.teacherId);
   if (scope.subjectId === null) query = query.is("subject_id", null);
   if (scope.subjectId) query = query.eq("subject_id", scope.subjectId);
@@ -432,32 +441,75 @@ async function readTests(db: SupabaseClient, scope: ContentScope) {
   return rows.map(testSummary);
 }
 
-async function getTest(db: SupabaseClient, testId: string): Promise<Test> {
-  const test = await dataOf(db.from("tests").select("id,title,teacher_name,timer,questions,subject_id,teacher_id")
-    .eq("id", testId).maybeSingle());
-  if (!test) missing("Тест недоступен.");
-  return test;
+function revision(value: unknown): number {
+  if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0) invalid("Обновите страницу попытки.");
+  return value;
 }
 
 async function startStudentTest(db: SupabaseClient, actor: Actor, input: Input) {
   requireRole(actor, false);
-  const test = await getTest(db, id(input.testId));
-  if (test.subject_id && !await findInstructor(db, test.subject_id, test.teacher_id)) {
-    missing("Тест недоступен.");
-  }
-  const expiresAt = test.timer ? Date.now() + test.timer * 60000 : null;
-  const attempt = await dataOf(db.from("test_attempts").insert({
-    test_id: test.id, student_id: actor.uid,
-    expires_at: expiresAt === null ? null : new Date(expiresAt).toISOString(),
-  }).select("id").single());
-  if (!attempt) throw new Error("Missing test attempt");
+  const attempt = await dataOf(db.rpc("open_test_attempt", { p_test_id: id(input.testId), p_student_id: actor.uid }));
+  return await attemptPayload(db, attempt);
+}
+
+async function attemptPayload(db: SupabaseClient, attempt: AttemptRow) {
+  const test = attempt.test_snapshot as Test;
   const questions = test.questions.map((question) => question.type === "choice" ?
     { type: question.type, text: question.text, options: question.options } :
     { type: question.type, text: question.text });
+  const result = attempt.state === "submitted" ? await dataOf(db.from("test_results")
+    .select("id,score,total,percentage,status,feedback,graded_at,review_revision").eq("id", attempt.id).single()) : null;
   return {
-    ...testSummary(test), attemptId: attempt.id, questions,
-    remainingMs: expiresAt === null ? null : Math.max(0, expiresAt - Date.now()),
+    ...testSummary(test), teacherId: test.teacher_id, attemptId: attempt.id, questions,
+    answers: attempt.answers, revision: attempt.revision, result: result ? resultSummary(result) : null,
+    expiresAt: attempt.expires_at,
+    remainingMs: attempt.expires_at === null ? null : Math.max(0, Date.parse(attempt.expires_at) - Date.now()),
   };
+}
+
+async function readStudentAttempt(db: SupabaseClient, actor: Actor, input: Input) {
+  requireRole(actor, false);
+  const attempt = await dataOf(db.rpc("read_test_attempt", { p_attempt_id: id(input.attemptId), p_student_id: actor.uid }));
+  return await attemptPayload(db, attempt);
+}
+
+async function listActiveAttempts(db: SupabaseClient, actor: Actor) {
+  requireRole(actor, false);
+  const rows = (await dataOf(db.from("test_attempts").select("id")
+    .eq("student_id", actor.uid).eq("state", "active").order("created_at", { ascending: false }))) ?? [];
+  const result: Input[] = [];
+  for (const row of rows) {
+    const a = await dataOf(db.rpc("read_test_attempt", { p_attempt_id: row.id, p_student_id: actor.uid }));
+    if (a.state === "active") result.push({ attemptId: a.id, title: a.test_snapshot.title,
+      subjectId: a.test_snapshot.subject_id, teacherId: a.test_snapshot.teacher_id });
+  }
+  return result;
+}
+
+async function validateAnswers(db: SupabaseClient, actor: Actor, attempt: Pick<AttemptRow, "id" | "test_snapshot">, answers: Input) {
+  const { questions } = attempt.test_snapshot as Test;
+  const photos: string[] = [];
+  const prefix = actor.uid + "/" + attempt.id + "/";
+  for (const [key, value] of Object.entries(answers)) {
+    const index = Number(key);
+    const question = questions[index];
+    if (!Number.isInteger(index) || String(index) !== key || !question) invalid("Ответ относится к неизвестному вопросу.");
+    if (question.type === "choice" && typeof value === "number" && Number.isInteger(value) && value >= 0 && value < 4) continue;
+    if (question.type === "text" && typeof value === "string" && value.length <= 5000) continue;
+    if (question.type === "photo" && ownedPath(value, prefix)) { photos.push(value); continue; }
+    invalid("Некорректный ответ на вопрос №" + (index + 1) + ".");
+  }
+  const exists = await Promise.all(photos.map(path => dataOf(db.storage.from(uploads.photo.bucket).exists(path))));
+  if (exists.some(value => !value)) invalid("Фото ещё не загружено.");
+}
+
+async function saveStudentDraft(db: SupabaseClient, actor: Actor, input: Input) {
+  requireRole(actor, false);
+  const attempt = await getAttempt(db, actor, id(input.attemptId));
+  const answers = record(input.answers);
+  await validateAnswers(db, actor, attempt, answers);
+  return await dataOf(db.rpc("save_test_draft", { p_attempt_id: attempt.id, p_student_id: actor.uid,
+    p_answers: answers, p_expected_revision: revision(input.revision) }));
 }
 
 async function submitStudentTest(db: SupabaseClient, actor: Actor, input: Input) {
@@ -466,39 +518,71 @@ async function submitStudentTest(db: SupabaseClient, actor: Actor, input: Input)
   const attemptId = id(input.attemptId);
   const answers = record(input.answers);
   const attempt = await getAttempt(db, actor, attemptId);
-  const previous = await dataOf(db.from("test_results").select("score,total,percentage")
+  const previous = await dataOf(db.from("test_results").select("id,score,total,percentage,status,feedback,graded_at,review_revision")
     .eq("id", attemptId).eq("student_id", actor.uid).maybeSingle());
-  if (previous) return previous;
-  if (attempt.expires_at && +receivedAt > Date.parse(attempt.expires_at) + graceMs) deadline();
-
-  const { questions } = await getTest(db, attempt.test_id);
-  const photos: string[] = [];
-  const prefix = actor.uid + "/" + attemptId + "/";
-  for (const [key, value] of Object.entries(answers)) {
-    const index = Number(key);
-    const question = questions[index];
-    if (!Number.isInteger(index) || String(index) !== key || !question) {
-      invalid("Ответ относится к неизвестному вопросу.");
-    }
-    if (question.type === "choice" && typeof value === "number" && Number.isInteger(value) &&
-        value >= 0 && value < question.options.length) continue;
-    if (question.type === "text" && typeof value === "string" && value.length <= 5000) continue;
-    if (question.type === "photo" && ownedPath(value, prefix)) {
-      photos.push(value);
-      continue;
-    }
-    invalid("Некорректный ответ на вопрос №" + (index + 1) + ".");
-  }
-  const exists = await Promise.all(photos.map((path) => dataOf(db.storage.from(uploads.photo.bucket).exists(path))));
-  if (exists.some((value) => !value)) invalid("Фото ещё не загружено.");
-
-  const { data, error } = await db.rpc("submit_test_attempt", {
+  if (previous) return resultSummary(previous);
+  await validateAnswers(db, actor, attempt, answers);
+  return await dataOf(db.rpc("finish_test_attempt", {
     p_attempt_id: attemptId, p_student_id: actor.uid, p_answers: answers, p_received_at: receivedAt.toISOString(),
-  });
-  if (error?.code === "P0001") deadline();
-  if (error?.code === "P0002") missing(error.message);
-  if (error) throw new Error(error.message);
-  return data;
+    p_expected_revision: input.revision === undefined ? attempt.revision : revision(input.revision),
+  }));
+}
+
+function resultSummary(row: ResultSummaryRow) {
+  return { id: row.id, score: row.score, total: row.total, percentage: row.percentage,
+    status: row.status, feedback: row.feedback, gradedAt: row.graded_at, reviewRevision: row.review_revision };
+}
+
+async function listResults(db: SupabaseClient, actor: Actor, input: Input) {
+  let query = db.from("test_results").select("id,test_id,test_title,student_name,score,total,percentage,status,submitted_at,graded_at")
+    .eq(actor.teacher ? "teacher_id" : "student_id", actor.uid);
+  if (input.status) {
+    if (input.status !== "graded" && input.status !== "pending_review") invalid("Неизвестный статус.");
+    query = query.eq("status", input.status);
+  }
+  if (input.testId) query = query.eq("test_id", id(input.testId));
+  if (input.studentName && actor.teacher) {
+    const name = text(input.studentName, 120, "Имя студента").replace(/[\\%_]/g, "\\$&");
+    query = query.ilike("student_name", "%" + name + "%");
+  }
+  for (const field of ["fromDate", "toDate"]) {
+    if (!input[field]) continue;
+    const date = input[field];
+    if (typeof date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(Date.parse(date))) invalid("Некорректная дата.");
+    query = field === "fromDate" ? query.gte("submitted_at", date + "T00:00:00Z") :
+      query.lt("submitted_at", new Date(Date.parse(date) + 86400000).toISOString());
+  }
+  const offset = input.offset ?? 0;
+  if (typeof offset !== "number" || !Number.isSafeInteger(offset) || offset < 0 || offset > 100000) invalid("Некорректная страница.");
+  const rows = (await dataOf(query.order("submitted_at", { ascending: false }).order("id")
+    .range(offset, offset + 49))) ?? [];
+  return { rows: rows.map(row => ({ ...row, ...resultSummary(row) })), hasMore: rows.length === 50 };
+}
+
+async function getResult(db: SupabaseClient, actor: Actor, input: Input) {
+  const row = await dataOf(db.from("test_results").select("id,test_id,test_title,student_name,student_id,teacher_id,score,total,percentage,status,submitted_at,test_snapshot,answers,question_scores,feedback,graded_at,review_revision")
+    .eq("id", id(input.resultId)).eq(actor.teacher ? "teacher_id" : "student_id", actor.uid).maybeSingle());
+  if (!row) missing("Работа недоступна.");
+  const questions = (row.test_snapshot.questions ?? []) as Question[];
+  const paths = questions.flatMap((q,i) => q.type === "photo" && ownedPath(row.answers[i], row.student_id + "/" + row.id + "/") ? [row.answers[i]] : []);
+  const signed = paths.length ? await dataOf(db.storage.from(uploads.photo.bucket).createSignedUrls(paths, 3600)) : [];
+  const links = new Map((signed ?? []).filter(f => f.path && f.signedUrl && !f.error).map(f => [f.path, storagePath(f.signedUrl)]));
+  const reviews = actor.teacher ? await dataOf(db.from("test_result_reviews").select("grades,feedback,score,reviewed_at")
+    .eq("result_id", row.id).order("reviewed_at", { ascending: false })) : [];
+  return { ...resultSummary(row), title: row.test_title, studentName: row.student_name, submittedAt: row.submitted_at,
+    teacherName: row.test_snapshot.teacher_name ?? "", reviews,
+    questions: questions.map((q,i) => ({ type: q.type, text: q.text,
+      ...(q.type === "choice" ? { options: q.options, ...(actor.teacher ? { correct: q.correct } : {}) } : {}),
+      answer: q.type === "photo" ? null : row.answers[i] ?? null,
+      photoUrl: q.type === "photo" ? links.get(row.answers[i]) ?? null : null, score: row.question_scores[i] ?? null })),
+  };
+}
+
+async function reviewResult(db: SupabaseClient, actor: Actor, input: Input) {
+  requireRole(actor, true);
+  return await dataOf(db.rpc("review_test_result", { p_result_id: id(input.resultId), p_teacher_id: actor.uid,
+    p_grades: record(input.grades), p_feedback: text(input.feedback ?? "", 5000, "Комментарий", true),
+    p_expected_revision: revision(input.revision) }));
 }
 
 function response(body: unknown, status = 200) {
@@ -540,7 +624,13 @@ export function createHandler(db: SupabaseClient, verify = verifyFirebase) {
         case "listStudentTests": result = await listTests(db, actor, false); break;
         case "listTeacherTests": result = await listTests(db, actor, true); break;
         case "startStudentTest": result = await startStudentTest(db, actor, input); break;
+        case "getStudentAttempt": result = await readStudentAttempt(db, actor, input); break;
+        case "listActiveAttempts": result = await listActiveAttempts(db, actor); break;
+        case "saveStudentDraft": result = await saveStudentDraft(db, actor, input); break;
         case "submitStudentTest": result = await submitStudentTest(db, actor, input); break;
+        case "listResults": result = await listResults(db, actor, input); break;
+        case "getResult": result = await getResult(db, actor, input); break;
+        case "reviewResult": result = await reviewResult(db, actor, input); break;
         case "listStudents":
           requireRole(actor, true);
           result = await dataOf(db.from("student_profiles").select("name,email").order("created_at"));
