@@ -101,12 +101,12 @@ const Gradebook = (() => {
   }
   async function exportCsv(button) {
     button.disabled = true;
-    const current = state;
+    const exportFilters = { ...state.filters };
     try {
       let rows = [];
       for (let offset = 0; ; offset += 50) {
         if (offset >= 5000) throw new Error('Сузьте фильтр: в одной выгрузке доступно до 5000 работ.');
-        const page = await callFunction('listResults', { ...current.filters, offset });
+        const page = await callFunction('listResults', { ...exportFilters, offset });
         rows.push(...page.rows); if (!page.hasMore) break;
       }
       const cell = value => '"' + String(value ?? '').replace(/^[=+\-@\t\r]/, "'$&").replace(/"/g, '""') + '"';
