@@ -103,7 +103,7 @@ async function dataOf<T>(query: PromiseLike<{ data: T; error: { message: string;
   if (error?.code === "P0002") missing(error.message);
   if (error?.code === "P0001") deadline();
   if (error?.code === "22023") invalid(error.message);
-  if (error?.code === "40001") throw new ApiError(409, "conflict", error.message);
+  if (error?.code === "40001" || error?.code === "PT409") throw new ApiError(409, "conflict", error.message);
   if (error) throw new Error(error.message);
   return data;
 }

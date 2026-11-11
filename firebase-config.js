@@ -24,18 +24,36 @@ async function callFunction(action, data, account = auth.currentUser) {
   if (!lmsBaseUrl) throw new Error('Адрес проекта Supabase ещё не настроен.');
   if (!account) throw new Error('Войдите в аккаунт.');
   const token = await account.getIdToken();
-  const response = await fetch(lmsBaseUrl + '/functions/v1/lms', {
-    method: 'POST',
-    headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action, data })
-  });
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const error = new Error(result.error || 'Сервер временно недоступен.');
-    error.code = result.code;
-    throw error;
+  const retryable = new Set(['profile','listSubjects','listSubjectTeachers','getSubjectContent','listMaterials',
+    'listStudentTests','listTeacherTests','listStudents','getStudentAttempt','listActiveAttempts','listResults',
+    'getResult','saveStudentDraft','submitStudentTest']).has(action);
+  for (let attempt = 0; ; attempt++) {
+    let response, result;
+    try {
+      response = await fetch(lmsBaseUrl + '/functions/v1/lms', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, data })
+      });
+      result = await response.json().catch(() => ({}));
+    } catch (error) {
+      if (!retryable || attempt >= 2) throw error;
+      await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+      continue;
+    }
+    const temporary = [502,503,504].includes(response.status) ||
+      ['WORKER_RESOURCE_LIMIT','WORKER_LIMIT','BOOT_ERROR'].includes(result.code);
+    if (!response.ok && temporary && retryable && attempt < 2) {
+      await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+      continue;
+    }
+    if (!response.ok) {
+      const error = new Error(result.error || result.message || 'Сервер временно недоступен.');
+      error.code = result.code;
+      throw error;
+    }
+    return result.data;
   }
-  return result.data;
 }
 
 async function uploadAttachment(kind, file, context = {}) {

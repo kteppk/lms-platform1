@@ -21,7 +21,7 @@ before(async () => {
   await db.exec("insert into profiles(id,name,email) values ('teacher','Учитель','t@test'),('other','Другой','o@test'),('student','Студент','s@test'),('student2','Студент 2','s2@test'); insert into teachers values ('teacher'),('other');");
   await createTest('legacy');
   await db.exec("insert into test_attempts(id,test_id,student_id) values ('legacy-attempt','legacy','student'); insert into materials(kind,teacher_id,teacher_name,title,body) values ('lectures','teacher','Учитель','Старая лекция','Текст');");
-  await db.exec(fs.readFileSync('supabase/migrations/'+migrations[2],'utf8'));
+  for (const f of migrations.slice(2)) await db.exec(fs.readFileSync('supabase/migrations/'+f,'utf8'));
   await db.exec('set role service_role');
 });
 after(async () => { await db?.close(); });
@@ -39,9 +39,10 @@ test('opening twice resumes one attempt without extending the deadline; drafts s
   const b = await rpc('open_test_attempt',['resume','student']);
   assert.equal(a.id,b.id); assert.equal(a.expires_at,b.expires_at);
   assert.deepEqual(await rpc('save_test_draft',[a.id,'student',{0:1},0]),{revision:1});
+  assert.deepEqual(await rpc('save_test_draft',[a.id,'student',{0:1},0]),{revision:1});
   const restored = await rpc('read_test_attempt',[a.id,'student']);
   assert.deepEqual(restored.answers,{'0':1}); assert.equal(restored.revision,1);
-  await assert.rejects(rpc('save_test_draft',[a.id,'student',{0:0},0]),{code:'40001'});
+  await assert.rejects(rpc('save_test_draft',[a.id,'student',{0:0},0]),{code:'PT409'});
   await assert.rejects(rpc('save_test_draft',[a.id,'student2',{0:0},1]),{code:'P0002'});
   await assert.rejects(rpc('save_test_draft',[a.id,'student',{9:0},1]),{code:'22023'});
 });
@@ -77,7 +78,7 @@ test('text and photo answers await review; only the owning teacher can grade eve
   const graded=await rpc('review_test_result',[a.id,'teacher',{1:1,2:1},'Хорошо',0]);
   assert.equal(graded.status,'graded'); assert.equal(graded.score,3); assert.equal(graded.percentage,100);
   assert.equal(graded.feedback,'Хорошо');
-  await assert.rejects(rpc('review_test_result',[a.id,'teacher',{1:0,2:0},'',0]),{code:'40001'});
+  await assert.rejects(rpc('review_test_result',[a.id,'teacher',{1:0,2:0},'',0]),{code:'PT409'});
   const revised=await rpc('review_test_result',[a.id,'teacher',{1:1,2:0},'Уточнение',1]);
   assert.equal(revised.score,2); assert.equal(revised.percentage,67);
   assert.equal((await db.query('select count(*)::int as n from test_result_reviews where result_id=$1',[a.id])).rows[0].n,2);
