@@ -33,6 +33,39 @@ test('migration preserves existing material and supplies a snapshot to an old at
   const privileges = (await db.query("select has_table_privilege('anon','test_result_reviews','select') as reviews, has_function_privilege('authenticated','save_test_draft(text,text,jsonb,integer)','execute') as drafts")).rows[0];
   assert.deepEqual(privileges,{reviews:false,drafts:false});
 });
+
+test('name warnings accept full names and the no-patronymic exception, stay private, and disappear after correction',async()=>{
+  for(const [name,noPatronymic,valid] of [['Иван Иванов Иванович',false,true],['Ли Анна',true,true],['Иван Иванов',false,false],['student123',false,false],['Иван Иванович 123',false,false],['Анна-Мария Иванова Петровна',false,true]])
+    assert.equal(await rpc('valid_full_name',[name,noPatronymic]),valid,name);
+  assert.ok((await rpc('notification_feed',['student',0])).rows.some(n=>n.severity==='danger'));
+  await db.query("update profiles set name='Иван Иванов Иванович' where id='student'");
+  assert.equal((await db.query("select count(*)::int n from notifications where dedupe_key='name:student'")).rows[0].n,0);
+  await db.query("insert into notifications(id,recipient_id,title) values ('private-notice','student2','Private')");
+  assert.equal((await rpc('notification_feed',['student',0])).rows.some(n=>n.id==='private-notice'),false);
+  await rpc('read_notifications',['student',['private-notice']]);
+  assert.equal((await db.query("select count(*)::int n from notification_reads where notification_id='private-notice'")).rows[0].n,0);
+});
+
+test('role changes require an administrator, preserve memberships, audit changes, and protect the final administrator',async()=>{
+  await db.query("insert into profiles(id,name,email) values ('admin-fixture','Анна Иванова Петровна','admin@test')");
+  await db.query("update account_roles set role='admin' where user_id='admin-fixture'");
+  await assert.rejects(rpc('set_account_role',['student','student','admin','student']),{code:'42501'});
+  await assert.rejects(rpc('set_account_role',['admin-fixture','admin-fixture','teacher','admin']),{code:'22023'});
+  await rpc('set_account_role',['admin-fixture','student2','teacher','student']);
+  const subject=await rpc('create_subject',['student2','Сохранность предмета','']);
+  await rpc('set_account_role',['admin-fixture','student2','student','teacher']);
+  assert.equal((await db.query('select count(*)::int n from subject_teachers where subject_id=$1',[subject])).rows[0].n,1);
+  assert.equal((await db.query('select count(*)::int n from subject_instructors where subject_id=$1',[subject])).rows[0].n,0);
+  await assert.rejects(rpc('set_account_role',['admin-fixture','student2','admin','teacher']),{code:'PT409'});
+  await rpc('set_account_role',['admin-fixture','student2','teacher','student']);
+  assert.equal((await db.query('select count(*)::int n from subject_instructors where subject_id=$1',[subject])).rows[0].n,1);
+  await rpc('set_account_role',['admin-fixture','student2','admin','teacher']);
+  assert.equal((await db.query('select count(*)::int n from subject_instructors where subject_id=$1',[subject])).rows[0].n,1);
+  await rpc('set_account_role',['admin-fixture','student2','student','admin']);
+  assert.equal((await db.query("select count(*)::int n from role_changes where user_id='student2'")).rows[0].n,5);
+  const privileges=(await db.query("select has_table_privilege('anon','account_roles','update') as roles,has_function_privilege('authenticated','set_account_role(text,text,text,text)','execute') as rpc,has_table_privilege('anon','teacher_documents','select') as documents")).rows[0];
+  assert.deepEqual(privileges,{roles:false,rpc:false,documents:false});
+});
 test('opening twice resumes one attempt without extending the deadline; drafts survive reading', async () => {
   await createTest('resume');
   const a = await rpc('open_test_attempt',['resume','student']);

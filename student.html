@@ -6,57 +6,42 @@
   <title>Кабинет студента</title>
   <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-auth-compat.js"></script>
-  <script src="firebase-config.js?v=assessment2"></script>
+  <script src="firebase-config.js?v=community1"></script>
   <script src="gradebook.js?v=assessment1"></script>
+  <script src="portal.js?v=community1" defer></script>
   <link rel="stylesheet" href="assessment.css">
   <link rel="stylesheet" href="subjects.css">
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: system-ui, -apple-system, sans-serif; background: #f7fafc; }
-    header { background: white; padding: 16px 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
-    header h1 { font-size: 20px; color: #2d3748; }
-    .user-info { display: flex; align-items: center; gap: 12px; }
-    button.logout { background: #e53e3e; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
-    main { max-width: 1200px; margin: 24px auto; padding: 0 24px; }
-    .tabs { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
-    .tab-btn { background: white; border: 2px solid #e2e8f0; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; }
-    .tab-btn.active { background: #48bb78; color: white; border-color: #48bb78; }
-    .content { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-    .item { border: 2px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
-    .item h3 { color: #2d3748; margin-bottom: 8px; }
-    .item .meta { color: #718096; font-size: 13px; margin-bottom: 8px; }
-    button.primary { background: #48bb78; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; }
-    .quiz-option { display: block; padding: 12px; background: #f7fafc; border: 2px solid #e2e8f0; border-radius: 6px; margin-bottom: 8px; cursor: pointer; }
-    .quiz-option:hover { background: #edf2f7; }
-    .timer { background: #fed7d7; color: #c53030; padding: 12px; border-radius: 6px; text-align: center; font-weight: 600; margin-bottom: 16px; }
-    .result { padding: 16px; border-radius: 8px; margin-top: 16px; font-weight: 600; text-align: center; }
-    .result.good { background: #c6f6d5; color: #22543d; }
-    .result.bad { background: #fed7d7; color: #742a2a; }
-  </style>
+  <link rel="stylesheet" href="portal.css?v=community1">
 </head>
 <body>
   <header>
-    <h1>🎓 Кабинет студента</h1>
+    <h1>Учебная платформа<span class="brand-caption">КТЭиП ПК · Кабинет студента</span></h1>
     <div class="user-info">
-      <span id="userName"></span>
+      <button class="profile-link" type="button" onclick="Portal.navigate('profile')"><span id="userName"></span></button>
       <button class="logout" onclick="logout()">Выйти</button>
     </div>
   </header>
 
   <p id="status" role="alert" hidden style="padding:12px 24px;color:#c53030"></p>
   <main hidden>
-    <div class="tabs">
-      <button class="tab-btn" onclick="switchTab('subjects', this)">📘 Предметы</button>
-      <button class="tab-btn active" onclick="switchTab('lectures', this)">📖 Лекции</button>
-      <button class="tab-btn" onclick="switchTab('books', this)">📚 Книги</button>
-      <button class="tab-btn" onclick="switchTab('tests', this)">✅ Тесты</button>
-      <button class="tab-btn" onclick="switchTab('results', this)">📋 Мои результаты</button>
-    </div>
+    <nav class="tabs" aria-label="Основная навигация">
+      <span class="nav-label">Рабочее пространство</span>
+      <button class="tab-btn active" data-tab="home" onclick="switchTab('home',this)">Главная</button>
+      <button class="tab-btn" data-tab="subjects" onclick="switchTab('subjects', this)">Предметы</button>
+      <button class="tab-btn" data-tab="lectures" onclick="switchTab('lectures', this)">Лекции</button>
+      <button class="tab-btn" data-tab="books" onclick="switchTab('books', this)">Книги</button>
+      <button class="tab-btn" data-tab="tests" onclick="switchTab('tests', this)">Тесты</button>
+      <button class="tab-btn" data-tab="results" onclick="switchTab('results', this)">Мои результаты</button>
+      <span class="nav-label">Информация</span><button class="tab-btn" data-tab="teachers" onclick="switchTab('teachers',this)">Преподаватели</button>
+<button class="tab-btn" data-tab="schedule" onclick="switchTab('schedule',this)">Расписание</button>
+<button class="tab-btn" data-tab="notifications" onclick="switchTab('notifications',this)">Уведомления</button>
+<button class="tab-btn" data-tab="profile" onclick="switchTab('profile',this)">Мой профиль</button>
+    </nav>
 
     <div id="resumeNotice" hidden></div>
     <div id="content" class="content"></div>
   </main>
 
-  <script src="student.js?v=assessment1"></script>
+  <script src="student.js?v=community1"></script>
 </body>
 </html>

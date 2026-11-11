@@ -26,7 +26,7 @@ async function callFunction(action, data, account = auth.currentUser) {
   const token = await account.getIdToken();
   const retryable = new Set(['profile','listSubjects','listSubjectTeachers','getSubjectContent','listMaterials',
     'listStudentTests','listTeacherTests','listStudents','getStudentAttempt','listActiveAttempts','listResults',
-    'getResult','saveStudentDraft','submitStudentTest']).has(action);
+    'getResult','saveStudentDraft','submitStudentTest','listTeachers','getTeacherProfile','listSchedule','listNotifications','listAccounts','readNotifications']).has(action);
   for (let attempt = 0; ; attempt++) {
     let response, result;
     try {
@@ -83,7 +83,7 @@ async function uploadAttachment(kind, file, context = {}) {
 }
 
 function cabinetPage(role) {
-  return role === 'teacher' ? 'teacher.html' : 'student.html';
+  return role === 'admin' ? 'admin.html' : role === 'teacher' ? 'teacher.html' : 'student.html';
 }
 
 function showStatus(message) {
@@ -101,12 +101,13 @@ function watchCabinet(role, onReady) {
     try {
       const profile = await getProfile(account);
       if (auth.currentUser?.uid !== account.uid) return;
-      if (profile.role !== role) {
+      if (profile.role !== role && !(role === 'teacher' && profile.role === 'admin' && profile.canTeach)) {
         location.replace(cabinetPage(profile.role));
         return;
       }
       document.getElementById('userName').textContent = profile.name;
       document.querySelector('main').hidden = false;
+      if (typeof Portal !== 'undefined') await Portal.init(profile);
       await onReady();
     } catch (error) {
       showStatus('Не удалось открыть кабинет. ' + error.message);

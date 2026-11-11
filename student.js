@@ -1,4 +1,4 @@
-let currentTab = 'lectures';
+let currentTab = 'home';
 let attempt = null;
 let attemptTab = null;
 let subjectView = null;
@@ -27,6 +27,7 @@ async function render() {
     return;
   }
 
+  if (await Portal.render(currentTab, content)) return;
   if (currentTab === 'results') { await Gradebook.render(content, false); return; }
 
   if (currentTab === 'subjects') {
@@ -128,7 +129,8 @@ async function renderSubjectView(list) {
     <div class="subjects-grid">${teachers.map(teacher => `
       <article class="item subject-card">
         <div class="subject-heading">${teacherAvatar(teacher.name)}<h3>${escapeHtml(teacher.name)}</h3></div>
-        <button class="primary" data-id="${escapeHtml(teacher.id)}" onclick="chooseInstructor(this)">Выбрать</button>
+        <div class="actions"><button class="primary" data-id="${escapeHtml(teacher.id)}" onclick="chooseInstructor(this)">Выбрать</button>
+        <button class="secondary" data-id="${escapeHtml(teacher.id)}" onclick="Portal.openTeacher(this.dataset.id)">О преподавателе</button></div>
       </article>`).join('') || '<p>У этого предмета пока нет преподавателей.</p>'}</div>`;
 }
 
@@ -197,7 +199,7 @@ function subjectContent({ subject, teacher, lectures, books, tests }) {
     </article>`];
   });
   return `<div class="subject-heading">${teacherAvatar(teacher.name)}
-    <div><h2>${escapeHtml(subject.title)}</h2><p>${escapeHtml(teacher.name)}</p></div></div>
+    <div><h2>${escapeHtml(subject.title)}</h2><p>${escapeHtml(teacher.name)}</p><button class="secondary" data-id="${escapeHtml(teacher.id)}" onclick="Portal.openTeacher(this.dataset.id)">О преподавателе</button></div></div>
     ${subjectSection('Видеоуроки', videos, 'Видеоуроков пока нет.')}
     ${subjectSection('PDF и книги', [...pdfBooks, ...lecturePdfs], 'Файлов и книг пока нет.')}
     ${subjectSection('Лекции и презентации', lectureCards, 'Лекций пока нет.')}

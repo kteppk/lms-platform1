@@ -5,7 +5,9 @@ const project = "students-70392";
 const firebaseKeys = createRemoteJWKSet(new URL(
   "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com",
 ));
-const idPattern = /^[A-Za-z0-9_-]{1,128}$/;
+import { ApiError, dataOf, id, idPattern, invalid, missing, record, text } from "./shared.ts";
+import type { Actor, Identity, Input } from "./shared.ts";
+import { communityAction } from "./community.ts";
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -32,9 +34,6 @@ const uploads = {
   },
 };
 
-type Input = Record<string, unknown>;
-type Identity = { uid: string; email: string; name?: string };
-type Actor = Identity & { name: string; teacher: boolean };
 type Kind = "lectures" | "books";
 type ContentScope = { teacherId?: string; subjectId?: string | null };
 type AttachmentDetails = { name: string; mime: string };
@@ -48,64 +47,17 @@ type AttemptRow = { id: string; test_snapshot: Test; answers: Input; revision: n
 type ResultSummaryRow = { id: string; score: number; total: number; percentage: number | null; status: string;
   feedback?: string; graded_at?: string | null; review_revision?: number };
 
-class ApiError extends Error {
-  constructor(readonly status: number, readonly code: string, message: string) {
-    super(message);
-  }
-}
-
-function invalid(message: string): never {
-  throw new ApiError(400, "invalid-argument", message);
-}
-
-function missing(message: string): never {
-  throw new ApiError(404, "not-found", message);
-}
-
 function deadline(): never {
   throw new ApiError(409, "deadline-exceeded", "Время на прохождение теста истекло.");
 }
 
 function requireRole(actor: Actor, teacher: boolean) {
-  if (actor.teacher !== teacher) throw new ApiError(403, "permission-denied", "Недостаточно прав.");
-}
-
-function record(value: unknown): Input {
-  if (!value || typeof value !== "object" || Array.isArray(value)) invalid("Некорректные данные.");
-  return value as Input;
-}
-
-function id(value: unknown): string {
-  if (typeof value !== "string" || !idPattern.test(value)) invalid("Некорректный идентификатор.");
-  return value;
+  if (teacher ? !actor.teacher : actor.role !== "student") throw new ApiError(403, "permission-denied", "Недостаточно прав.");
 }
 
 function materialKind(value: unknown): Kind {
   if (value !== "lectures" && value !== "books") invalid("Неизвестный тип материала.");
   return value;
-}
-
-function text(value: unknown, limit: number, field: string, optional = false): string {
-  if (typeof value !== "string" || value.length > limit || (!optional && !value.trim())) {
-    invalid(`${field}: укажите текст длиной до ${limit} символов.`);
-  }
-  return value.trim();
-}
-
-async function dataOf<T>(query: PromiseLike<{ data: T; error: { message: string; code?: string } | null }>): Promise<T> {
-  const { data, error } = await query;
-  if (error?.code === "23505" && error.message.includes("subjects_active_title")) {
-    throw new ApiError(409, "already-exists", "Предмет с таким названием уже есть. Присоединитесь к нему в каталоге.");
-  }
-  if (error?.code === "42501" && error.message === "Вы не ведёте этот предмет.") {
-    throw new ApiError(403, "permission-denied", error.message);
-  }
-  if (error?.code === "P0002") missing(error.message);
-  if (error?.code === "P0001") deadline();
-  if (error?.code === "22023") invalid(error.message);
-  if (error?.code === "40001" || error?.code === "PT409") throw new ApiError(409, "conflict", error.message);
-  if (error) throw new Error(error.message);
-  return data;
 }
 
 export async function verifyFirebase(token: string): Promise<Identity> {
@@ -129,8 +81,9 @@ export async function verifyFirebase(token: string): Promise<Identity> {
 
 async function getActor(db: SupabaseClient, identity: Identity, registrationName?: unknown): Promise<Actor> {
   const { uid, email } = identity;
-  const [existing, teacher] = await Promise.all([
-    dataOf(db.from("profiles").select("name").eq("id", uid).maybeSingle()),
+  const [existing, accountRole, instructor] = await Promise.all([
+    dataOf(db.from("profiles").select("name,no_patronymic").eq("id", uid).maybeSingle()),
+    dataOf(db.from("account_roles").select("role").eq("user_id", uid).maybeSingle()),
     dataOf(db.from("teachers").select("user_id").eq("user_id", uid).maybeSingle()),
   ]);
   if (!existing && registrationName === undefined) {
@@ -144,9 +97,9 @@ async function getActor(db: SupabaseClient, identity: Identity, registrationName
     await dataOf(db.from("profiles").upsert({ id: uid, name, email }, { onConflict: "id", ignoreDuplicates: true }));
     const stored = await dataOf(db.from("profiles").select("name").eq("id", uid).single());
     if (!stored) throw new Error("Missing profile");
-    return { ...identity, name: stored.name, teacher: Boolean(teacher) };
+    return { ...identity, name: stored.name, teacher: accountRole?.role === "teacher", role: accountRole?.role ?? "student", noPatronymic: false };
   }
-  return { ...identity, name, teacher: Boolean(teacher) };
+  return { ...identity, name, teacher: Boolean(instructor) && ["teacher", "admin"].includes(accountRole?.role ?? "student"), role: accountRole?.role ?? "student", noPatronymic: existing?.no_patronymic ?? false };
 }
 
 function ownedPath(value: unknown, prefix: string): value is string {
@@ -182,8 +135,9 @@ async function publishingSubject(db: SupabaseClient, actor: Actor, value: unknow
 async function listSubjects(db: SupabaseClient, actor: Actor) {
   const rows = (await dataOf(db.from("subjects").select("id,title,description,created_by,subject_teachers(teacher_id)")
     .is("archived_at", null).order("title"))) ?? [];
+  const instructors = (await dataOf(db.from("subject_instructors").select("subject_id,teacher_id"))) ?? [];
   return rows.map(({ id, title, description, created_by, subject_teachers }) => ({
-    id, title, description, teacherCount: subject_teachers.length,
+    id, title, description, teacherCount: instructors.filter(i => i.subject_id === id).length,
     ...(actor.teacher ? {
       canEdit: created_by === actor.uid,
       joined: subject_teachers.some(({ teacher_id }) => teacher_id === actor.uid),
@@ -606,7 +560,7 @@ export function createHandler(db: SupabaseClient, verify = verifyFirebase) {
       const actor = await getActor(db, identity, action === "profile" ? input.name ?? "" : undefined);
       let result;
       switch (action) {
-        case "profile": result = { uid: actor.uid, name: actor.name, role: actor.teacher ? "teacher" : "student" }; break;
+        case "profile": result = { uid: actor.uid, name: actor.name, email: actor.email, role: actor.role, canTeach: actor.teacher, noPatronymic: actor.noPatronymic }; break;
         case "listSubjects": result = await listSubjects(db, actor); break;
         case "saveSubject": result = await saveSubject(db, actor, input); break;
         case "deleteSubject":
@@ -635,7 +589,11 @@ export function createHandler(db: SupabaseClient, verify = verifyFirebase) {
           requireRole(actor, true);
           result = await dataOf(db.from("student_profiles").select("name,email").order("created_at"));
           break;
-        default: invalid("Неизвестное действие.");
+        default: {
+          const community = await communityAction(db, actor, action, input);
+          if (!community) invalid("Неизвестное действие.");
+          result = community.data;
+        }
       }
       return response({ data: result });
     } catch (error) {

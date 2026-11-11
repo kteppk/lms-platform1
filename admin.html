@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Кабинет администратора · КТЭиП ПК</title>
+  <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-auth-compat.js"></script>
+  <script src="firebase-config.js?v=community1"></script>
+  <script src="portal.js?v=community1" defer></script>
+  <link rel="stylesheet" href="portal.css?v=community1">
+</head>
+<body>
+  <header>
+    <h1>Учебная платформа<span class="brand-caption">КТЭиП ПК · Кабинет администратора</span></h1>
+    <div class="user-info">
+      <button class="profile-link" type="button" onclick="Portal.navigate('profile')"><span id="userName"></span></button>
+      <button class="logout" onclick="logout()">Выйти</button>
+    </div>
+  </header>
+  <p id="status" role="alert" hidden style="padding:12px 24px"></p>
+  <main hidden>
+    <nav class="tabs" aria-label="Основная навигация">
+      <span class="nav-label">Управление</span>
+      <button class="tab-btn active" data-tab="home" onclick="switchTab('home',this)">Главная</button>
+      <button class="tab-btn" data-tab="accounts" onclick="switchTab('accounts',this)">Аккаунты и роли</button>
+      <button class="tab-btn" data-tab="schedule" onclick="switchTab('schedule',this)">Расписание</button>
+      <button class="tab-btn" data-tab="announcements" onclick="switchTab('announcements',this)">Объявления</button>
+      <span class="nav-label">Информация</span>
+      <button class="tab-btn" data-tab="teachers" onclick="switchTab('teachers',this)">Преподаватели</button>
+      <button class="tab-btn" data-tab="notifications" onclick="switchTab('notifications',this)">Уведомления</button>
+      <button class="tab-btn" data-tab="profile" onclick="switchTab('profile',this)">Мой профиль</button>
+    </nav>
+    <div id="content" class="content"></div>
+  </main>
+  <script>
+    let currentTab='home';
+    function switchTab(tab,button){
+      currentTab=tab;showStatus('');
+      document.querySelectorAll('.tabs .tab-btn').forEach(b=>b.classList.toggle('active',b===button));
+      Portal.render(tab,document.getElementById('content')).catch(e=>showStatus(e.message));
+    }
+    watchCabinet('admin',()=>Portal.render(currentTab,document.getElementById('content')));
+  </script>
+</body>
+</html>
