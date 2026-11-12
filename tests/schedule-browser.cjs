@@ -13,6 +13,8 @@ module.exports=async({admin,teacher,student,stamp,screenshotDir})=>{
   await admin.getByLabel('Курс',{exact:true}).fill('4');
   await admin.getByLabel('Специальность',{exact:true}).fill('Информационные системы и программирование');
   await admin.locator('dialog button[type="submit"]').click();
+  await admin.locator('dialog[open]').waitFor({state:'hidden'});
+  await admin.locator('.schedule-group-heading h3').filter({hasText:'Проверка '+stamp}).waitFor();
   await admin.locator('.schedule-week-grid').waitFor();
   const groupId=await admin.locator('#scheduleGroupSelect').inputValue();
   const second=(await rpc(admin,'createScheduleGroup',{name:'Проверка '+stamp+'0',lessonsPerDay:6})).data;
