@@ -10,7 +10,7 @@ const base = published ? 'https://kteppk.github.io/lms-platform1/' : 'http://127
 const screenshots = process.env.LMS_SCREENSHOTS;
 const root = path.resolve(__dirname, '..');
 const assets = new Set(['index.html', 'student.html', 'teacher.html', 'admin.html', 'student.js',
-  'firebase-config.js', 'portal.js', 'portal.css', 'mobile-nav.js', 'mobile-nav.css',
+  'schedule.js', 'schedule.css', 'firebase-config.js', 'portal.js', 'portal.css', 'mobile-nav.js', 'mobile-nav.css',
   'subjects.css', 'assessment.css', 'gradebook.js']);
 
 function fixtures(role) {
@@ -26,7 +26,9 @@ function fixtures(role) {
       case 'getTeacherProfile': return { ...teacher, id: data.teacherId, canEdit: role !== 'student', revision: 0, documents: [] };
       case 'listNotifications': return { unreadCount: 1, rows: [{ id: 'notice', title: 'Изменения в расписании', body: 'Проверьте время ближайшего занятия.', severity: 'info', destination: 'schedule', created_at: new Date().toISOString(), read: false }] };
       case 'readNotifications': return null;
-      case 'listSchedule': return { rows: [1, 2, 3].map(i => ({ id: 'lesson-' + i, lesson_date: data.from, starts_at: '09:00:00', ends_at: '10:30:00', title: 'Основы экономики и финансовая грамотность', teacher_id: teacher.id, group_name: 'ЭК-11', room: 'Аудитория 201', note: 'Учебные материалы размещены в разделе «Предметы».', revision: 0 })), hasMore: false };
+      case 'listScheduleGroups': return [{id:'g9241',name:'9241',course:'4',lessons_per_day:6},{id:'g9251',name:'9251',course:'3',lessons_per_day:6}];
+      case 'getWeeklySchedule': return {group:{id:data.groupId,name:data.groupId==='g9241'?'9241':'9251',course:'4',lessons_per_day:6},cells:[{id:'slot',weekday:1,lesson_number:4,status:'lesson',title:'Основы экономики и финансовая грамотность',teacher_label:teacher.name,room:'20',note:'Учебные материалы размещены в разделе «Предметы».',revision:0}]};
+      case 'listSchedule': return {rows:[],hasMore:false};
       case 'listAccounts': return [{ id: 'person', name, email: 'very-long-student-address-for-mobile-layout@example.test', role: 'student', needs_name: false }];
       case 'listMaterials': return [{ id: 'material', title: 'Материал с длинным заголовком для чтения на телефоне', teacherName: name, createdAt: new Date().toISOString(), text: ('Учебный материал, который удобно читать с телефона.\n').repeat(35), files: [], attachments: [], author: name, description: 'Учебное пособие', fileUrl: '' }];
       case 'listStudentTests': case 'listTeacherTests': return [test];
@@ -91,7 +93,9 @@ async function verify(page, role) {
     assert.equal(await page.locator('main > .tabs').isVisible(), false);
     assert.equal(await page.locator('#mobileNavigation button').count(), 5);
     await choose(page, 'schedule');
-    await page.locator('#scheduleFrom').waitFor();
+    await page.locator('#scheduleGroupSelect').waitFor();
+    await page.locator('#scheduleGroupSelect').selectOption('g9241');
+    await page.locator('.schedule-week-grid').waitFor();
     const layout = await page.evaluate(() => {
       const bar = document.getElementById('mobileNavigation').getBoundingClientRect();
       return { overflow: document.documentElement.scrollWidth > innerWidth, bottom: bar.bottom, height: innerHeight,
@@ -139,7 +143,7 @@ async function verify(page, role) {
   const ready = { home: '.quick-grid', subjects: '.subject-card', lectures: role === 'student' ? '#content .item' : '#lectureTitle',
     books: role === 'student' ? '#content .item' : '#bookTitle', tests: role === 'student' ? '#content .item' : '#testTitle',
     students: '#studentsList', journal: '#gradeRows h3', results: '#gradeRows h3', teachers: '.teacher-card',
-    schedule: '#scheduleFrom', notifications: '.notice-card', profile: '#profileName', accounts: '.table-wrap tbody tr', announcements: '#announcementTitle' };
+    schedule: '#scheduleGroupSelect', notifications: '.notice-card', profile: '#profileName', accounts: '.table-wrap tbody tr', announcements: '#announcementTitle' };
   for (const tab of sections) {
     await choose(page, tab);
     await page.locator(ready[tab]).first().waitFor();
@@ -155,7 +159,7 @@ async function verify(page, role) {
     await page.locator('#draftStatus').filter({ hasText: 'Ответы сохранены на сервере.' }).waitFor();
     const before = await page.evaluate(() => ({ id: attempt.attemptId, expiresAt: attempt.expiresAt }));
     await choose(page, 'schedule');
-    await page.locator('#scheduleFrom').waitFor();
+    await page.locator('#scheduleGroupSelect').waitFor();
     await choose(page, 'tests');
     await page.locator('#timer').waitFor();
     assert.equal(await page.getByRole('radio', { name: 'Второй', exact: true }).isChecked(), true);

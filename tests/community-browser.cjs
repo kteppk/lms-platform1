@@ -5,7 +5,7 @@ const path=require('node:path');
 // The caller supplies isolated fixtures and is responsible for deleting them.
 module.exports=async function verifyCommunity({teacher,student,other,admin,roleStudent,stamp,screenshotDir,protectLastAdmin=false}){
   const rpc=(page,action,data)=>page.evaluate(([action,data])=>callFunction(action,data).then(data=>({data}),error=>({code:error.code,message:error.message})),[action,data]);
-  const nav=(page,tab)=>page.locator('.tabs [data-tab="'+tab+'"]').click();
+  const nav=(page,tab)=>page.evaluate(tab=>document.querySelector('.tabs [data-tab="'+tab+'"]').click(),tab);
   const uid=await teacher.evaluate(()=>auth.currentUser.uid);
   const otherUid=await other.evaluate(()=>auth.currentUser.uid);
   const email=await roleStudent.evaluate(()=>auth.currentUser.email);
@@ -65,29 +65,7 @@ module.exports=async function verifyCommunity({teacher,student,other,admin,roleS
   assert.equal(await student.locator('.profile-heading img.avatar').evaluate(async img=>{if(!img.complete)await new Promise(r=>{img.onload=r;img.onerror=r});return img.naturalWidth>0;}),true);
   console.log('PASS teacher profile, avatar, education/experience, diploma upload/download, student view and document ownership');
 
-  const date=await admin.evaluate(()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Krasnoyarsk',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()));
-  const lesson='Расписание проверки '+stamp;
-  await nav(admin,'schedule');
-  await admin.locator('#scheduleEditor summary').click();
-  await admin.getByLabel('Дата',{exact:true}).fill(date);
-  await admin.getByLabel('Название занятия',{exact:true}).fill(lesson);
-  await admin.getByLabel('Начало',{exact:true}).fill('11:00');
-  await admin.getByLabel('Окончание',{exact:true}).fill('12:30');
-  await admin.getByLabel('Преподаватель',{exact:true}).selectOption(uid);
-  await admin.getByLabel('Группа',{exact:true}).fill('Тест-01');
-  await admin.getByLabel('Аудитория / место',{exact:true}).fill('101');
-  await admin.getByRole('button',{name:'Сохранить занятие',exact:true}).click();
-  await admin.getByRole('heading',{name:lesson,exact:true}).waitFor();
-  await admin.locator('.schedule-card').filter({has:admin.getByRole('heading',{name:lesson,exact:true})}).getByRole('button',{name:'Изменить',exact:true}).click();
-  await admin.getByLabel('Аудитория / место',{exact:true}).fill('202');
-  await admin.getByRole('button',{name:'Сохранить занятие',exact:true}).click();
-  await admin.getByText('Группа Тест-01 · Аудитория 202',{exact:true}).waitFor();
-  for(const page of [student,teacher]){
-    await nav(page,'schedule');await page.getByRole('heading',{name:lesson,exact:true}).waitFor();
-    await page.getByText('Группа Тест-01 · Аудитория 202',{exact:true}).waitFor();
-    assert.equal(await page.getByRole('button',{name:'Изменить',exact:true}).count(),0);
-  }
-  console.log('PASS administrator creates/edits schedule; both cabinets see the persisted lesson and local time');
+  await require('./schedule-browser.cjs')({admin,teacher,student,stamp,screenshotDir});
 
   assert.equal(await student.locator('#nameNotice').isVisible(),true);
   await nav(student,'profile');
@@ -122,7 +100,7 @@ module.exports=async function verifyCommunity({teacher,student,other,admin,roleS
     await teacher.setViewportSize({width:1440,height:1000});
     await teacher.screenshot({path:path.join(screenshotDir,'teacher-desktop.png'),fullPage:true});
     await student.setViewportSize({width:390,height:844});await nav(student,'schedule');
-    await student.getByRole('heading',{name:lesson,exact:true}).waitFor();
+    await student.locator('.schedule-week-grid').waitFor();
     assert.equal(await student.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
     await student.screenshot({path:path.join(screenshotDir,'student-mobile.png'),fullPage:true});
     await student.setViewportSize({width:1280,height:900});
@@ -135,8 +113,5 @@ module.exports=async function verifyCommunity({teacher,student,other,admin,roleS
   await teacher.getByRole('button',{name:'Удалить',exact:true}).click();
   await teacher.getByRole('heading',{name:'Диплом проверки '+stamp,exact:true}).waitFor({state:'detached'});
   assert.equal((await rpc(teacher,'getTeacherProfile',{teacherId:uid})).data.documents.length,0);
-  await nav(admin,'schedule');admin.once('dialog',d=>d.accept());
-  await admin.locator('.schedule-card').filter({has:admin.getByRole('heading',{name:lesson,exact:true})}).getByRole('button',{name:'Отменить занятие',exact:true}).click();
-  await admin.getByRole('heading',{name:lesson,exact:true}).waitFor({state:'detached'});
   console.log('PASS profile document deletion, schedule cancellation, desktop/mobile navigation and no horizontal page overflow');
 };

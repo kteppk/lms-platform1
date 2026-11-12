@@ -83,7 +83,8 @@
   "workspace": {
     "packageJson": {
       "dependencies": [
-        "npm:@electric-sql/pglite@0.5.16"
+        "npm:@electric-sql/pglite@0.5.16",
+        "npm:playwright-core@1.65.0"
       ]
     }
   }

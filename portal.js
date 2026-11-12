@@ -1,6 +1,6 @@
 const Portal = (() => {
-  let profile, teachers=[], selectedTeacher=null, editingTeacher=null, schedule=[], accountRows=[], accountOffset=0, accountSearch='', pendingTeacher=null;
-  let noticeRows=[], noticeOffset=0, seen=new Set(), polling=false, scheduleFilter={};
+  let profile, teachers=[], selectedTeacher=null, editingTeacher=null, accountRows=[], accountOffset=0, accountSearch='', pendingTeacher=null;
+  let noticeRows=[], noticeOffset=0, seen=new Set(), polling=false;
   const roles={student:'Студент',teacher:'Преподаватель',admin:'Администратор'};
   const categories={diploma:'Диплом',award:'Грамота',certificate:'Сертификат',other:'Другой документ'};
   const e=value=>escapeHtml(value);
@@ -9,8 +9,6 @@ const Portal = (() => {
   const button=(label,action,extra='',cls='secondary')=>`<button type="button" class="${cls}" data-portal="${action}" ${extra}>${label}</button>`;
   const empty=message=>`<p class="empty-state">${message}</p>`;
   const val=key=>document.getElementById(key).value;
-  const today=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Krasnoyarsk',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
-  const shift=(date,n)=>new Date(Date.parse(date+'T12:00:00Z')+n*86400000).toISOString().slice(0,10);
   const fullNameValid=(name,noPatronymic=false)=>{
     const words=name.trim().split(/\s+/u);
     return words.length===(noPatronymic?2:3)&&words.every(p=>/^[\p{L}][\p{L}'’‐-]{0,38}[\p{L}]$/u.test(p));
@@ -125,19 +123,7 @@ const Portal = (() => {
     const result=await fetch(new URL(grant.url,lmsBaseUrl),{method:'PUT',headers:{'x-upsert':'false'},body:form});
     if(!result.ok)throw new Error('Хранилище не приняло файл.');return grant.path;
   }
-  async function renderSchedule(container){
-    const from=scheduleFilter.from||today(),to=scheduleFilter.to||shift(from,6);
-    container.innerHTML='<h2>Расписание</h2><p>Загрузка занятий…</p>';
-    const [data,staff,subjects]=await Promise.all([callFunction('listSchedule',{from,to}),callFunction('listTeachers'),profile.role==='admin'?callFunction('listSubjects'):[]]);
-    if(!container.isConnected)return;schedule=data.rows;teachers=staff;
-    const names=new Map(staff.map(t=>[t.id,t.name]));
-    const visible=schedule.filter(s=>(!scheduleFilter.group||s.group_name.toLowerCase().includes(scheduleFilter.group.toLowerCase()))&&(!scheduleFilter.mine||s.teacher_id===profile.uid));
-    container.innerHTML=`<h2>Расписание</h2><p class="section-lead">Время занятий — местное, Кызыл (UTC+7). ${profile.role==='admin'?'Изменения автоматически появятся в уведомлениях.':'Выберите даты и свою группу.'}</p>
-      <form class="schedule-filters" data-portal-form="schedule-filter"><label>С даты<input id="scheduleFrom" type="date" value="${from}" required></label><label>По дату<input id="scheduleTo" type="date" value="${to}" required></label><label>Фильтр по группе<input id="scheduleGroupFilter" value="${e(scheduleFilter.group||'')}" placeholder="Все группы" maxlength="100"></label>${profile.role==='teacher'?`<label class="check-label"><input id="scheduleMine" type="checkbox" ${scheduleFilter.mine?'checked':''}>Только мои занятия</label>`:''}<button type="submit" class="primary">Показать</button></form>
-      ${data.hasMore?'<p class="notice-danger">Занятий больше 500. Уменьшите период.</p>':''}
-      ${profile.role==='admin'?`<details id="scheduleEditor"><summary>+ Добавить занятие</summary><form data-portal-form="schedule-edit" style="margin-top:20px"><input id="scheduleId" type="hidden"><input id="scheduleRevision" type="hidden" value="0"><div class="field-grid">${field('scheduleDate','Дата',from,'date','required')}${field('scheduleTitle','Название занятия','','text','required maxlength="200"')}${field('scheduleStart','Начало','09:00','time','required')}${field('scheduleEnd','Окончание','10:30','time','required')}<div class="form-group"><label for="scheduleSubject">Предмет (необязательно)</label><select id="scheduleSubject"><option value="">Без привязки</option>${subjects.map(s=>`<option value="${e(s.id)}">${e(s.title)}</option>`).join('')}</select></div><div class="form-group"><label for="scheduleTeacher">Преподаватель</label><select id="scheduleTeacher"><option value="">Не назначен</option>${staff.map(t=>`<option value="${e(t.id)}">${e(t.name)}</option>`).join('')}</select></div>${field('scheduleGroup','Группа','','text','maxlength="100"')}${field('scheduleRoom','Аудитория / место','','text','maxlength="100"')}<div class="full-width">${area('scheduleNote','Примечание','',1000)}</div></div><div class="actions"><button type="submit" class="primary">Сохранить занятие</button>${button('Отмена','schedule-cancel')}</div></form></details>`:''}
-      <div id="scheduleList">${visible.length?[...new Set(visible.map(s=>s.lesson_date))].map(day=>`<section class="schedule-day"><h3>${e(new Date(day+'T12:00:00Z').toLocaleDateString('ru-RU',{weekday:'long',day:'numeric',month:'long',timeZone:'UTC'}))}</h3>${visible.filter(s=>s.lesson_date===day).map(s=>`<article class="item schedule-card"><div class="schedule-time">${e(s.starts_at.slice(0,5))}<div class="meta">${e(s.ends_at.slice(0,5))}</div></div><div><h3>${e(s.title)}</h3><p>${e(names.get(s.teacher_id)||'Преподаватель не назначен')}</p><p class="meta">${e(s.group_name?`Группа ${s.group_name}`:'Все группы')} · ${e(s.room?`Аудитория ${s.room}`:'Место уточняется')}</p>${s.note?`<p>${e(s.note)}</p>`:''}</div>${profile.role==='admin'?`<div class="actions">${button('Изменить','schedule-edit',`data-id="${e(s.id)}"`)}${button('Отменить занятие','schedule-delete',`data-id="${e(s.id)}"`,'danger-button')}</div>`:''}</article>`).join('')}</section>`).join(''):empty('На выбранный период занятий нет.')}</div>`;
-  }
+  async function renderSchedule(container){ return Schedule.render(container,profile); }
   function noticeCards(rows){
     return rows.map(n=>`<article class="item notice-card ${n.read?'':'unread'} ${n.severity==='danger'?'danger':''}"><span class="meta">${e(new Date(n.created_at).toLocaleString('ru-RU'))}${n.read?'':' · Новое'}</span><h3>${e(n.title)}</h3><p>${e(n.body)}</p><div class="actions">${button('Открыть','notice-open',`data-id="${e(n.id)}" data-tab="${e(n.destination)}"`)}${n.read?'':button('Прочитано','notice-read',`data-id="${e(n.id)}"`)}</div></article>`).join('')||empty('Уведомлений пока нет.');
   }
@@ -180,16 +166,6 @@ const Portal = (() => {
       if(!confirm('Удалить документ из профиля?'))return;
       await callFunction('deleteTeacherDocument',{teacherId:editingTeacher.id,id:node.dataset.id});toast('Документ удалён');return editTeacher(editingTeacher.id);
     }
-    if(name==='schedule-cancel')return renderSchedule(container);
-    if(name==='schedule-edit'){
-      const s=schedule.find(s=>s.id===node.dataset.id);if(!s)return;
-      for(const [key,value]of Object.entries({scheduleId:s.id,scheduleRevision:s.revision,scheduleDate:s.lesson_date,scheduleTitle:s.title,scheduleStart:s.starts_at.slice(0,5),scheduleEnd:s.ends_at.slice(0,5),scheduleSubject:s.subject_id??'',scheduleTeacher:s.teacher_id??'',scheduleGroup:s.group_name,scheduleRoom:s.room,scheduleNote:s.note}))document.getElementById(key).value=value;
-      document.getElementById('scheduleEditor').open=true;document.getElementById('scheduleTitle').focus();return;
-    }
-    if(name==='schedule-delete'){
-      const s=schedule.find(s=>s.id===node.dataset.id);if(!s||!confirm('Отменить занятие? Пользователи получат уведомление.'))return;
-      await callFunction('deleteSchedule',{id:s.id,revision:s.revision});toast('Занятие отменено');return renderSchedule(container);
-    }
     if(name==='role-save'){
       const p=accountRows.find(p=>p.id===node.dataset.id);if(!p)return;
       const role=document.querySelector(`[data-role-id="${p.id}"]`).value;
@@ -226,12 +202,6 @@ const Portal = (() => {
       try{await callFunction('addTeacherDocument',{teacherId:uid,title:val('documentTitle'),category:val('documentCategory'),year:val('documentYear')===''?null:Number(val('documentYear')),path,fileName:file.name});}
       catch(error){await callFunction('removeProfileUpload',{teacherId:uid,path}).catch(()=>{});throw error;}
       toast('Документ добавлен','','success');return editTeacher(uid);
-    }
-    if(kind==='schedule-filter'){
-      scheduleFilter={from:val('scheduleFrom'),to:val('scheduleTo'),group:val('scheduleGroupFilter'),mine:document.getElementById('scheduleMine')?.checked};return renderSchedule(container);
-    }
-    if(kind==='schedule-edit'){
-      await callFunction('saveSchedule',{id:val('scheduleId')||null,revision:Number(val('scheduleRevision')),date:val('scheduleDate'),startsAt:val('scheduleStart'),endsAt:val('scheduleEnd'),title:val('scheduleTitle'),subjectId:val('scheduleSubject')||null,teacherId:val('scheduleTeacher')||null,group:val('scheduleGroup'),room:val('scheduleRoom'),note:val('scheduleNote')});toast('Расписание сохранено','','success');return renderSchedule(container);
     }
     if(kind==='accounts-search'){accountOffset=0;accountSearch=val('accountSearch');return renderAccounts(container);}
     if(kind==='announcement'){

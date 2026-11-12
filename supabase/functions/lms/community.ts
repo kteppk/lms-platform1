@@ -1,6 +1,7 @@
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2.89.0';
 import { ApiError, dataOf, id, invalid, missing, requireAdmin, text } from './shared.ts';
 import type { Actor, Input } from './shared.ts';
+import { scheduleAction } from './schedule.ts';
 
 const profileBucket='lms-profiles';
 const imageTypes=['image/jpeg','image/png','image/webp'];
@@ -114,11 +115,15 @@ async function updateMyProfile(db:SupabaseClient,actor:Actor,input:Input) {
   await dataOf(db.from('profiles').update({name,no_patronymic:input.noPatronymic}).eq('id',actor.uid));
   return {name,noPatronymic:input.noPatronymic};
 }
-async function listSchedule(db:SupabaseClient,input:Input) {
+async function listSchedule(db:SupabaseClient,actor:Actor,input:Input) {
   const from=date(input.from),to=date(input.to);
   if(to<from||Date.parse(to)-Date.parse(from)>31*86400000)invalid('Выберите период не более 31 дня.');
-  const rows=(await dataOf(db.from('schedule_entries').select('id,lesson_date,starts_at,ends_at,subject_id,title,teacher_id,group_name,room,note,revision')
-    .gte('lesson_date',from).lte('lesson_date',to).order('lesson_date').order('starts_at').order('id').range(0,500)))??[];
+  const group=text(input.group??'',100,'Группа',true);
+  if(!group&&actor.role!=='admin')return {rows:[],hasMore:false,requiresGroup:true};
+  let query=db.from('schedule_entries').select('id,lesson_date,starts_at,ends_at,subject_id,title,teacher_id,group_name,room,note,revision')
+    .gte('lesson_date',from).lte('lesson_date',to);
+  if(group)query=query.eq('group_name',group);
+  const rows=(await dataOf(query.order('lesson_date').order('starts_at').order('id').range(0,500)))??[];
   return {rows:rows.slice(0,500).map(row=>({...row,lesson_date:new Date(row.lesson_date).toISOString().slice(0,10)})),hasMore:rows.length>500};
 }
 async function saveSchedule(db:SupabaseClient,actor:Actor,input:Input) {
@@ -157,7 +162,7 @@ export async function communityAction(db:SupabaseClient,actor:Actor,action:unkno
       if(document||profile){data=false;break;}
       await dataOf(db.storage.from(profileBucket).remove([path]));data=true;break;
     }
-    case 'listSchedule':data=await listSchedule(db,input);break;
+    case 'listSchedule':data=await listSchedule(db,actor,input);break;
     case 'saveSchedule':data=await saveSchedule(db,actor,input);break;
     case 'deleteSchedule':{
       requireAdmin(actor);
@@ -178,7 +183,7 @@ export async function communityAction(db:SupabaseClient,actor:Actor,action:unkno
       requireAdmin(actor);
       data=await dataOf(db.from('notifications').insert({actor_id:actor.uid,title:text(input.title,200,'Заголовок'),body:text(input.body,2000,'Текст'),destination:'notifications',severity:input.important===true?'danger':'info'}).select('id').single());break;
     }
-    default:return null;
+    default:return await scheduleAction(db,actor,action,input);
   }
   return {data};
 }
