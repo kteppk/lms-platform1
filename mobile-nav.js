@@ -19,7 +19,7 @@ const MobileNavigation = (() => {
   };
   const svg = name => `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name] || icons.lectures}</svg>`;
   let navigate, menu, bar, activeTab, opener, primaryTabs = [];
-  const mobile = () => matchMedia('(max-width: 900px)').matches;
+  const mobile = () => matchMedia('(max-width: 1024px)').matches;
 
   function closeMenu() {
     if (!menu) return;
@@ -134,7 +134,7 @@ const MobileNavigation = (() => {
       } else if (button.dataset.mobileAction === 'close') closeMenu();
       else if (button.dataset.mobileAction === 'logout') { closeMenu(); logout(); }
     });
-    matchMedia('(max-width: 900px)').addEventListener('change', event => { if (!event.matches) closeMenu(); });
+    matchMedia('(max-width: 1024px)').addEventListener('change', event => { if (!event.matches) closeMenu(); });
     document.body.classList.add('has-mobile-navigation');
     sync();
   }

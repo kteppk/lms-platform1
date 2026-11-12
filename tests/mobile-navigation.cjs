@@ -86,7 +86,7 @@ async function choose(page, tab) {
 }
 
 async function verify(page, role) {
-  for (const [width, height] of [[320, 640], [360, 740], [390, 844], [430, 932], [768, 1024], [844, 390]]) {
+  for (const [width, height] of [[320, 640], [360, 740], [390, 844], [430, 932], [768, 1024], [844, 390], [932, 430], [1024, 768]]) {
     await page.setViewportSize({ width, height });
     assert.equal(await page.locator('main > .tabs').isVisible(), false);
     assert.equal(await page.locator('#mobileNavigation button').count(), 5);
@@ -184,7 +184,7 @@ async function verify(page, role) {
   await page.locator('main > .tabs [data-tab="profile"]').click();
   await page.locator('#profileName').waitFor();
   assert.equal(await page.locator('main > .tabs .active').getAttribute('data-tab'), 'profile');
-  console.log('PASS ' + role + ': six screen sizes, all sections, focus/Escape/backdrop, desktop resize, touch targets' + (role === 'student' ? ', same attempt/answers/deadline' : ''));
+  console.log('PASS ' + role + ': eight screen sizes, all sections, focus/Escape/backdrop, desktop resize, touch targets' + (role === 'student' ? ', same attempt/answers/deadline' : ''));
 }
 
 async function main() {
