@@ -21,6 +21,7 @@ const Portal = (() => {
       `<span class="avatar" aria-hidden="true">${e(person.name?.split(/\s+/).slice(0,2).map(p=>p[0]).join(''))}</span>`;
   }
   function navigate(tab){
+    if(typeof MobileNavigation!=='undefined')MobileNavigation.closeMenu();
     document.getElementById('notificationsDialog')?.close();
     const target=document.querySelector(`.tabs [data-tab="${tab}"]`);
     if(target) target.click();
@@ -74,6 +75,7 @@ const Portal = (() => {
       // Current server roles, including demotion, are checked when the user returns.
       window.addEventListener('focus',()=>getProfile(auth.currentUser).then(p=>{if(p.role!==profile.role)location.replace(cabinetPage(p.role));}).catch(()=>{}));
     }
+    if(typeof MobileNavigation!=='undefined')MobileNavigation.init(profile,navigate);
     await poll(true);
   }
   function home(container){
@@ -81,7 +83,7 @@ const Portal = (() => {
     const cards=admin?[['accounts','Аккаунты и роли','Назначайте преподавателей и администраторов.'],['schedule','Расписание','Добавляйте занятия и сообщайте об изменениях.'],['announcements','Объявления','Публикуйте сообщения для всех пользователей.'],['teachers','Преподаватели','Профили, образование и документы.']]:teacher?
       [['subjects','Мои предметы','Ведите предметы и публикуйте учебные материалы.'],['journal','Журнал оценок','Проверяйте работы и оставляйте комментарии.'],['schedule','Расписание','Ближайшие занятия и аудитории.'],['profile','Мой профиль','Расскажите о себе и добавьте дипломы и грамоты.']]:
       [['subjects','Предметы','Выберите предмет и своего преподавателя.'],['schedule','Расписание','Посмотрите занятия на ближайшую неделю.'],['results','Мои результаты','Баллы и комментарии преподавателей.'],['teachers','Преподаватели','Познакомьтесь с преподавателями техникума.']];
-    container.innerHTML=`<div class="hero"><div class="eyebrow">${roles[profile.role]} · КТЭиП ПК</div><h2>Добро пожаловать, ${e(profile.name)}</h2><p>${admin?'Управляйте доступом, расписанием и объявлениями в одном месте.':teacher?'Материалы, работы студентов и расписание — всё рядом.':'Продолжайте учиться: материалы, занятия и ваши результаты собраны здесь.'}</p></div><h2>С чего начнём?</h2><div class="quick-grid">${cards.map(([tab,title,description])=>`<button class="quick-card" data-portal="navigate" data-tab="${tab}"><strong>${title} →</strong><span>${description}</span></button>`).join('')}</div>`;
+    container.innerHTML=`<div class="hero"><div class="eyebrow">${roles[profile.role]} · КТЭиП ПК</div><h2>Добро пожаловать, <span class="welcome-name">${e(profile.name)}</span></h2><p>${admin?'Управляйте доступом, расписанием и объявлениями в одном месте.':teacher?'Материалы, работы студентов и расписание — всё рядом.':'Продолжайте учиться: материалы, занятия и ваши результаты собраны здесь.'}</p></div><h2>С чего начнём?</h2><div class="quick-grid">${cards.map(([tab,title,description])=>`<button class="quick-card" data-portal="navigate" data-tab="${tab}"><strong>${title} →</strong><span>${description}</span></button>`).join('')}</div>`;
   }
   async function myProfile(container){
     container.innerHTML=`<h2>Мой профиль</h2><p class="section-lead">Укажите настоящее имя: оно используется в кабинете и списках пользователей.</p>

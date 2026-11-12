@@ -15,6 +15,10 @@ const supabaseProjectUrl = 'https://qqhkuuktgzcyrkfdnjjq.supabase.co';
 const lmsBaseUrl = isLocal ? 'http://127.0.0.1:54321' : supabaseProjectUrl;
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
+// This script runs in the head, before deferred cabinet modules are ready.
+const cabinetScriptsReady = typeof document === 'undefined' || document.readyState === 'complete'
+  ? Promise.resolve()
+  : new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve, { once: true }));
 
 function getProfile(account, registrationName) {
   return callFunction('profile', { name: registrationName }, account);
@@ -105,6 +109,10 @@ function watchCabinet(role, onReady) {
         location.replace(cabinetPage(profile.role));
         return;
       }
+      // Cabinet navigation is deferred; even a fast Auth response must wait
+      // for those scripts before initializing the first screen.
+      await cabinetScriptsReady;
+      if (auth.currentUser?.uid !== account.uid) return;
       document.getElementById('userName').textContent = profile.name;
       document.querySelector('main').hidden = false;
       if (typeof Portal !== 'undefined') await Portal.init(profile);
