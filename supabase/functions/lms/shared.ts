@@ -1,6 +1,6 @@
 export type Input = Record<string, unknown>;
 export type Identity = { uid: string; email: string; name?: string };
-export type Actor = Identity & { name: string; teacher: boolean; role: 'student' | 'teacher' | 'admin'; noPatronymic: boolean };
+export type Actor = Identity & { name: string; teacher: boolean; role: 'student' | 'teacher' | 'admin'; noPatronymic: boolean; nameData: Input };
 export const idPattern = /^[A-Za-z0-9_-]{1,128}$/;
 export class ApiError extends Error {
   constructor(readonly status: number, readonly code: string, message: string) { super(message); }

@@ -34,7 +34,7 @@ const ResultsExport = (() => {
       const cells=values(row,i);cells[8]=excelDate(row.submitted_at);cells[9]=excelDate(row.graded_at);return cells;
     })];
     const headerRow=5,lastRow=rows.length;
-    const sheet=rows.map((row,index)=>`<row r="${index+1}" ht="${index>4?45:32}" customHeight="1">${row.map((value,column)=>{
+    const sheet=rows.map((row,index)=>`<row r="${index+1}" ht="${index>4?Math.max(30,Math.min(360,Math.ceil(String(row[1]??'').length/36)*15)):32}" customHeight="1">${row.map((value,column)=>{
       const ref=String.fromCharCode(65+column)+(index+1),style=index===4?1:index>4&&column>=8?3:column===5&&index>4?2:0;
       if(value==null)return `<c r="${ref}" s="${style}"/>`;
       return typeof value==='number'&&Number.isFinite(value)?`<c r="${ref}" s="${style}"><v>${value}</v></c>`:

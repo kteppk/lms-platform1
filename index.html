@@ -6,13 +6,15 @@
   <title>LMS Platform - Вход</title>
   <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-auth-compat.js"></script>
-  <script src="firebase-config.js?v=mobile1"></script>
+  <script src="firebase-config.js?v=identity1"></script>
   <link rel="stylesheet" href="portal.css?v=community1">
   <link rel="stylesheet" href="mobile-nav.css?v=mobile2">
+  <link rel="stylesheet" href="theme.css?v=almanac1">
 </head>
 <body class="auth-page">
+  <aside class="auth-intro"><div class="auth-wordmark">КТЭиП ПК <span class="section-kicker">Кызыл</span></div><h1>Учебная среда<br>техникума</h1><p>Материалы преподавателей, проверочные работы и расписание в вашем кабинете.</p><div class="auth-index"><p><span>01</span>Предметы и материалы</p><p><span>02</span>Тесты и результаты</p><p><span>03</span>Расписание групп</p></div></aside>
   <div class="auth-container">
-    <div class="eyebrow">КТЭиП ПК · Учебная платформа</div><h1>Добро пожаловать</h1>
+    <div class="eyebrow">Личный кабинет</div><h2 id="authFormTitle">Войти в кабинет</h2>
     <p class="subtitle">Войдите, чтобы продолжить учёбу и работу</p>
     
     <div class="tabs">
@@ -37,10 +39,12 @@
 
     <!-- Форма регистрации -->
     <form id="registerForm" class="hidden" onsubmit="handleRegister(event)">
-      <div class="form-group">
-        <label for="regName">Имя, фамилия и отчество</label>
-        <input type="text" id="regName" required maxlength="120" autocomplete="name" placeholder="Иван Иванов Иванович" aria-describedby="nameHint">
-        <small id="nameHint">Пишите настоящее ФИО полностью, без никнейма. Если отчества нет, это можно отметить в профиле.</small>
+      <div class="name-fields" data-name-prefix="reg">
+        <div class="form-group"><label for="regFirstName">Имя</label><input id="regFirstName" data-name-part="first" required maxlength="512" autocomplete="given-name" placeholder="Анна-Мария"><span class="name-field-error" data-name-error="first"></span></div>
+        <div class="form-group"><label for="regLastName">Фамилия</label><input id="regLastName" data-name-part="last" required maxlength="512" autocomplete="family-name" placeholder="Салчак-оол"><span class="name-field-error" data-name-error="last"></span></div>
+        <div class="form-group"><label for="regPatronymic">Отчество <span class="optional-label">необязательно</span></label><input id="regPatronymic" data-name-part="patronymic" maxlength="512" autocomplete="additional-name"><span class="name-field-error" data-name-error="patronymic"></span></div>
+        <label class="check-label name-no-patronymic"><input id="regNoPatronymic" type="checkbox">Нет отчества</label>
+        <p class="name-preview" data-name-preview>Имя и фамилия обязательны. Отчество можно не указывать.</p>
       </div>
       <div class="form-group">
         <label for="regEmail">Email</label>
@@ -60,6 +64,8 @@
     function switchTab(tab, button) {
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
       button.classList.add('active');
+      document.getElementById('authFormTitle').textContent=tab==='register'?'Создать аккаунт':'Войти в кабинет';
+      document.querySelector('.auth-container .subtitle').textContent=tab==='register'?'Имя и фамилия будут видны в учебных списках.':'Войдите в учебную среду техникума.';
       document.getElementById('loginForm').classList.toggle('hidden', tab !== 'login');
       document.getElementById('registerForm').classList.toggle('hidden', tab !== 'register');
       document.getElementById('error').classList.add('hidden');
@@ -106,13 +112,13 @@
 
     function handleRegister(event) {
       return handleAuthForm(event, async () => {
-        const name = document.getElementById('regName').value.trim();
-        if (!name) throw new Error('Укажите имя, фамилию и отчество.');
+        const names = (await nameFieldsReady).read('reg');
         const email = document.getElementById('regEmail').value.trim();
         const password = document.getElementById('regPassword').value;
         const { user } = await auth.createUserWithEmailAndPassword(email, password);
-        await user.updateProfile({ displayName: name });
-        await openCabinet(user, name);
+        const profile = await getProfile(user, names);
+        await user.updateProfile({ displayName: profile.name }).catch(()=>{});
+        location.replace(cabinetPage(profile.role));
       });
     }
 

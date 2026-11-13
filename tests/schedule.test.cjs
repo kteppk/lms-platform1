@@ -15,6 +15,8 @@ before(async()=>{
   await db.exec('set role service_role');
   group=await rpc('create_schedule_group',['admin','9241','4','Информационные системы и программирование',6]);
   other=await rpc('create_schedule_group',['admin','92410','','',6]);
+  await rpc('add_notification_subscription',['student','group',group.id,null,null]);
+  await rpc('add_notification_subscription',['student','group',other.id,null,null]);
 });
 after(async()=>await db?.close());
 test('migration retains dated lessons and groups; database access is service-only',async()=>{

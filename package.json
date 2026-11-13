@@ -2,7 +2,7 @@
   "name": "lms-platform",
   "private": true,
   "scripts": {
-    "test": "node --test tests/assessment.test.cjs tests/client-retry.test.cjs tests/schedule.test.cjs tests/results.test.cjs",
+    "test": "node --test tests/assessment.test.cjs tests/client-retry.test.cjs tests/schedule.test.cjs tests/results.test.cjs tests/identity-notifications.test.cjs",
     "test:mobile": "node tests/mobile-navigation.cjs"
   },
   "devDependencies": {

@@ -15,13 +15,15 @@ const supabaseProjectUrl = 'https://qqhkuuktgzcyrkfdnjjq.supabase.co';
 const lmsBaseUrl = isLocal ? 'http://127.0.0.1:54321' : supabaseProjectUrl;
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
+const nameFieldsReady = import('./name-fields.mjs?v=identity1');
+nameFieldsReady.catch(()=>{});
 // This script runs in the head, before deferred cabinet modules are ready.
 const cabinetScriptsReady = typeof document === 'undefined' || document.readyState === 'complete'
   ? Promise.resolve()
   : new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve, { once: true }));
 
 function getProfile(account, registrationName) {
-  return callFunction('profile', { name: registrationName }, account);
+  return callFunction('profile', typeof registrationName==='object'&&registrationName!==null?{nameFields:registrationName}:{name:registrationName}, account);
 }
 
 async function callFunction(action, data, account = auth.currentUser) {
@@ -30,7 +32,7 @@ async function callFunction(action, data, account = auth.currentUser) {
   const token = await account.getIdToken();
   const retryable = new Set(['profile','listSubjects','listSubjectTeachers','getSubjectContent','listMaterials',
     'listStudentTests','listTeacherTests','listStudents','getStudentAttempt','listActiveAttempts','listResults',
-    'getResult','listResultTests','getTestResults','exportTestResults','saveStudentDraft','submitStudentTest','listTeachers','getTeacherProfile','listSchedule','listScheduleGroups','getWeeklySchedule','listNotifications','listAccounts','readNotifications']).has(action);
+    'getResult','listResultTests','getTestResults','exportTestResults','saveStudentDraft','submitStudentTest','listTeachers','getTeacherProfile','listSchedule','listScheduleGroups','getWeeklySchedule','listNotifications','listNotificationSubscriptions','listRoleChanges','listAccounts','readNotifications']).has(action);
   for (let attempt = 0; ; attempt++) {
     let response, result;
     try {
@@ -112,6 +114,7 @@ function watchCabinet(role, onReady) {
       // Cabinet navigation is deferred; even a fast Auth response must wait
       // for those scripts before initializing the first screen.
       await cabinetScriptsReady;
+      await nameFieldsReady;
       if (auth.currentUser?.uid !== account.uid) return;
       document.getElementById('userName').textContent = profile.name;
       document.querySelector('main').hidden = false;

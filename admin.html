@@ -6,17 +6,19 @@
   <title>Кабинет администратора · КТЭиП ПК</title>
   <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-auth-compat.js"></script>
-  <script src="firebase-config.js?v=weekly1"></script>
+  <script src="firebase-config.js?v=identity1"></script>
   <script src="mobile-nav.js?v=mobile2" defer></script>
-  <script src="schedule.js?v=weekly1" defer></script>
-  <script src="portal.js?v=weekly1" defer></script>
+  <script src="schedule.js?v=identity1" defer></script>
+  <script src="subscriptions.js?v=identity1" defer></script>
+  <script src="portal.js?v=identity1" defer></script>
   <link rel="stylesheet" href="portal.css?v=community1">
   <link rel="stylesheet" href="mobile-nav.css?v=mobile2">
   <link rel="stylesheet" href="schedule.css?v=weekly1">
+  <link rel="stylesheet" href="theme.css?v=almanac1">
 </head>
 <body>
   <header>
-    <h1>Учебная платформа<span class="brand-caption">КТЭиП ПК · Кабинет администратора</span></h1>
+    <h1><span class="brand-mark" aria-hidden="true">К</span><span>КТЭиП ПК<span class="brand-caption">Кабинет администратора · Кызыл</span></span></h1>
     <div class="user-info">
       <button class="profile-link" type="button" onclick="Portal.navigate('profile')"><span id="userName"></span></button>
       <button class="logout" onclick="logout()">Выйти</button>

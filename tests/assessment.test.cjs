@@ -37,7 +37,8 @@ test('migration preserves existing material and supplies a snapshot to an old at
 test('name warnings accept full names and the no-patronymic exception, stay private, and disappear after correction',async()=>{
   for(const [name,noPatronymic,valid] of [['Иван Иванов Иванович',false,true],['Ли Анна',true,true],['Иван Иванов',false,false],['student123',false,false],['Иван Иванович 123',false,false],['Анна-Мария Иванова Петровна',false,true]])
     assert.equal(await rpc('valid_full_name',[name,noPatronymic]),valid,name);
-  assert.ok((await rpc('notification_feed',['student',0])).rows.some(n=>n.severity==='danger'));
+  assert.equal((await rpc('notification_feed',['student',0])).rows.some(n=>n.severity==='danger'),false);
+  await rpc('save_profile_name',['student',0,'Иван','Иванов','Иванович','provided','Иванов Иван Иванович']);
   await db.query("update profiles set name='Иван Иванов Иванович' where id='student'");
   assert.equal((await db.query("select count(*)::int n from notifications where dedupe_key='name:student'")).rows[0].n,0);
   await db.query("insert into notifications(id,recipient_id,title) values ('private-notice','student2','Private')");

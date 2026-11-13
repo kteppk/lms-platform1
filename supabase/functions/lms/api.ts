@@ -9,6 +9,8 @@ import { ApiError, dataOf, id, idPattern, invalid, missing, record, text } from 
 import type { Actor, Identity, Input } from "./shared.ts";
 import { communityAction } from "./community.ts";
 import { resultsAction } from "./results.ts";
+import { namePayload, profileNameColumns, validatedNames } from './names.ts';
+import { fullName } from '../_shared/name-rules.mjs';
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -83,24 +85,26 @@ export async function verifyFirebase(token: string): Promise<Identity> {
 async function getActor(db: SupabaseClient, identity: Identity, registrationName?: unknown): Promise<Actor> {
   const { uid, email } = identity;
   const [existing, accountRole, instructor] = await Promise.all([
-    dataOf(db.from("profiles").select("name,no_patronymic").eq("id", uid).maybeSingle()),
+    dataOf(db.from("profiles").select(profileNameColumns).eq("id", uid).maybeSingle()),
     dataOf(db.from("account_roles").select("role").eq("user_id", uid).maybeSingle()),
     dataOf(db.from("teachers").select("user_id").eq("user_id", uid).maybeSingle()),
   ]);
   if (!existing && registrationName === undefined) {
     throw new ApiError(403, "permission-denied", "Сначала откройте профиль.");
   }
-  const name = existing?.name ?? (
+  const names=!existing&&registrationName!==null&&typeof registrationName==='object'?validatedNames(registrationName as Input):null;
+  const name = existing?.name ?? (names?fullName(names):(
     (typeof registrationName === "string" && registrationName.trim()) ||
     identity.name?.trim() || email.split("@")[0] || "Пользователь"
-  ).slice(0, 120);
+  ).slice(0, 120));
   if (!existing) {
-    await dataOf(db.from("profiles").upsert({ id: uid, name, email }, { onConflict: "id", ignoreDuplicates: true }));
-    const stored = await dataOf(db.from("profiles").select("name").eq("id", uid).single());
+    await dataOf(db.from("profiles").upsert({ id: uid, name, email,...(names?{first_name_raw:names.firstNameRaw,last_name_raw:names.lastNameRaw,
+      patronymic_raw:names.patronymicRaw,patronymic_status:names.patronymicStatus,no_patronymic:names.patronymicStatus==='absent',name_revision:1,name_confirmed_at:new Date().toISOString()}:{}) }, { onConflict: "id", ignoreDuplicates: true }));
+    const stored = await dataOf(db.from("profiles").select(profileNameColumns).eq("id", uid).single());
     if (!stored) throw new Error("Missing profile");
-    return { ...identity, name: stored.name, teacher: accountRole?.role === "teacher", role: accountRole?.role ?? "student", noPatronymic: false };
+    return { ...identity, name: stored.name, teacher: accountRole?.role === "teacher", role: accountRole?.role ?? "student", noPatronymic: stored.no_patronymic, nameData:namePayload(stored) };
   }
-  return { ...identity, name, teacher: Boolean(instructor) && ["teacher", "admin"].includes(accountRole?.role ?? "student"), role: accountRole?.role ?? "student", noPatronymic: existing?.no_patronymic ?? false };
+  return { ...identity, name, teacher: Boolean(instructor) && ["teacher", "admin"].includes(accountRole?.role ?? "student"), role: accountRole?.role ?? "student", noPatronymic: existing?.no_patronymic ?? false, nameData:namePayload(existing) };
 }
 
 function ownedPath(value: unknown, prefix: string): value is string {
@@ -558,10 +562,10 @@ export function createHandler(db: SupabaseClient, verify = verifyFirebase) {
       try { parsed = JSON.parse(body); } catch { invalid("Некорректный JSON."); }
       const { action, data } = record(parsed);
       const input = record(data ?? {});
-      const actor = await getActor(db, identity, action === "profile" ? input.name ?? "" : undefined);
+      const actor = await getActor(db, identity, action === "profile" ? input.nameFields ?? input.name ?? "" : undefined);
       let result;
       switch (action) {
-        case "profile": result = { uid: actor.uid, name: actor.name, email: actor.email, role: actor.role, canTeach: actor.teacher, noPatronymic: actor.noPatronymic }; break;
+        case "profile": result = { uid: actor.uid, name: actor.name, email: actor.email, role: actor.role, canTeach: actor.teacher, noPatronymic: actor.noPatronymic,...actor.nameData }; break;
         case "listSubjects": result = await listSubjects(db, actor); break;
         case "saveSubject": result = await saveSubject(db, actor, input); break;
         case "deleteSubject":

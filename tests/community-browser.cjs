@@ -23,7 +23,7 @@ module.exports=async function verifyCommunity({teacher,student,other,admin,roleS
   await admin.locator('[data-role-id="'+roleUid+'"]').filter({has:admin.locator('option[value="teacher"][selected]')}).waitFor();
   await roleStudent.goto(new URL('index.html',roleStudent.url()).href);
   await roleStudent.waitForURL('**/teacher.html');
-  await roleStudent.getByRole('heading',{name:'С чего начнём?',exact:true}).waitFor();
+  await roleStudent.getByRole('heading',{name:'Рабочие разделы',exact:true}).waitFor();
   assert.equal((await rpc(roleStudent,'profile')).data.role,'teacher');
   await nav(admin,'accounts');
   await admin.getByRole('combobox',{name:'Роль '+email,exact:true}).selectOption('student');
@@ -69,11 +69,13 @@ module.exports=async function verifyCommunity({teacher,student,other,admin,roleS
 
   assert.equal(await student.locator('#nameNotice').isVisible(),true);
   await nav(student,'profile');
-  await student.getByLabel('Имя, фамилия и отчество',{exact:true}).fill('Иван Иванов Иванович');
+  await student.getByLabel('Имя',{exact:true}).fill('Иван');
+  await student.getByLabel('Фамилия',{exact:true}).fill('Иванов');
+  await student.locator('#profilePatronymic').fill('Иванович');
   await student.getByRole('button',{name:'Сохранить ФИО',exact:true}).click();
   await student.locator('#nameNotice').waitFor({state:'hidden'});
   await student.reload();
-  await student.locator('#userName').filter({hasText:'Иван Иванов Иванович'}).waitFor();
+  await student.locator('#userName').filter({hasText:'Иванов Иван Иванович'}).waitFor();
   assert.equal(await student.locator('#nameNotice').isVisible(),false);
   assert.equal((await rpc(student,'listNotifications')).data.rows.some(n=>n.title==='Укажите полное ФИО'),false);
   await nav(admin,'announcements');
@@ -96,7 +98,7 @@ module.exports=async function verifyCommunity({teacher,student,other,admin,roleS
   console.log('PASS red FIO warning resolves persistently; important announcements reach both cabinets; popup and per-user read status work');
   if(screenshotDir){
     fs.mkdirSync(screenshotDir,{recursive:true});
-    await nav(teacher,'home');await teacher.getByRole('heading',{name:'С чего начнём?',exact:true}).waitFor();
+    await nav(teacher,'home');await teacher.getByRole('heading',{name:'Рабочие разделы',exact:true}).waitFor();
     await teacher.setViewportSize({width:1440,height:1000});
     await teacher.screenshot({path:path.join(screenshotDir,'teacher-desktop.png'),fullPage:true});
     await student.setViewportSize({width:390,height:844});await nav(student,'schedule');

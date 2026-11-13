@@ -1,7 +1,7 @@
 const Schedule = (() => {
   const days=['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье'];
   const e=value=>escapeHtml(value??'');
-  let generation=0,current=null;
+  let generation=0,current=null,pendingGroup=null;
   const key=actor=>'lms-schedule-group:'+actor.uid;
   function readGroup(actor){try{return localStorage.getItem(key(actor))||'';}catch{return '';}}
   function remember(actor,id){try{localStorage.setItem(key(actor),id);}catch{ /* Selection still works without storage. */ }}
@@ -32,7 +32,7 @@ const Schedule = (() => {
     root.innerHTML='<h2>Расписание</h2><p role="status">Загрузка групп…</p>';
     const groups=await callFunction('listScheduleGroups');
     if(!root.isConnected||token!==generation)return;
-    const requested=selected===undefined?readGroup(actor):selected;
+    const requested=pendingGroup??(selected===undefined?readGroup(actor):selected);pendingGroup=null;
     const groupId=groups.some(g=>g.id===requested)?requested:'';
     const dates=week();
     const ctx={root,actor,groups,groupId,dates,cells:[],staff:[],subjects:[]};current=ctx;
@@ -44,7 +44,8 @@ const Schedule = (() => {
     Object.assign(ctx,data);
     const body=root.querySelector('#scheduleWeekBody');
     const sunday=data.cells.some(c=>c.weekday===7);
-    body.innerHTML=`<div class="schedule-group-heading"><div><h3>Группа ${e(data.group.name)}${data.group.course?' · '+e(data.group.course)+' курс':''}</h3>${data.group.program?`<p>${e(data.group.program)}</p>`:''}</div><span class="badge">Каждую неделю</span></div>${actor.role==='admin'?'<p class="schedule-tip">Нажмите на ячейку: укажите предмет или выберите «Нет пары». Изменения действуют каждую неделю и появляются в уведомлениях.</p>':''}<nav class="schedule-day-links" aria-label="Дни расписания">${days.slice(0,sunday?7:6).map((d,i)=>`<a href="#schedule-day-${i+1}">${d.slice(0,2)}</a>`).join('')}</nav><div class="schedule-week-grid">${Array.from({length:sunday?7:6},(_,i)=>dayTable(i+1,ctx)).join('')}</div>${actor.role==='admin'&&!sunday?`<details class="schedule-sunday"><summary>Воскресенье (при необходимости)</summary>${dayTable(7,ctx)}</details>`:''}<p class="schedule-legend">«Нет пары» — занятие не проводится. «Не заполнено» — расписание ещё не указано.</p>${legacy.rows.length?`<section class="schedule-legacy"><h3>Дополнительные занятия на эту неделю</h3><p>Ранее добавленные занятия с конкретной датой.</p>${legacy.rows.map(row=>`<article class="item"><strong>${e(row.title)}</strong><p>${dateLabel(row.lesson_date)} · ${e(row.starts_at.slice(0,5))}–${e(row.ends_at.slice(0,5))}${row.room?' · Каб. '+e(row.room):''}</p>${row.note?`<p>${e(row.note)}</p>`:''}</article>`).join('')}${legacy.hasMore?'<p>Показаны первые 500 занятий.</p>':''}</section>`:''}`;
+    body.innerHTML=`<div class="schedule-group-heading"><div><h3>Группа ${e(data.group.name)}${data.group.course?' · '+e(data.group.course)+' курс':''}</h3>${data.group.program?`<p>${e(data.group.program)}</p>`:''}</div><span class="badge">Каждую неделю</span></div>${actor.role==='admin'?'<p class="schedule-tip">Нажмите на ячейку: укажите предмет или выберите «Нет пары». Изменения действуют каждую неделю и появляются в уведомлениях.</p>':''}<div class="schedule-subscriptions"></div><nav class="schedule-day-links" aria-label="Дни расписания">${days.slice(0,sunday?7:6).map((d,i)=>`<a href="#schedule-day-${i+1}">${d.slice(0,2)}</a>`).join('')}</nav><div class="schedule-week-grid">${Array.from({length:sunday?7:6},(_,i)=>dayTable(i+1,ctx)).join('')}</div>${actor.role==='admin'&&!sunday?`<details class="schedule-sunday"><summary>Воскресенье (при необходимости)</summary>${dayTable(7,ctx)}</details>`:''}<p class="schedule-legend">«Нет пары» — занятие не проводится. «Не заполнено» — расписание ещё не указано.</p>${legacy.rows.length?`<section class="schedule-legacy"><h3>Дополнительные занятия на эту неделю</h3><p>Ранее добавленные занятия с конкретной датой.</p>${legacy.rows.map(row=>`<article class="item"><strong>${e(row.title)}</strong><p>${dateLabel(row.lesson_date)} · ${e(row.starts_at.slice(0,5))}–${e(row.ends_at.slice(0,5))}${row.room?' · Каб. '+e(row.room):''}</p>${row.note?`<p>${e(row.note)}</p>`:''}</article>`).join('')}${legacy.hasMore?'<p>Показаны первые 500 занятий.</p>':''}</section>`:''}`;
+    await Subscriptions.groupPanel(body.querySelector('.schedule-subscriptions'),data.group,data.cells);
   }
   function dialog(ctx,title,body){
     ctx.root.querySelector('dialog')?.remove();
@@ -63,7 +64,7 @@ const Schedule = (() => {
     const cell=ctx.cells.find(c=>c.weekday===weekday&&c.lesson_number===number);
     ctx.editing={weekday,number,cell};
     const modal=dialog(ctx,`${days[weekday-1]} · ${number} пара`,
-      `<p>Группа ${e(ctx.group.name)} · каждую неделю</p><form data-schedule-form="cell"><fieldset><legend class="schedule-sr-only">Ячейка расписания</legend><div class="schedule-status-choice"><label><input type="radio" name="scheduleStatus" value="lesson" ${cell?.status!=='free'?'checked':''}> Занятие</label><label><input type="radio" name="scheduleStatus" value="free" ${cell?.status==='free'?'checked':''}> Нет пары</label></div><div id="scheduleLessonFields" class="schedule-fields">${input('scheduleTitle','Предмет',cell?.title,'list="scheduleSubjects" maxlength="200" required placeholder="Выберите или впишите предмет"')}<datalist id="scheduleSubjects">${subjects.map(s=>`<option value="${e(s.title)}"></option>`).join('')}</datalist>${input('scheduleTeacher','Преподаватель',cell?.teacher_label,'list="scheduleTeachers" maxlength="120" placeholder="ФИО или инициалы"')}<datalist id="scheduleTeachers">${staff.map(t=>`<option value="${e(t.name)}"></option>`).join('')}</datalist>${input('scheduleRoom','Аудитория',cell?.room,'maxlength="100" placeholder="Например, 20"')}<details><summary>Время и примечание (необязательно)</summary><div class="schedule-time-fields">${input('scheduleStart','Начало',cell?.starts_at?.slice(0,5),'type="time"')}${input('scheduleEnd','Окончание',cell?.ends_at?.slice(0,5),'type="time"')}</div><label for="scheduleNote">Примечание<textarea id="scheduleNote" maxlength="1000">${e(cell?.note)}</textarea></label></details></div><div class="actions"><button class="primary" type="submit">Сохранить</button>${button('Отмена','close')}</div></fieldset></form>`);
+      `<p>Группа ${e(ctx.group.name)} · каждую неделю</p><form data-schedule-form="cell"><fieldset><legend class="schedule-sr-only">Ячейка расписания</legend><div class="schedule-status-choice"><label><input type="radio" name="scheduleStatus" value="lesson" ${cell?.status!=='free'?'checked':''}> Занятие</label><label><input type="radio" name="scheduleStatus" value="free" ${cell?.status==='free'?'checked':''}> Нет пары</label></div><div id="scheduleLessonFields" class="schedule-fields">${input('scheduleTitle','Предмет',cell?.title,'list="scheduleSubjects" maxlength="200" required placeholder="Выберите или впишите предмет"')}<datalist id="scheduleSubjects">${subjects.map(s=>`<option value="${e(s.title)}"></option>`).join('')}</datalist>${input('scheduleTeacher','Преподаватель',cell?.teacher_label,'list="scheduleTeachers" maxlength="800" placeholder="ФИО или инициалы"')}<datalist id="scheduleTeachers">${staff.map(t=>`<option value="${e(t.name)}"></option>`).join('')}</datalist>${input('scheduleRoom','Аудитория',cell?.room,'maxlength="100" placeholder="Например, 20"')}<details><summary>Время и примечание (необязательно)</summary><div class="schedule-time-fields">${input('scheduleStart','Начало',cell?.starts_at?.slice(0,5),'type="time"')}${input('scheduleEnd','Окончание',cell?.ends_at?.slice(0,5),'type="time"')}</div><label for="scheduleNote">Примечание<textarea id="scheduleNote" maxlength="1000">${e(cell?.note)}</textarea></label></details></div><div class="actions"><button class="primary" type="submit">Сохранить</button>${button('Отмена','close')}</div></fieldset></form>`);
     updateStatus(modal);
   }
   function updateStatus(modal){
@@ -122,5 +123,5 @@ const Schedule = (() => {
       if(error.code==='conflict'&&!modal.querySelector('[data-schedule="reload"]'))errorNode.insertAdjacentHTML('afterend',button('Закрыть и обновить расписание','reload'));
     }finally{fields.disabled=false;delete modal.dataset.busy;}
   });
-  return {render};
+  return {render,selectGroup:id=>{pendingGroup=id;}};
 })();

@@ -2,6 +2,7 @@ import type { SupabaseClient } from 'npm:@supabase/supabase-js@2.89.0';
 import { ApiError, dataOf, id, invalid, missing, requireAdmin, text } from './shared.ts';
 import type { Actor, Input } from './shared.ts';
 import { scheduleAction } from './schedule.ts';
+import { saveNames } from './names.ts';
 
 const profileBucket='lms-profiles';
 const imageTypes=['image/jpeg','image/png','image/webp'];
@@ -108,6 +109,8 @@ async function deleteDocument(db:SupabaseClient,actor:Actor,input:Input) {
   return null;
 }
 async function updateMyProfile(db:SupabaseClient,actor:Actor,input:Input) {
+  if(input.firstNameRaw!==undefined||input.lastNameRaw!==undefined)return await saveNames(db,actor.uid,input,revision(input.nameRevision));
+  if(actor.nameData.nameConfirmed)invalid('Обновите страницу и заполните имя, фамилию и отчество в отдельных полях.');
   const name=text(input.name,120,'ФИО').replace(/\s+/gu,' ');
   if(typeof input.noPatronymic!=='boolean')invalid('Укажите, есть ли отчество.');
   const valid=await dataOf(db.rpc('valid_full_name',{p_name:name,p_no_patronymic:input.noPatronymic}));
@@ -175,13 +178,23 @@ export async function communityAction(db:SupabaseClient,actor:Actor,action:unkno
       if(!['student','teacher','admin'].includes(String(input.role))||!['student','teacher','admin'].includes(String(input.expectedRole)))invalid('Выберите роль и обновите список аккаунтов.');
       data=await dataOf(db.rpc('set_account_role',{p_actor_id:actor.uid,p_user_id:id(input.userId),p_role:input.role,p_expected_role:input.expectedRole}));break;
     case 'listNotifications':data=await dataOf(db.rpc('notification_feed',{p_user_id:actor.uid,p_offset:pageOffset(input.offset)}));break;
+    case 'listNotificationSubscriptions':data=await dataOf(db.rpc('list_notification_subscriptions',{p_user_id:actor.uid}));break;
+    case 'addNotificationSubscription':{
+      if(!['group','subject','mine'].includes(String(input.scope)))invalid('Выберите тип подписки.');
+      data=await dataOf(db.rpc('add_notification_subscription',{p_user_id:actor.uid,p_scope:input.scope,
+        p_group_id:input.scope==='mine'?null:id(input.groupId),p_subject_id:input.scope==='subject'&&input.subjectId?id(input.subjectId):null,
+        p_subject_title:input.scope==='subject'?text(input.subjectTitle,200,'Предмет'):null}));break;
+    }
+    case 'removeNotificationSubscription':
+      data=await dataOf(db.from('notification_subscriptions').delete().eq('user_id',actor.uid).eq('id',id(input.id)).select('id').maybeSingle());break;
+    case 'listRoleChanges':requireAdmin(actor);data=await dataOf(db.rpc('role_change_log',{p_actor_id:actor.uid,p_offset:pageOffset(input.offset)}));break;
     case 'readNotifications':{
       if(!Array.isArray(input.ids)||input.ids.length>100)invalid('Некорректный список уведомлений.');
       data=await dataOf(db.rpc('read_notifications',{p_user_id:actor.uid,p_ids:input.ids.map(id)}));break;
     }
     case 'publishAnnouncement':{
       requireAdmin(actor);
-      data=await dataOf(db.from('notifications').insert({actor_id:actor.uid,title:text(input.title,200,'Заголовок'),body:text(input.body,2000,'Текст'),destination:'notifications',severity:input.important===true?'danger':'info'}).select('id').single());break;
+      data=await dataOf(db.from('notifications').insert({actor_id:actor.uid,category:'announcement',title:text(input.title,200,'Заголовок'),body:text(input.body,2000,'Текст'),destination:'notifications',severity:input.important===true?'danger':'info'}).select('id').single());break;
     }
     default:return await scheduleAction(db,actor,action,input);
   }

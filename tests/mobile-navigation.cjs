@@ -11,7 +11,7 @@ const screenshots = process.env.LMS_SCREENSHOTS;
 const root = path.resolve(__dirname, '..');
 const assets = new Set(['index.html', 'student.html', 'teacher.html', 'admin.html', 'student.js',
   'schedule.js', 'schedule.css', 'firebase-config.js', 'portal.js', 'portal.css', 'mobile-nav.js', 'mobile-nav.css',
-  'subjects.css', 'assessment.css', 'gradebook.js', 'results-export.js']);
+  'subjects.css', 'assessment.css', 'gradebook.js', 'results-export.js', 'theme.css', 'subscriptions.js', 'name-fields.mjs', 'supabase/functions/_shared/name-rules.mjs']);
 
 function fixtures(role) {
   let active = null;
@@ -20,9 +20,11 @@ function fixtures(role) {
     const teacher = { id: 'teacher-fixture', name, position: 'Преподаватель экономики', avatarUrl: null, subjectIds: ['subject'] };
     const test = { id: 'quiz', title: 'Тест с сохранением ответов', timer: 5, questionCount: 2, teacherName: name };
     switch (action) {
-      case 'profile': return { uid: role, role, name, email: role + '@example.test', canTeach: role === 'teacher', noPatronymic: false };
+      case 'profile': return { uid: role, role, name, email: role + '@example.test', canTeach: role === 'teacher', noPatronymic: false,firstNameRaw:'Александра',lastNameRaw:'Константинопольская',patronymicRaw:'Владимировна',patronymicStatus:'provided',nameRevision:1,nameConfirmed:true,needsNameReview:false };
       case 'listSubjects': return [{ id: 'subject', title: 'Экономика и финансовая грамотность', description: 'Материалы и задания по предмету.', teacherCount: 1, joined: true, canEdit: true }];
       case 'listTeachers': return [teacher];
+      case 'listNotificationSubscriptions': return [];
+      case 'listRoleChanges': return [];
       case 'getTeacherProfile': return { ...teacher, id: data.teacherId, canEdit: role !== 'student', revision: 0, documents: [] };
       case 'listNotifications': return { unreadCount: 1, rows: [{ id: 'notice', title: 'Изменения в расписании', body: 'Проверьте время ближайшего занятия.', severity: 'info', destination: 'schedule', created_at: new Date().toISOString(), read: false }] };
       case 'readNotifications': return null;
@@ -74,7 +76,7 @@ async function prepare(browser, role) {
     }
   });
   await page.goto(base + role + '.html');
-  try { await page.getByRole('heading', { name: 'С чего начнём?', exact: true }).waitFor(); }
+  try { await page.getByRole('heading', { name: 'Рабочие разделы', exact: true }).waitFor(); }
   catch(error) { console.error({role,url:page.url(),errors,status:await page.locator('#status').textContent().catch(()=>''),body:(await page.locator('body').innerText()).slice(0,1500)});throw error; }
   await page.locator('#mobileNavigation').waitFor();
   return { page, context, errors };
@@ -114,11 +116,11 @@ async function verify(page, role) {
     assert.equal(await page.locator('#mobileMore').getAttribute('aria-expanded'), 'true');
     assert.equal(await page.locator('#mobileMenu [data-mobile-tab]').count(), await page.locator('main > .tabs [data-tab]').count());
     await page.locator('#mobileMenu [data-mobile-tab="profile"]').click();
-    await page.locator('#profileName').waitFor();
+    await page.locator('#profileFirstName').waitFor();
     assert.equal(await page.locator('#mobileMenu').isVisible(), false);
     assert.equal(await page.locator('#mobileMore').getAttribute('aria-expanded'), 'false');
     assert.match(await page.locator('#mobileMore').getAttribute('class'), /active/);
-    assert.equal(await page.locator('#profileName').evaluate(el => getComputedStyle(el).fontSize), '16px');
+    assert.equal(await page.locator('#profileFirstName').evaluate(el => getComputedStyle(el).fontSize), '16px');
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
   }
 
@@ -145,7 +147,7 @@ async function verify(page, role) {
   const ready = { home: '.quick-grid', subjects: '.subject-card', lectures: role === 'student' ? '#content .item' : '#lectureTitle',
     books: role === 'student' ? '#content .item' : '#bookTitle', tests: role === 'student' ? '#content .item' : '#testTitle',
     students: '#studentsList', journal: '#gradeRows h3', results: '#gradeRows h3', teachers: '.teacher-card',
-    schedule: '#scheduleGroupSelect', notifications: '.notice-card', profile: '#profileName', accounts: '.table-wrap tbody tr', announcements: '#announcementTitle' };
+    schedule: '#scheduleGroupSelect', notifications: '.notice-card', profile: '#profileFirstName', accounts: '.table-wrap tbody tr', announcements: '#announcementTitle' };
   for (const tab of sections) {
     await choose(page, tab);
     await page.locator(ready[tab]).first().waitFor();
@@ -171,7 +173,7 @@ async function verify(page, role) {
   }
 
   await choose(page, 'home');
-  await page.getByRole('heading', { name: 'С чего начнём?', exact: true }).waitFor();
+  await page.getByRole('heading', { name: 'Рабочие разделы', exact: true }).waitFor();
   await page.evaluate(() => Portal.toast('Проверка уведомлений', 'Нижняя панель остаётся доступной.', 'info', 'schedule'));
   const navBox = await page.locator('#mobileNavigation').boundingBox();
   const toast = await page.locator('#toastRegion .toast').last().boundingBox();
@@ -188,7 +190,7 @@ async function verify(page, role) {
   assert.equal(await page.locator('#mobileNavigation').isVisible(), false);
   assert.equal(await page.locator('main > .tabs').isVisible(), true);
   await page.locator('main > .tabs [data-tab="profile"]').click();
-  await page.locator('#profileName').waitFor();
+  await page.locator('#profileFirstName').waitFor();
   assert.equal(await page.locator('main > .tabs .active').getAttribute('data-tab'), 'profile');
   console.log('PASS ' + role + ': eight screen sizes, all sections, focus/Escape/backdrop, desktop resize, touch targets' + (role === 'student' ? ', same attempt/answers/deadline' : ''));
 }
@@ -199,7 +201,7 @@ async function main() {
     server = http.createServer((req, res) => {
       const file = new URL(req.url, base).pathname.slice(1) || 'index.html';
       if (!assets.has(file)) return res.writeHead(404).end();
-      const type = file.endsWith('.js') ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : 'text/html';
+      const type = (file.endsWith('.js') || file.endsWith('.mjs')) ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : 'text/html';
       res.writeHead(200, { 'Content-Type': type + '; charset=utf-8' }).end(fs.readFileSync(path.join(root, file)));
     });
     await new Promise((resolve, reject) => server.listen(54321, '127.0.0.1', resolve).once('error', reject));

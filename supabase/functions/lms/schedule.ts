@@ -28,7 +28,7 @@ export async function scheduleAction(db:SupabaseClient,actor:Actor,action:unknow
       const cell:Input={status:input.status};
       if(input.status==='lesson'){
         cell.title=text(input.title,200,'Предмет');cell.subjectId=input.subjectId?id(input.subjectId):null;
-        cell.teacherId=input.teacherId?id(input.teacherId):null;cell.teacherLabel=text(input.teacherLabel??'',120,'Преподаватель',true);
+        cell.teacherId=input.teacherId?id(input.teacherId):null;cell.teacherLabel=text(input.teacherLabel??'',800,'Преподаватель',true);
         cell.room=text(input.room??'',100,'Аудитория',true);cell.note=text(input.note??'',1000,'Примечание',true);
         const starts=input.startsAt||null,ends=input.endsAt||null;
         if((starts===null)!==(ends===null)||(starts!==null&&(typeof starts!=='string'||typeof ends!=='string'||!/^([01]\d|2[0-3]):[0-5]\d$/.test(starts)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(ends)||ends<=starts)))invalid('Укажите оба времени, окончание должно быть позже начала.');
