@@ -432,11 +432,10 @@ async function submitTest(timedOut = false) {
 
 function renderResult({ score, total, percentage, status, feedback }) {
   const pending = status === 'pending_review';
-  const passed = percentage >= 60;
   content.innerHTML = `
-    <div class="result ${pending ? '' : passed ? 'good' : 'bad'}">
+    <div class="result">
       <h2>${pending ? 'Работа отправлена' : `Результат: ${score} из ${total} (${percentage}%)`}</h2>
-      <p>${pending ? 'Ожидает проверки преподавателем. Итог появится в разделе «Мои результаты».' : passed ? '✅ Зачёт!' : '❌ Нужно повторить'}</p>
+      <p>${pending ? 'Ожидает проверки преподавателем. Итог появится в разделе «Мои результаты».' : 'Результат сохранён. Все попытки и комментарии доступны в разделе «Мои результаты».'}</p>
       ${feedback ? `<p class="review-answer">${escapeHtml(feedback)}</p>` : ''}
       <button class="primary" onclick="returnToTests()" style="margin-top:16px">
         ${attemptTab === 'subjects' ? testReturnLabel() : 'Вернуться к тестам'}
