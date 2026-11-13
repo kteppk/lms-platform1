@@ -20,7 +20,12 @@ module.exports = async function verifyAssessment({ teacher, student, other, crea
     await q.locator('.q-type').selectOption(type);
   }
   await teacher.getByRole('button',{name:'Сохранить тест',exact:true}).click();
-  await teacher.getByRole('heading',{name:title,exact:true}).waitFor();
+  try{await teacher.getByRole('heading',{name:title,exact:true}).waitFor();}
+  catch(error){
+    const status=await teacher.locator('#status').textContent();
+    const invalid=await teacher.locator('input:invalid,select:invalid,textarea:invalid').evaluateAll(nodes=>nodes.map(n=>({id:n.id,class:n.className,disabled:n.disabled,message:n.validationMessage})));
+    throw new Error('Test creation did not complete: '+JSON.stringify({status,invalid}),{cause:error});
+  }
   const testId=(await rpc(teacher,'listTeacherTests')).data.find(t=>t.title===title).id;
   await tab(student,'Тесты');
   await student.locator('.item').filter({has:student.getByRole('heading',{name:title,exact:true})}).getByRole('button',{name:'Пройти тест'}).click();
