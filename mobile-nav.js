@@ -62,7 +62,7 @@ const MobileNavigation = (() => {
     const has = tab => tabs.some(button => button.dataset.tab === tab);
     const fourth = has('accounts') ? 'notifications' : has('journal') ? 'journal' : 'results';
     primaryTabs = ['home', has('accounts') ? 'accounts' : 'subjects', 'schedule', fourth];
-    const labels = { home: 'Главная', subjects: 'Предметы', accounts: 'Аккаунты', schedule: 'Расписание', results: 'Результаты', journal: 'Журнал', notifications: 'События' };
+    const labels = { home: 'Главная', subjects: 'Предметы', accounts: 'Аккаунты', schedule: 'Расписание', results: 'Результаты', journal: 'Результаты', notifications: 'События' };
 
     bar = document.createElement('nav');
     bar.id = 'mobileNavigation';

@@ -11,7 +11,7 @@ const screenshots = process.env.LMS_SCREENSHOTS;
 const root = path.resolve(__dirname, '..');
 const assets = new Set(['index.html', 'student.html', 'teacher.html', 'admin.html', 'student.js',
   'schedule.js', 'schedule.css', 'firebase-config.js', 'portal.js', 'portal.css', 'mobile-nav.js', 'mobile-nav.css',
-  'subjects.css', 'assessment.css', 'gradebook.js']);
+  'subjects.css', 'assessment.css', 'gradebook.js', 'results-export.js']);
 
 function fixtures(role) {
   let active = null;
@@ -33,6 +33,8 @@ function fixtures(role) {
       case 'listMaterials': return [{ id: 'material', title: 'Материал с длинным заголовком для чтения на телефоне', teacherName: name, createdAt: new Date().toISOString(), text: ('Учебный материал, который удобно читать с телефона.\n').repeat(35), files: [], attachments: [], author: name, description: 'Учебное пособие', fileUrl: '' }];
       case 'listStudentTests': case 'listTeacherTests': return [test];
       case 'listStudents': return [];
+      case 'listResultTests': return [{id:'quiz',title:'Итоговая работа по экономике',state:'active',attempts:2,students:1,pending:0}];
+      case 'getTestResults': return {test:{id:'quiz',title:'Итоговая работа по экономике',canSetScale:role==='teacher'},scale:{min_three:50,min_four:70,min_five:85,revision:0},summary:{rows:1,students:1,pending:0,graded:1},rows:[{id:'result',student_id:'student-fixture',student_name:name,score:2,total:3,status:'graded',percentage:67,submitted_at:new Date().toISOString(),attempt_number:2,attempt_count:2,mark:3}],hasMore:false,generatedAt:new Date().toISOString()};
       case 'listResults': return { rows: [{ id: 'result', test_title: 'Итоговая работа по экономике', student_name: name, score: 2, total: 3, percentage: 67, status: 'graded', submitted_at: new Date().toISOString() }], hasMore: false };
       case 'listActiveAttempts': return active ? [{ attemptId: active.attemptId, title: active.title, subjectId: null, teacherId: teacher.id }] : [];
       case 'startStudentTest':

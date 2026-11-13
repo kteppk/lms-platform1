@@ -6,12 +6,13 @@
   <title>Кабинет преподавателя</title>
   <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-auth-compat.js"></script>
-  <script src="firebase-config.js?v=weekly1"></script>
-  <script src="gradebook.js?v=assessment1"></script>
-  <script src="mobile-nav.js?v=mobile2" defer></script>
+  <script src="firebase-config.js?v=results1"></script>
+  <script src="results-export.js?v=results1"></script>
+  <script src="gradebook.js?v=results1"></script>
+  <script src="mobile-nav.js?v=results1" defer></script>
   <script src="schedule.js?v=weekly1" defer></script>
-  <script src="portal.js?v=weekly1" defer></script>
-  <link rel="stylesheet" href="assessment.css">
+  <script src="portal.js?v=results1" defer></script>
+  <link rel="stylesheet" href="assessment.css?v=results1">
   <link rel="stylesheet" href="subjects.css">
   <link rel="stylesheet" href="portal.css?v=community1">
   <link rel="stylesheet" href="mobile-nav.css?v=mobile2">
@@ -36,7 +37,7 @@
       <button class="tab-btn" data-tab="books" onclick="switchTab('books', this)">Книги</button>
       <button class="tab-btn" data-tab="tests" onclick="switchTab('tests', this)">Тесты</button>
       <button class="tab-btn" data-tab="students" onclick="switchTab('students', this)">Студенты</button>
-      <button class="tab-btn" data-tab="journal" onclick="switchTab('journal', this)">Журнал оценок</button>
+      <button class="tab-btn" data-tab="journal" onclick="switchTab('journal', this)">Результаты тестов</button>
       <span class="nav-label">Информация</span><button class="tab-btn" data-tab="teachers" onclick="switchTab('teachers',this)">Преподаватели</button>
 <button class="tab-btn" data-tab="schedule" onclick="switchTab('schedule',this)">Расписание</button>
 <button class="tab-btn" data-tab="notifications" onclick="switchTab('notifications',this)">Уведомления</button>
@@ -473,6 +474,7 @@
           <div class="meta">${data.questionCount} вопросов ${data.timer ? `• Таймер: ${escapeHtml(data.timer)} мин` : ''} ${data.archived ? '• В архиве' : ''}</div>
           ${subjectLabel(data.subjectId)}
           <div class="item-actions">
+            <button class="secondary" data-id="${escapeHtml(data.id)}" onclick="Gradebook.openTest(this.dataset.id)">Результаты</button>
             ${data.archived ? '' : `<button class="secondary" data-id="${escapeHtml(data.id)}" onclick="deleteItem('tests', this.dataset.id, 'Убрать тест в архив? Начатые попытки и оценки сохранятся.')">В архив</button>`}
           </div>
         </div>`;

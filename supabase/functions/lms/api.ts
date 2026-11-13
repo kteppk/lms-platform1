@@ -8,6 +8,7 @@ const firebaseKeys = createRemoteJWKSet(new URL(
 import { ApiError, dataOf, id, idPattern, invalid, missing, record, text } from "./shared.ts";
 import type { Actor, Identity, Input } from "./shared.ts";
 import { communityAction } from "./community.ts";
+import { resultsAction } from "./results.ts";
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -590,7 +591,7 @@ export function createHandler(db: SupabaseClient, verify = verifyFirebase) {
           result = await dataOf(db.from("student_profiles").select("name,email").order("created_at"));
           break;
         default: {
-          const community = await communityAction(db, actor, action, input);
+          const community = await resultsAction(db, actor, action, input) ?? await communityAction(db, actor, action, input);
           if (!community) invalid("Неизвестное действие.");
           result = community.data;
         }
