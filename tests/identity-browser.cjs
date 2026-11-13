@@ -72,12 +72,13 @@ module.exports=async({admin,teacher,student,other,stamp,outputDir})=>{
   assert.equal((await changes(student)).length,before+1,'overlapping group+subject subscriptions deliver once');
   const personalTeacherNotice=(await changes(teacher))[0];await rpc(student,'readNotifications',{ids:[personalTeacherNotice.id]});
   assert.equal((await changes(teacher)).find(n=>n.id===personalTeacherNotice.id).read,false);
-  await student.evaluate(()=>Portal.openSubscriptions());await student.getByRole('heading',{name:'Мои подписки',exact:true}).waitFor();
+  await student.evaluate(()=>Portal.openSubscriptions());await student.locator('.subscription-list').waitFor();
   if(outputDir){fs.mkdirSync(outputDir,{recursive:true});await student.setViewportSize({width:390,height:844});await student.screenshot({path:path.join(outputDir,'subscriptions-mobile.png'),fullPage:true});await student.setViewportSize({width:1440,height:1000});}
   while(await student.getByRole('button',{name:'Отписаться',exact:true}).count()){
     const count=await student.getByRole('button',{name:'Отписаться',exact:true}).count();await student.getByRole('button',{name:'Отписаться',exact:true}).first().click();
-    await student.waitForFunction(n=>document.querySelectorAll('[data-sub-action="remove"]').length<n,count);
+    await student.waitForFunction(n=>document.querySelector('.subscription-list')&&document.querySelectorAll('[data-sub-action="remove"]').length<n,count);
   }
+  assert.equal((await rpc(student,'listNotificationSubscriptions')).data.length,0,'all displayed subscriptions were removed');
   const past=(await changes(student)).length;await save(first,{status:'free'},overlap);assert.equal((await changes(student)).length,past);
   const notice=(await changes(student))[0];await nav(student,'notifications');
   await student.locator('[data-portal="notice-open"][data-id="'+notice.id+'"]').click();await student.locator('.schedule-week-grid').waitFor();
