@@ -23,7 +23,7 @@ module.exports=async function verifyCommunity({teacher,student,other,admin,roleS
   await admin.locator('[data-role-id="'+roleUid+'"]').filter({has:admin.locator('option[value="teacher"][selected]')}).waitFor();
   await roleStudent.goto(new URL('index.html',roleStudent.url()).href);
   await roleStudent.waitForURL('**/teacher.html');
-  await roleStudent.getByRole('heading',{name:'Рабочие разделы',exact:true}).waitFor();
+  await roleStudent.getByRole('heading',{name:'Главная',exact:true}).waitFor();
   assert.equal((await rpc(roleStudent,'profile')).data.role,'teacher');
   await nav(admin,'accounts');
   await admin.getByRole('combobox',{name:'Роль '+email,exact:true}).selectOption('student');
@@ -81,10 +81,10 @@ module.exports=async function verifyCommunity({teacher,student,other,admin,roleS
   await nav(admin,'announcements');
   const announcement='Объявление проверки '+stamp;
   await admin.getByLabel('Заголовок',{exact:true}).fill(announcement);
-  await admin.getByLabel('Текст сообщения',{exact:true}).fill('Проверка центра уведомлений.');
-  await admin.getByLabel('Важное объявление',{exact:true}).check();
-  await admin.getByRole('button',{name:'Опубликовать объявление',exact:true}).click();
-  await admin.waitForFunction(()=>document.getElementById('announcementTitle')?.value==='');
+  await admin.getByLabel('Текст',{exact:true}).fill('Проверка центра уведомлений.');
+  await admin.locator('#newsNotify').check();await admin.locator('#newsImportant').check();
+  await admin.getByRole('button',{name:'Опубликовать',exact:true}).click();
+  await admin.waitForFunction(()=>document.getElementById('newsTitle')?.value==='');
   await student.locator('#toastRegion').getByText(announcement,{exact:true}).waitFor({timeout:40000});
   for(const page of [student,teacher]){
     await page.locator('#notificationButton').click();
@@ -98,7 +98,7 @@ module.exports=async function verifyCommunity({teacher,student,other,admin,roleS
   console.log('PASS red FIO warning resolves persistently; important announcements reach both cabinets; popup and per-user read status work');
   if(screenshotDir){
     fs.mkdirSync(screenshotDir,{recursive:true});
-    await nav(teacher,'home');await teacher.getByRole('heading',{name:'Рабочие разделы',exact:true}).waitFor();
+    await nav(teacher,'home');await teacher.getByRole('heading',{name:'Главная',exact:true}).waitFor();
     await teacher.setViewportSize({width:1440,height:1000});
     await teacher.screenshot({path:path.join(screenshotDir,'teacher-desktop.png'),fullPage:true});
     await student.setViewportSize({width:390,height:844});await nav(student,'schedule');

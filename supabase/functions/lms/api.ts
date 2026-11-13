@@ -263,7 +263,7 @@ async function readMaterials(db: SupabaseClient, kind: Kind, scope: ContentScope
   if (scope.subjectId) query = query.eq("subject_id", scope.subjectId);
   const rows = (await dataOf(query.order("created_at", { ascending: false }))) ?? [];
 
-  const paths = mine ? [] : [...new Set(rows.flatMap((row) => row.files as string[]))];
+  const paths = [...new Set(rows.flatMap((row) => row.files as string[]))];
   const links = new Map<string, string>();
   if (paths.length) {
     const signed = await dataOf(db.storage.from(uploads[kind].bucket).createSignedUrls(paths, 3600));
@@ -283,7 +283,7 @@ async function readMaterials(db: SupabaseClient, kind: Kind, scope: ContentScope
       return [{ name, mime, downloadUrl: storagePath(download.href),
         viewUrl: mime === pdf || mime === "video/mp4" ? storagePath(url) : null }];
     });
-    const files: string[] = mine ? row.files : attachments.map((file) => file.downloadUrl);
+    const files: string[] = attachments.map((file) => file.downloadUrl);
     return {
       id: row.id, title: row.title, teacherName: row.teacher_name, createdAt: row.created_at,
       subjectId: row.subject_id, attachments,
@@ -305,7 +305,7 @@ async function createMaterial(db: SupabaseClient, actor: Actor, input: Input) {
     invalid("Некорректный список вложений.");
   }
   const body = kind === "lectures"
-    ? text(input.text, 100000, "Текст лекции", subjectId !== null && files.length > 0)
+    ? text(input.text, 100000, "Текст материала", files.length > 0)
     : text(input.description, 100000, "Описание", true);
   const bucket = db.storage.from(uploads[kind].bucket);
   let attachmentDetails: AttachmentDetails[] = [];

@@ -72,13 +72,7 @@ const Portal = (() => {
     if(typeof MobileNavigation!=='undefined')MobileNavigation.init(profile,navigate);
     await poll(true);
   }
-  function home(container){
-    const teacher=profile.role==='teacher',admin=profile.role==='admin';
-    const cards=admin?[['accounts','Аккаунты и роли','Назначайте преподавателей и администраторов.'],['schedule','Расписание','Добавляйте занятия и сообщайте об изменениях.'],['announcements','Объявления','Публикуйте сообщения для всех пользователей.'],['teachers','Преподаватели','Профили, образование и документы.']]:teacher?
-      [['subjects','Мои предметы','Ведите предметы и публикуйте учебные материалы.'],['journal','Результаты тестов','Проверяйте ответы и выгружайте результаты выбранного теста.'],['schedule','Расписание','Ближайшие занятия и аудитории.'],['profile','Мой профиль','Расскажите о себе и добавьте дипломы и грамоты.']]:
-      [['subjects','Предметы','Выберите предмет и своего преподавателя.'],['schedule','Расписание','Посмотрите занятия на ближайшую неделю.'],['results','Мои результаты','Баллы и комментарии преподавателей.'],['teachers','Преподаватели','Познакомьтесь с преподавателями техникума.']];
-    container.innerHTML=`<div class="hero"><div class="eyebrow">КТЭиП ПК · Учебная платформа</div><h2>${admin?'Администрирование':teacher?'Кабинет преподавателя':'Кабинет студента'}</h2><p>${admin?'Доступ к аккаунтам, расписания и объявления.':teacher?'Учебные материалы, проверка работ и результаты тестов.':'Ваши предметы, учебные материалы и результаты.'}</p><span class="edition-mark">КЫЗЫЛ / УЧЕБНАЯ СРЕДА</span></div><h2>Рабочие разделы</h2><div class="quick-grid">${cards.map(([tab,title,description],i)=>`<button class="quick-card" data-portal="navigate" data-tab="${tab}"><span class="section-number">0${i+1}</span><strong>${title}</strong><span class="quick-description">${description}</span><span class="quick-arrow" aria-hidden="true">↗</span></button>`).join('')}</div>`;
-  }
+  async function home(container){return News.home(container,profile);}
   async function myProfile(container){
     const [names,current]=await Promise.all([nameFieldsReady,getProfile(auth.currentUser)]);if(!container.isConnected)return;
     if(current.role!==profile.role){location.replace(cabinetPage(current.role));return;}
@@ -135,21 +129,20 @@ const Portal = (() => {
   async function renderAccounts(container){
     container.innerHTML='<h2>Аккаунты и роли</h2><p role="status">Загрузка аккаунтов…</p>';
     const rows=await callFunction('listAccounts',{search:accountSearch,offset:accountOffset});if(!container.isConnected)return;accountRows=rows;
-    container.innerHTML=`<h2>Аккаунты и роли</h2><p class="section-lead">Новые пользователи — студенты. Изменение роли сохраняет материалы и результаты. Последний администратор защищён от понижения.</p><form class="account-search" data-portal-form="accounts-search"><input id="accountSearch" aria-label="Поиск по ФИО или email" placeholder="Найти по ФИО или email" value="${e(accountSearch)}" maxlength="120"><button class="primary" type="submit">Найти</button></form><div class="table-wrap"><table><thead><tr><th>Пользователь</th><th>Роль</th><th>Действие</th></tr></thead><tbody>${rows.map(p=>`<tr><td class="account-name"><strong>${e(p.name)}</strong><small>${e(p.email)}</small>${p.needs_name?'<span class="badge">Заполнить поля ФИО</span>':''}${p.id===profile.uid?'<span class="badge">Это вы</span>':''}</td><td><select aria-label="Роль ${e(p.email)}" data-role-id="${e(p.id)}">${Object.entries(roles).map(([role,label])=>`<option value="${role}" ${role===p.role?'selected':''}>${label}</option>`).join('')}</select></td><td>${button('Сохранить роль','role-save',`data-id="${e(p.id)}"`)}</td></tr>`).join('')}</tbody></table></div>${!rows.length?empty('Аккаунты не найдены.'):''}<details class="role-log"><summary>История назначения ролей</summary><p>Последние 50 назначений. Доступны только администрации. Уведомление получает только владелец изменённого аккаунта.</p>${button('Загрузить историю','role-log')}<div id="roleChangeLog"></div></details><div class="actions">${button('← Назад','accounts-prev',accountOffset?'':'disabled')}${button('Далее →','accounts-next',rows.length===50?'':'disabled')}</div>`;
+    container.innerHTML=`<h2>Аккаунты и роли</h2><p class="section-lead">Новые пользователи — студенты. Изменение роли сохраняет материалы и результаты. Последний администратор защищён от понижения.</p><section id="registrationStats" class="registration-statistics"></section><form class="account-search" data-portal-form="accounts-search"><input id="accountSearch" aria-label="Поиск по ФИО или email" placeholder="Найти по ФИО или email" value="${e(accountSearch)}" maxlength="120"><button class="primary" type="submit">Найти</button></form><div class="table-wrap"><table><thead><tr><th>Пользователь</th><th>Роль</th><th>Действие</th></tr></thead><tbody>${rows.map(p=>`<tr><td class="account-name"><strong>${e(p.name)}</strong><small>${e(p.email)}</small>${p.needs_name?'<span class="badge">Заполнить поля ФИО</span>':''}${p.id===profile.uid?'<span class="badge">Это вы</span>':''}</td><td><select aria-label="Роль ${e(p.email)}" data-role-id="${e(p.id)}">${Object.entries(roles).map(([role,label])=>`<option value="${role}" ${role===p.role?'selected':''}>${label}</option>`).join('')}</select></td><td>${button('Сохранить роль','role-save',`data-id="${e(p.id)}"`)}</td></tr>`).join('')}</tbody></table></div>${!rows.length?empty('Аккаунты не найдены.'):''}<details class="role-log"><summary>История назначения ролей</summary><p>Последние 50 назначений. Доступны только администрации. Уведомление получает только владелец изменённого аккаунта.</p>${button('Загрузить историю','role-log')}<div id="roleChangeLog"></div></details><div class="actions">${button('← Назад','accounts-prev',accountOffset?'':'disabled')}${button('Далее →','accounts-next',rows.length===50?'':'disabled')}</div>`;
+    await News.statistics(container.querySelector('#registrationStats'));
   }
-  function announcements(container){
-    container.innerHTML=`<h2>Объявление для всех</h2><p class="section-lead">Сообщение появится в центре уведомлений у студентов и преподавателей. Важное объявление будет выделено красным.</p><form data-portal-form="announcement">${field('announcementTitle','Заголовок','','text','required maxlength="200"')}${area('announcementBody','Текст сообщения','',2000)}<label class="check-label"><input id="announcementImportant" type="checkbox">Важное объявление</label><button class="primary" type="submit">Опубликовать объявление</button></form>`;
-  }
+  async function announcements(container){return News.manager(container);}
   async function render(tab,parent){
     if(!['home','profile','teachers','schedule','notifications','accounts','announcements'].includes(tab))return false;
     parent.innerHTML='<section id="portalPage" aria-live="polite"></section>';const target=parent.firstElementChild;
-    if(tab==='home')home(target);
+    if(tab==='home')await home(target);
     if(tab==='profile')await myProfile(target);
     if(tab==='teachers'){const uid=pendingTeacher;pendingTeacher=null;if(uid)await viewTeacher(uid,target);else await renderTeachers(target);}
     if(tab==='schedule')await renderSchedule(target);
     if(tab==='notifications'){if(pendingSubscriptions){pendingSubscriptions=false;await Subscriptions.render(target);}else await renderNotices(target);}
     if(tab==='accounts')await renderAccounts(target);
-    if(tab==='announcements')announcements(target);
+    if(tab==='announcements')await announcements(target);
     return true;
   }
   async function action(name,node){

@@ -5,7 +5,7 @@ const path=require('node:path');
 module.exports=async({admin,teacher,student,other,stamp,outputDir})=>{
   const rpc=(page,action,data={})=>page.evaluate(([a,d])=>callFunction(a,d).then(data=>({data}),e=>({code:e.code,message:e.message})),[action,data]);
   const nav=async(page,tab)=>page.evaluate(tab=>document.querySelector('.tabs [data-tab="'+tab+'"]').click(),tab);
-  const home=page=>page.getByRole('heading',{name:'Рабочие разделы',exact:true});
+  const home=page=>page.getByRole('heading',{name:'Главная',exact:true});
   await nav(student,'profile');await student.locator('#profileFirstName').waitFor();
   const initial=(await rpc(student,'profile')).data;assert.equal(initial.nameConfirmed,true);assert.equal(initial.needsNameReview,false);
   assert.equal(await student.locator('#profileFirstName').inputValue(),initial.firstNameRaw);

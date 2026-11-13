@@ -43,7 +43,7 @@ module.exports=async({admin,teacher,student,stamp,screenshotDir})=>{
     assert.equal(response.cells.length,1);assert.equal(response.cells[0].title,title);assert.equal(response.cells[0].teacher_label,teacherName);assert.equal(response.cells[0].starts_at,null);
     assert.equal((await rpc(page,'listSchedule',{from:'2026-11-09',to:'2026-11-15'})).data.requiresGroup,true);
   }
-  await admin.reload();await admin.getByRole('heading',{name:'Рабочие разделы',exact:true}).waitFor();await nav(admin);
+  await admin.reload();await admin.getByRole('heading',{name:'Главная',exact:true}).waitFor();await nav(admin);
   await slot(admin).filter({hasText:title}).waitFor();assert.equal(await admin.locator('#scheduleGroupSelect').inputValue(),groupId);
   await slot(admin).click();
   assert.equal(await admin.getByLabel('Аудитория',{exact:true}).inputValue(),'13');
@@ -60,7 +60,7 @@ module.exports=async({admin,teacher,student,stamp,screenshotDir})=>{
   await admin.locator('dialog button[type="submit"]').click();
   await slot(admin).filter({hasText:'Нет пары'}).waitFor();
   for(const page of [teacher,student]){
-    await page.reload();await page.getByRole('heading',{name:'Рабочие разделы',exact:true}).waitFor();await nav(page);
+    await page.reload();await page.getByRole('heading',{name:'Главная',exact:true}).waitFor();await nav(page);
     await page.locator('#schedule-day-1 tbody tr').nth(3).getByText('Нет пары',{exact:true}).waitFor();
     assert.equal(await page.locator('#scheduleGroupSelect').inputValue(),groupId);
     assert.equal(await page.locator('#schedule-day-1 tbody tr').nth(0).getByText('Не заполнено',{exact:true}).count(),1);

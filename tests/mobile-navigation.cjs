@@ -11,7 +11,7 @@ const screenshots = process.env.LMS_SCREENSHOTS;
 const root = path.resolve(__dirname, '..');
 const assets = new Set(['index.html', 'student.html', 'teacher.html', 'admin.html', 'student.js',
   'schedule.js', 'schedule.css', 'firebase-config.js', 'portal.js', 'portal.css', 'mobile-nav.js', 'mobile-nav.css',
-  'subjects.css', 'assessment.css', 'gradebook.js', 'results-export.js', 'theme.css', 'subscriptions.js', 'name-fields.mjs', 'supabase/functions/_shared/name-rules.mjs']);
+  'subjects.css', 'assessment.css', 'gradebook.js', 'results-export.js', 'theme.css', 'release.js', 'news.js', 'subject-search.js', 'subscriptions.js', 'name-fields.mjs', 'supabase/functions/_shared/name-rules.mjs']);
 
 function fixtures(role) {
   let active = null;
@@ -21,6 +21,8 @@ function fixtures(role) {
     const test = { id: 'quiz', title: 'Тест с сохранением ответов', timer: 5, questionCount: 2, teacherName: name };
     switch (action) {
       case 'profile': return { uid: role, role, name, email: role + '@example.test', canTeach: role === 'teacher', noPatronymic: false,firstNameRaw:'Александра',lastNameRaw:'Константинопольская',patronymicRaw:'Владимировна',patronymicStatus:'provided',nameRevision:1,nameConfirmed:true,needsNameReview:false };
+      case 'listNews': return {rows:[],hasMore:false};
+      case 'registrationStatistics': return {total:27,students:22,teachers:4,admins:1,last7:5,last30:27,months:[]};
       case 'listSubjects': return [{ id: 'subject', title: 'Экономика и финансовая грамотность', description: 'Материалы и задания по предмету.', teacherCount: 1, joined: true, canEdit: true }];
       case 'listTeachers': return [teacher];
       case 'listNotificationSubscriptions': return [];
@@ -76,7 +78,7 @@ async function prepare(browser, role) {
     }
   });
   await page.goto(base + role + '.html');
-  try { await page.getByRole('heading', { name: 'Рабочие разделы', exact: true }).waitFor(); }
+  try { await page.getByRole('heading', { name: 'Главная', exact: true }).waitFor(); }
   catch(error) { console.error({role,url:page.url(),errors,status:await page.locator('#status').textContent().catch(()=>''),body:(await page.locator('body').innerText()).slice(0,1500)});throw error; }
   await page.locator('#mobileNavigation').waitFor();
   return { page, context, errors };
@@ -138,16 +140,16 @@ async function verify(page, role) {
   await page.locator(role === 'admin' ? '.table-wrap tbody tr' : '#gradeRows h3').waitFor();
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
   if (role === 'admin') {
-    const table = await page.locator('.table-wrap').evaluate(el => ({ width: el.clientWidth, scroll: el.scrollWidth }));
+    const table = await page.locator('#portalPage > .table-wrap').evaluate(el => ({ width: el.clientWidth, scroll: el.scrollWidth }));
     assert.equal(table.width, table.scroll, 'accounts fit without sideways scrolling');
     assert.ok((await page.locator('[data-portal="role-save"]').boundingBox()).height >= 44);
   }
 
   const sections = await page.locator('main > .tabs [data-tab]').evaluateAll(nodes => nodes.map(n => n.dataset.tab));
-  const ready = { home: '.quick-grid', subjects: '.subject-card', lectures: role === 'student' ? '#content .item' : '#lectureTitle',
-    books: role === 'student' ? '#content .item' : '#bookTitle', tests: role === 'student' ? '#content .item' : '#testTitle',
+  const ready = { home: '.news-columns', subjects: '.subject-card', lectures: role === 'student' ? '#content .item' : '#lectureTitle',
+    tests: role === 'student' ? '#content .item' : '#testTitle',
     students: '#studentsList', journal: '#gradeRows h3', results: '#gradeRows h3', teachers: '.teacher-card',
-    schedule: '#scheduleGroupSelect', notifications: '.notice-card', profile: '#profileFirstName', accounts: '.table-wrap tbody tr', announcements: '#announcementTitle' };
+    schedule: '#scheduleGroupSelect', notifications: '.notice-card', profile: '#profileFirstName', accounts: '.table-wrap tbody tr', announcements: '#newsTitle' };
   for (const tab of sections) {
     await choose(page, tab);
     await page.locator(ready[tab]).first().waitFor();
@@ -173,7 +175,7 @@ async function verify(page, role) {
   }
 
   await choose(page, 'home');
-  await page.getByRole('heading', { name: 'Рабочие разделы', exact: true }).waitFor();
+  await page.getByRole('heading', { name: 'Главная', exact: true }).waitFor();
   await page.evaluate(() => Portal.toast('Проверка уведомлений', 'Нижняя панель остаётся доступной.', 'info', 'schedule'));
   const navBox = await page.locator('#mobileNavigation').boundingBox();
   const toast = await page.locator('#toastRegion .toast').last().boundingBox();

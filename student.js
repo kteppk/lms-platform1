@@ -48,7 +48,7 @@ async function render() {
     return;
   }
 
-  const titles = { lectures: 'Доступные лекции', books: 'Доступные книги', tests: 'Доступные тесты' };
+  const titles = { lectures: 'Доступные материалы', tests: 'Доступные тесты' };
   content.innerHTML = `<h2 style="margin-bottom:16px">${titles[currentTab]}</h2><div>Загрузка…</div>`;
   const list = content.lastElementChild;
   const tab = currentTab;
@@ -59,29 +59,11 @@ async function render() {
     return;
   }
 
-  const materials = await callFunction('listMaterials', { kind: tab });
-  if (tab === 'lectures') {
-    list.innerHTML = materials.map(data => {
-      const date = new Date(data.createdAt).toLocaleString('ru');
-      const files = (data.files ?? []).map((file, index) => materialLink(file, 'Скачать файл ' + (index + 1)));
-      return `<div class="item">
-        <h3>${escapeHtml(data.title)}</h3>
-        <div class="meta">Преподаватель: ${escapeHtml(data.teacherName)} • ${date}</div>
-        <p>${escapeHtml(data.text)}</p>
-        ${files.filter(Boolean).map(link => `<p style="margin-top:8px">📎 ${link}</p>`).join('')}
-      </div>`;
-    }).join('') || '<p>Нет лекций</p>';
-  } else {
-    list.innerHTML = materials.map(data => {
-      const link = data.fileUrl ? materialLink(data.fileUrl, 'Читать PDF') : '';
-      return `<div class="item">
-        <h3>${escapeHtml(data.title)}</h3>
-        <div class="meta">Автор: ${escapeHtml(data.author)}</div>
-        <p>${escapeHtml(data.description)}</p>
-        ${link ? `<p style="margin-top:8px">📖 ${link}</p>` : ''}
-      </div>`;
-    }).join('') || '<p>Нет книг</p>';
-  }
+  if(tab!=='lectures')return;
+  const [lectures,pdfs]=await Promise.all([callFunction('listMaterials',{kind:'lectures'}),callFunction('listMaterials',{kind:'books'})]);
+  if(!list.isConnected)return;
+  const materials=[...lectures.map(d=>({...d,_legacyPdf:false})),...pdfs.map(d=>({...d,_legacyPdf:true}))].sort((a,b)=>Date.parse(b.createdAt)-Date.parse(a.createdAt));
+  list.innerHTML=materials.map(data=>`<article class="item"><h3>${escapeHtml(data.title)}</h3><div class="meta">Преподаватель: ${escapeHtml(data.teacherName)} · ${new Date(data.createdAt).toLocaleString('ru-RU')}</div>${data.author?`<p class="meta">Автор: ${escapeHtml(data.author)}</p>`:''}<p class="subject-description">${escapeHtml(data._legacyPdf?data.description:data.text)}</p>${(data._legacyPdf?[data.fileUrl]:data.files??[]).map((url,i)=>`<p>${materialLink(url,data._legacyPdf?'Открыть PDF':'Открыть файл '+(i+1))}</p>`).join('')}</article>`).join('')||'<p>Материалов пока нет.</p>';
 }
 
 function testCards(tests) {
@@ -97,13 +79,14 @@ async function renderSubjectView(list) {
   const selection = subjectView;
   if (!selection) {
     const subjects = await callFunction('listSubjects');
-    list.innerHTML = `<div class="subjects-grid">${subjects.map(subject => `
-      <article class="item subject-card">
+    list.innerHTML = `${SubjectSearch.toolbar()}<div class="subjects-grid">${subjects.map(subject => `
+      <article class="item subject-card" ${SubjectSearch.attrs(subject)}>
         <h3>${escapeHtml(subject.title)}</h3>
-        <p class="subject-description">${escapeHtml(subject.description)}</p>
+        <p class="subject-description subject-preview">${escapeHtml(subject.description)}</p>
         <p class="meta">Преподавателей: ${escapeHtml(subject.teacherCount)}</p>
         <button class="primary" data-id="${escapeHtml(subject.id)}" onclick="openSubject(this)">Открыть предмет</button>
       </article>`).join('') || '<p>Предметов пока нет.</p>'}</div>`;
+    SubjectSearch.update();
     return;
   }
 
@@ -200,8 +183,9 @@ function subjectContent({ subject, teacher, lectures, books, tests }) {
   });
   return `<div class="subject-heading">${teacherAvatar(teacher.name)}
     <div><h2>${escapeHtml(subject.title)}</h2><p>${escapeHtml(teacher.name)}</p><button class="secondary" data-id="${escapeHtml(teacher.id)}" onclick="Portal.openTeacher(this.dataset.id)">О преподавателе</button></div></div>
+    <p class="subject-description subject-full-description">${escapeHtml(subject.description)}</p>
     ${subjectSection('Видеоуроки', videos, 'Видеоуроков пока нет.')}
-    ${subjectSection('PDF и книги', [...pdfBooks, ...lecturePdfs], 'Файлов и книг пока нет.')}
+    ${subjectSection('PDF и учебные материалы', [...pdfBooks, ...lecturePdfs], 'PDF-файлов пока нет.')}
     ${subjectSection('Лекции и презентации', lectureCards, 'Лекций пока нет.')}
     ${subjectSection('Тесты', [testCards(tests)].filter(Boolean), 'Тестов пока нет.')}`;
 }

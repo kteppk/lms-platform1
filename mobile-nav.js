@@ -10,7 +10,6 @@ const MobileNavigation = (() => {
     profile: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="9" r="3"/><path d="M6 19a6 6 0 0 1 12 0"/>',
     notifications: '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-11 13h4"/>',
     lectures: '<path d="M14 3H5v18h14V8zM14 3v5h5M8 12h8m-8 4h6"/>',
-    books: '<path d="M5 3h14v18H6a3 3 0 0 1 0-6h13M5 3v12m3-8h7"/>',
     tests: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="m8 8 1 1 2-2m2 1h3m-8 6 1 1 2-2m2 1h3"/>',
     announcements: '<path d="m3 11 17-7v16L3 15zm4 5 2 5h3l-2-4M20 9h2m-2 6h2"/>',
     more: '<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',
@@ -80,6 +79,7 @@ const MobileNavigation = (() => {
       <div class="mobile-menu-heading"><div><p class="eyebrow">${{ student: 'Кабинет студента', teacher: 'Кабинет преподавателя', admin: 'Кабинет администратора' }[person.role]}</p><h2 id="mobileMenuTitle">Все разделы</h2></div><button type="button" class="mobile-icon-button" data-mobile-action="close" aria-label="Закрыть меню">${svg('close')}</button></div>
       <p id="mobileProfileName" class="mobile-profile-name"></p>
       <nav class="mobile-menu-grid" aria-label="Все разделы кабинета">${tabs.map(button => `<button type="button" data-mobile-tab="${button.dataset.tab}">${svg(button.dataset.tab === 'students' ? 'accounts' : button.dataset.tab)}<span>${escapeHtml(button.textContent.trim())}</span></button>`).join('')}</nav>
+      <p class="site-version" data-site-version>Версия ${escapeHtml(SiteRelease.version)}</p>
       <div class="mobile-menu-footer"><button type="button" data-mobile-action="logout">${svg('logout')}<span>Выйти из аккаунта</span></button></div>`;
     document.body.append(menu);
     for (const link of document.querySelectorAll('header .user-info a[href]')) {

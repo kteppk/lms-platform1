@@ -3,6 +3,7 @@ import { ApiError, dataOf, id, invalid, missing, requireAdmin, text } from './sh
 import type { Actor, Input } from './shared.ts';
 import { scheduleAction } from './schedule.ts';
 import { saveNames } from './names.ts';
+import { newsAction } from './news.ts';
 
 const profileBucket='lms-profiles';
 const imageTypes=['image/jpeg','image/png','image/webp'];
@@ -196,7 +197,7 @@ export async function communityAction(db:SupabaseClient,actor:Actor,action:unkno
       requireAdmin(actor);
       data=await dataOf(db.from('notifications').insert({actor_id:actor.uid,category:'announcement',title:text(input.title,200,'Заголовок'),body:text(input.body,2000,'Текст'),destination:'notifications',severity:input.important===true?'danger':'info'}).select('id').single());break;
     }
-    default:return await scheduleAction(db,actor,action,input);
+    default:return await newsAction(db,actor,action,input) ?? await scheduleAction(db,actor,action,input);
   }
   return {data};
 }
