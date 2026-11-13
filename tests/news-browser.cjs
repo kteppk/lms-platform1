@@ -34,7 +34,9 @@ module.exports=async({admin,teacher,student,other,stamp,outputDir})=>{
  const title='Ёмкая дисциплина '+stamp;
  const subject=(await rpc(teacher,'saveSubject',{title,description})).data;assert.ok(subject.id);
  for(const p of [teacher,student]){
-  await nav(p,'subjects');await p.locator('#subjectSearch').waitFor();await p.locator('#subjectSearch').fill('емкая ДИСЦИПЛИНА');
+  await nav(p,'subjects');await p.locator('#subjectSearch').waitFor();
+  await p.locator('[data-subject-search]').filter({has:p.getByRole('heading',{name:title,exact:true})}).waitFor();
+  await p.locator('#subjectSearch').fill('емкая ДИСЦИПЛИНА');
   const card=p.locator('[data-subject-search]:visible');assert.equal(await card.count(),1);assert.equal(await card.getByRole('heading',{name:title,exact:true}).count(),1);
   assert.equal(await card.locator('.subject-preview').evaluate(n=>n.scrollHeight>n.clientHeight&&getComputedStyle(n).maskImage!=='none'),true);
   await p.locator('#subjectSearch').fill('Предмета с таким названием нет');assert.equal(await p.locator('[data-subject-search]:visible').count(),0);await p.locator('#subjectSearchStatus').filter({hasText:'Ничего не найдено'}).waitFor();
