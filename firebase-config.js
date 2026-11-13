@@ -15,8 +15,10 @@ const supabaseProjectUrl = 'https://qqhkuuktgzcyrkfdnjjq.supabase.co';
 const lmsBaseUrl = isLocal ? 'http://127.0.0.1:54321' : supabaseProjectUrl;
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
-const nameFieldsReady = import('./name-fields.mjs?v=identity1');
-nameFieldsReady.catch(()=>{});
+let nameFieldsPromise;
+const nameFieldsReady={then(resolve,reject){nameFieldsPromise??=import('./name-fields.mjs?v=identity1');return nameFieldsPromise.then(resolve,reject);}};
+let cacheAccount=null;
+auth.onAuthStateChanged?.(account=>{if(typeof AppConnection==='undefined')return;if(account){if(cacheAccount&&cacheAccount!==account.uid)AppConnection.clearUser(cacheAccount);AppConnection.begin(account.uid);cacheAccount=account.uid;}else if(cacheAccount){AppConnection.clearUser(cacheAccount);cacheAccount=null;}});
 // This script runs in the head, before deferred cabinet modules are ready.
 const cabinetScriptsReady = typeof document === 'undefined' || document.readyState === 'complete'
   ? Promise.resolve()
@@ -26,27 +28,35 @@ function getProfile(account, registrationName) {
   return callFunction('profile', typeof registrationName==='object'&&registrationName!==null?{nameFields:registrationName}:{name:registrationName}, account);
 }
 
-async function callFunction(action, data, account = auth.currentUser) {
+async function callFunction(action,data,account=auth.currentUser,options={}) {
+  if(!account)throw new Error('Войдите в аккаунт.');
+  const send=()=>sendFunction(action,data,account);
+  return typeof AppConnection==='undefined'?send():AppConnection.request(action,data,account,send,options);
+}
+async function sendFunction(action, data, account = auth.currentUser) {
   if (!lmsBaseUrl) throw new Error('Адрес проекта Supabase ещё не настроен.');
   if (!account) throw new Error('Войдите в аккаунт.');
+  if(typeof navigator!=='undefined'&&navigator.onLine===false){const error=new Error('Нет интернета. Запрос не отправлен.');error.code='unavailable';throw error;}
   const token = await account.getIdToken();
   const retryable = new Set(['profile','listSubjects','listSubjectTeachers','getSubjectContent','listMaterials',
     'listStudentTests','listTeacherTests','listStudents','getStudentAttempt','listActiveAttempts','listResults',
     'getResult','listResultTests','getTestResults','exportTestResults','saveStudentDraft','submitStudentTest','listTeachers','getTeacherProfile','listSchedule','listScheduleGroups','getWeeklySchedule','listNotifications','listNotificationSubscriptions','listRoleChanges','listNews','registrationStatistics','listAccounts','readNotifications']).has(action);
   for (let attempt = 0; ; attempt++) {
     let response, result;
+    const controller=typeof AbortController!=='undefined'?new AbortController():null;
+    const timeout=controller?setTimeout(()=>controller.abort(),10000):null;
     try {
       response = await fetch(lmsBaseUrl + '/functions/v1/lms', {
-        method: 'POST',
+        method: 'POST', signal:controller?.signal,
         headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, data })
       });
-      result = await response.json().catch(() => ({}));
+      result = await response.json();
     } catch (error) {
-      if (!retryable || attempt >= 2) throw error;
+      if (!retryable || attempt >= 2){const failure=new Error(retryable?'Не удалось подключиться к серверу. Повторите загрузку.':'Не удалось подтвердить сохранение. Проверьте результат после восстановления связи перед повторной отправкой.');failure.code='unavailable';throw failure;}
       await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
       continue;
-    }
+    } finally {if(timeout)clearTimeout(timeout);}
     const temporary = [502,503,504].includes(response.status) ||
       ['WORKER_RESOURCE_LIMIT','WORKER_LIMIT','BOOT_ERROR'].includes(result.code);
     if (!response.ok && temporary && retryable && attempt < 2) {
@@ -55,7 +65,7 @@ async function callFunction(action, data, account = auth.currentUser) {
     }
     if (!response.ok) {
       const error = new Error(result.error || result.message || 'Сервер временно недоступен.');
-      error.code = result.code;
+      error.code = temporary?'unavailable':result.code;
       throw error;
     }
     return result.data;
@@ -114,21 +124,25 @@ function watchCabinet(role, onReady) {
       // Cabinet navigation is deferred; even a fast Auth response must wait
       // for those scripts before initializing the first screen.
       await cabinetScriptsReady;
-      await nameFieldsReady;
       if (auth.currentUser?.uid !== account.uid) return;
       document.getElementById('userName').textContent = profile.name;
       document.querySelector('main').hidden = false;
+      if(typeof AppConnection!=='undefined')AppConnection.ready();
       if (typeof Portal !== 'undefined') await Portal.init(profile);
       await onReady();
     } catch (error) {
       showStatus('Не удалось открыть кабинет. ' + error.message);
+      if(typeof AppConnection!=='undefined')AppConnection.recovery(error);
     }
   });
 }
 
 async function logout() {
   try {
+    const uid=auth.currentUser?.uid;
+    if(uid&&typeof AppConnection!=='undefined'&&AppConnection.hasDrafts(uid)&&!confirm('На устройстве есть несохранённые ответы теста. При выходе локальные копии будут удалены. Сначала можно вернуться к работе и скачать копию. Выйти?'))return;
     await auth.signOut();
+    if(uid&&typeof AppConnection!=='undefined')AppConnection.clearUser(uid);
   } catch (error) {
     showStatus('Не удалось выйти. ' + error.message);
   }

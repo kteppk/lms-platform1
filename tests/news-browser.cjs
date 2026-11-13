@@ -1,4 +1,5 @@
 const assert=require('node:assert/strict');
+const version=require('../release.json').version;
 const fs=require('node:fs');const path=require('node:path');
 // Accounts and all created rows belong to the caller's isolated fixtures.
 module.exports=async({admin,teacher,student,other,stamp,outputDir})=>{
@@ -7,7 +8,7 @@ module.exports=async({admin,teacher,student,other,stamp,outputDir})=>{
  const pages=[admin,teacher,student];
  for(const p of pages){
   await nav(p,'home');await p.getByRole('heading',{name:'Новости сайта',exact:true}).waitFor();await p.getByRole('heading',{name:'Новости техникума',exact:true}).waitFor();
-  assert.equal(await p.locator('.tabs [data-tab="books"]').count(),0);assert.match(await p.locator('.tabs [data-site-version]').textContent(),/0\.7\.1/);
+  assert.equal(await p.locator('.tabs [data-tab="books"]').count(),0);assert.equal(await p.locator('.tabs [data-site-version]').textContent(),'Версия '+version);
  }
  const totals=(await rpc(admin,'registrationStatistics')).data;assert.equal(totals.total,totals.students+totals.teachers+totals.admins);assert.equal(totals.months.length,6);
  assert.equal((await rpc(student,'registrationStatistics')).code,'permission-denied');assert.equal((await rpc(teacher,'saveNewsPost',{channel:'site',kind:'news',title:'Нет доступа',body:'Запрещено'})).code,'permission-denied');
@@ -21,7 +22,7 @@ module.exports=async({admin,teacher,student,other,stamp,outputDir})=>{
  await admin.locator('.news-management .news-article').filter({has:admin.getByRole('heading',{name:site,exact:true})}).waitFor();
  assert.equal((await rpc(student,'listNotifications')).data.unreadCount,before,'posting news does not broadcast notifications');
  for(const p of [student,teacher]){
-  await nav(p,'home');await p.locator('[data-news-feed="site"]').getByRole('heading',{name:site,exact:true}).waitFor();
+  await nav(p,'home');await p.getByRole('button',{name:'Обновить новости',exact:true}).click();await p.locator('[data-news-feed="site"]').getByRole('heading',{name:site,exact:true}).waitFor();
   const article=p.locator('[data-news-feed="college"] .news-article').filter({has:p.getByRole('heading',{name:college,exact:true})});await article.waitFor();await article.locator('summary').click();assert.equal(await article.locator('.news-full .news-body').textContent(),body);assert.equal(await article.locator('script').count(),0);
  }
  const post=(await rpc(admin,'listNews',{channel:'site'})).data.rows.find(n=>n.title===site);
@@ -58,7 +59,7 @@ module.exports=async({admin,teacher,student,other,stamp,outputDir})=>{
  for(const [role,p] of [['admin',admin],['teacher',teacher],['student',student]]){
   await p.setViewportSize({width:1440,height:1000});await nav(p,'home');await p.locator('[data-news-feed="college"] .news-article').first().waitFor();if(outputDir)await p.screenshot({path:path.join(outputDir,role+'-news-desktop.png'),fullPage:true});
   await p.setViewportSize({width:390,height:844});assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);if(outputDir)await p.screenshot({path:path.join(outputDir,role+'-news-mobile.png'),fullPage:true});
-  await p.locator('#mobileMore').click();await p.locator('#mobileMenu').waitFor();assert.equal(await p.locator('#mobileMenu [data-mobile-tab="books"]').count(),0);assert.match(await p.locator('#mobileMenu [data-site-version]').textContent(),/0\.7\.1/);await p.keyboard.press('Escape');await p.setViewportSize({width:1280,height:900});
+  await p.locator('#mobileMore').click();await p.locator('#mobileMenu').waitFor();assert.equal(await p.locator('#mobileMenu [data-mobile-tab="books"]').count(),0);assert.equal(await p.locator('#mobileMenu [data-site-version]').textContent(),'Версия '+version);await p.keyboard.press('Escape');await p.setViewportSize({width:1280,height:900});
  }
  const current=(await rpc(admin,'listNews',{channel:'site'})).data.rows.find(n=>n.title===site);await rpc(admin,'deleteNewsPost',{id:current.id,revision:current.revision});
  assert.equal((await rpc(admin,'listNews',{channel:'site'})).data.rows.some(n=>n.id===current.id),false);

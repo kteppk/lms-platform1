@@ -3,8 +3,8 @@ const Schedule = (() => {
   const e=value=>escapeHtml(value??'');
   let generation=0,current=null,pendingGroup=null;
   const key=actor=>'lms-schedule-group:'+actor.uid;
-  function readGroup(actor){try{return localStorage.getItem(key(actor))||'';}catch{return '';}}
-  function remember(actor,id){try{localStorage.setItem(key(actor),id);}catch{ /* Selection still works without storage. */ }}
+  function readGroup(actor){try{return AppConnection.draftStorage()?.getItem(key(actor))||'';}catch{return '';}}
+  function remember(actor,id){try{AppConnection.draftStorage()?.setItem(key(actor),id);}catch{ /* Selection still works without storage. */ }}
   function week(){
     const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Krasnoyarsk',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
     const date=new Date(today+'T12:00:00Z');date.setUTCDate(date.getUTCDate()-(date.getUTCDay()+6)%7);
@@ -19,18 +19,18 @@ const Schedule = (() => {
     return `<span class="schedule-lesson"><strong>${e(cell.title)}</strong>${cell.teacher_label?`<span class="schedule-teacher">${e(cell.teacher_label)}</span>`:''}${cell.starts_at?`<small>${e(cell.starts_at.slice(0,5))}–${e(cell.ends_at.slice(0,5))}</small>`:''}${cell.note?`<small>${e(cell.note)}</small>`:''}</span><span class="schedule-room">${e(cell.room||'—')}</span>`;
   }
   function dayTable(day,ctx){
-    const {group,cells,dates,actor}=ctx,admin=actor.role==='admin';
+    const {group,cells,dates,actor}=ctx,admin=actor.role==='admin'&&!ctx.readOnly;
     return `<section class="schedule-day-table" id="schedule-day-${day}" aria-labelledby="schedule-day-title-${day}"><header><h3 id="schedule-day-title-${day}">${days[day-1]}</h3><span>${dateLabel(dates[day-1])}</span></header><table><caption class="schedule-sr-only">${days[day-1]}, группа ${e(group.name)}</caption><thead><tr><th scope="col">№</th><th scope="col" colspan="2"><span class="schedule-columns"><span>Предмет · преподаватель</span><span>Каб.</span></span></th></tr></thead><tbody>${Array.from({length:group.lessons_per_day},(_,i)=>{
       const number=i+1,cell=cells.find(c=>c.weekday===day&&c.lesson_number===number);
       const label=`${days[day-1]}, ${number} пара: ${cell?(cell.status==='free'?'Нет пары':cell.title):'Не заполнено'}`;
       return `<tr><th scope="row">${number}</th><td colspan="2">${admin?`<button class="schedule-cell" type="button" data-schedule="cell" data-day="${day}" data-number="${number}" aria-label="Изменить: ${e(label)}">${content(cell,true)}</button>`:`<div class="schedule-cell">${content(cell,false)}</div>`}</td></tr>`;
     }).join('')}</tbody></table></section>`;
   }
-  async function render(root,actor,selected){
+  async function render(root,actor,selected,fresh=false){
     const token=++generation;
     root.classList.add('weekly-schedule');
     root.innerHTML='<h2>Расписание</h2><p role="status">Загрузка групп…</p>';
-    const groups=await callFunction('listScheduleGroups');
+    const groups=await callFunction('listScheduleGroups',{},undefined,{fresh});
     if(!root.isConnected||token!==generation)return;
     const requested=pendingGroup??(selected===undefined?readGroup(actor):selected);pendingGroup=null;
     const groupId=groups.some(g=>g.id===requested)?requested:'';
@@ -39,12 +39,12 @@ const Schedule = (() => {
     root.innerHTML=`<div class="schedule-heading"><div><h2>Расписание</h2><p class="section-lead">Выберите свою группу. Расписание повторяется каждую неделю.</p></div>${actor.role==='admin'?button('+ Добавить группу','add-group'):''}</div><div class="schedule-toolbar"><label for="scheduleGroupSelect">Группа<select id="scheduleGroupSelect"><option value="">Выберите группу</option>${groups.map(g=>`<option value="${e(g.id)}" ${g.id===groupId?'selected':''}>${e(g.name)}${g.course?' · '+e(g.course)+' курс':''}</option>`).join('')}</select></label><p>Неделя: <strong>${dateLabel(dates[0])} — ${dateLabel(dates[5])}</strong></p>${button('Обновить','refresh')}</div><div id="scheduleWeekBody" aria-live="polite">${groupId?'<p role="status">Загрузка расписания…</p>':'<p class="empty-state">Выберите группу, чтобы увидеть только её занятия.'+(groups.length?'':' Администратор может добавить первую группу.')+'</p>'}</div>`;
     if(!groupId)return;
     remember(actor,groupId);
-    const [data,legacy]=await Promise.all([callFunction('getWeeklySchedule',{groupId}),callFunction('listSchedule',{from:dates[0],to:dates[6],group:groups.find(g=>g.id===groupId).name})]);
+    const [data,legacy]=await Promise.all([callFunction('getWeeklySchedule',{groupId},undefined,{fresh}),callFunction('listSchedule',{from:dates[0],to:dates[6],group:groups.find(g=>g.id===groupId).name},undefined,{fresh}).catch(()=>({rows:[],hasMore:false,failed:true}))]);
     if(!root.isConnected||token!==generation)return;
-    Object.assign(ctx,data);
+    Object.assign(ctx,data);ctx.readOnly=!AppConnection.online()||!!data._offline?.stale;
     const body=root.querySelector('#scheduleWeekBody');
     const sunday=data.cells.some(c=>c.weekday===7);
-    body.innerHTML=`<div class="schedule-group-heading"><div><h3>Группа ${e(data.group.name)}${data.group.course?' · '+e(data.group.course)+' курс':''}</h3>${data.group.program?`<p>${e(data.group.program)}</p>`:''}</div><span class="badge">Каждую неделю</span></div>${actor.role==='admin'?'<p class="schedule-tip">Нажмите на ячейку: укажите предмет или выберите «Нет пары». Изменения действуют каждую неделю и появляются в уведомлениях.</p>':''}<div class="schedule-subscriptions"></div><nav class="schedule-day-links" aria-label="Дни расписания">${days.slice(0,sunday?7:6).map((d,i)=>`<a href="#schedule-day-${i+1}">${d.slice(0,2)}</a>`).join('')}</nav><div class="schedule-week-grid">${Array.from({length:sunday?7:6},(_,i)=>dayTable(i+1,ctx)).join('')}</div>${actor.role==='admin'&&!sunday?`<details class="schedule-sunday"><summary>Воскресенье (при необходимости)</summary>${dayTable(7,ctx)}</details>`:''}<p class="schedule-legend">«Нет пары» — занятие не проводится. «Не заполнено» — расписание ещё не указано.</p>${legacy.rows.length?`<section class="schedule-legacy"><h3>Дополнительные занятия на эту неделю</h3><p>Ранее добавленные занятия с конкретной датой.</p>${legacy.rows.map(row=>`<article class="item"><strong>${e(row.title)}</strong><p>${dateLabel(row.lesson_date)} · ${e(row.starts_at.slice(0,5))}–${e(row.ends_at.slice(0,5))}${row.room?' · Каб. '+e(row.room):''}</p>${row.note?`<p>${e(row.note)}</p>`:''}</article>`).join('')}${legacy.hasMore?'<p>Показаны первые 500 занятий.</p>':''}</section>`:''}`;
+    body.innerHTML=`${AppConnection.note(groups,data,legacy)}${legacy.failed?'<p class="cache-note stale">Дополнительные занятия на эту неделю не удалось проверить. Повторите обновление при работающем интернете.</p>':''}<div class="schedule-group-heading"><div><h3>Группа ${e(data.group.name)}${data.group.course?' · '+e(data.group.course)+' курс':''}</h3>${data.group.program?`<p>${e(data.group.program)}</p>`:''}</div><span class="badge">Каждую неделю</span></div>${actor.role==='admin'?'<p class="schedule-tip">Нажмите на ячейку: укажите предмет или выберите «Нет пары». Изменения действуют каждую неделю и появляются в уведомлениях.</p>':''}<div class="schedule-subscriptions"></div><nav class="schedule-day-links" aria-label="Дни расписания">${days.slice(0,sunday?7:6).map((d,i)=>`<a href="#schedule-day-${i+1}">${d.slice(0,2)}</a>`).join('')}</nav><div class="schedule-week-grid">${Array.from({length:sunday?7:6},(_,i)=>dayTable(i+1,ctx)).join('')}</div>${actor.role==='admin'&&!sunday?`<details class="schedule-sunday"><summary>Воскресенье (при необходимости)</summary>${dayTable(7,ctx)}</details>`:''}<p class="schedule-legend">«Нет пары» — занятие не проводится. «Не заполнено» — расписание ещё не указано.</p>${legacy.rows.length?`<section class="schedule-legacy"><h3>Дополнительные занятия на эту неделю</h3><p>Ранее добавленные занятия с конкретной датой.</p>${legacy.rows.map(row=>`<article class="item"><strong>${e(row.title)}</strong><p>${dateLabel(row.lesson_date)} · ${e(row.starts_at.slice(0,5))}–${e(row.ends_at.slice(0,5))}${row.room?' · Каб. '+e(row.room):''}</p>${row.note?`<p>${e(row.note)}</p>`:''}</article>`).join('')}${legacy.hasMore?'<p>Показаны первые 500 занятий.</p>':''}</section>`:''}`;
     await Subscriptions.groupPanel(body.querySelector('.schedule-subscriptions'),data.group,data.cells);
   }
   function dialog(ctx,title,body){
@@ -105,7 +105,7 @@ const Schedule = (() => {
     if(ctx.actor.role!=='admin'&&node.dataset.schedule!=='refresh')return;
     node.disabled=true;
     try{
-      if(node.dataset.schedule==='refresh')await render(ctx.root,ctx.actor,ctx.groupId);
+      if(node.dataset.schedule==='refresh')await render(ctx.root,ctx.actor,ctx.groupId,true);
       if(node.dataset.schedule==='cell')await editCell(ctx,node);
       if(node.dataset.schedule==='close')node.closest('dialog').close();
       if(node.dataset.schedule==='reload'){node.closest('dialog').close();await render(ctx.root,ctx.actor,ctx.groupId);}
@@ -123,5 +123,6 @@ const Schedule = (() => {
       if(error.code==='conflict'&&!modal.querySelector('[data-schedule="reload"]'))errorNode.insertAdjacentHTML('afterend',button('Закрыть и обновить расписание','reload'));
     }finally{fields.disabled=false;delete modal.dataset.busy;}
   });
+  document.addEventListener('lms-reference-updated',event=>{const ctx=current;if(ctx?.root.isConnected&&ctx.readOnly&&!ctx.root.querySelector('dialog[open]')&&event.detail.action==='getWeeklySchedule'&&event.detail.data?.groupId===ctx.groupId)render(ctx.root,ctx.actor,ctx.groupId).catch(()=>{});});
   return {render,selectGroup:id=>{pendingGroup=id;}};
 })();

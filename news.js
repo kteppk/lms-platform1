@@ -6,18 +6,18 @@ const News = (()=>{
     const long=n.body.length>600,commit=/^[a-f0-9]{40}$/.test(n.commit_sha??'')?n.commit_sha:null;
     return `<article class="news-article" data-news-id="${e(n.id)}"><div class="news-meta"><span>${kinds[n.kind]||'Новость'}</span><time datetime="${e(n.published_at)}">${e(new Date(n.published_at).toLocaleString('ru-RU',{timeZone:'Asia/Krasnoyarsk',dateStyle:'long',timeStyle:'short'}))}</time></div><h3>${e(n.title)}</h3><p class="news-body">${e(long?n.body.slice(0,380)+'…':n.body)}</p>${long?`<details class="news-full"><summary>Читать полностью</summary><p class="news-body">${e(n.body)}</p></details>`:''}${commit?`<a class="commit-link" href="https://github.com/kteppk/lms-platform1/commit/${commit}" target="_blank" rel="noopener noreferrer">Коммит ${commit.slice(0,7)} ↗</a>`:''}${manage&&!n.imported?`<div class="actions"><button type="button" class="secondary" data-news-action="edit" data-id="${e(n.id)}">Редактировать</button><button type="button" class="secondary" data-news-action="delete" data-id="${e(n.id)}">Удалить</button></div>`:''}</article>`;
   }
-  async function feed(root,channel,more=false,manage=false){
+  async function feed(root,channel,more=false,manage=false,fresh=false){
     let state=states.get(root);if(!more||!state){state={channel,offset:0,manage};states.set(root,state);root.innerHTML='<p role="status">Загрузка новостей…</p>';}
     try{
-      const data=await callFunction('listNews',{channel,offset:state.offset});if(!root.isConnected||states.get(root)!==state)return;
-      if(!more)root.innerHTML='<div class="news-items"></div>';
+      const data=await callFunction('listNews',{channel,offset:state.offset},undefined,{fresh:fresh||manage});if(!root.isConnected||states.get(root)!==state)return;
+      if(!more)root.innerHTML=AppConnection.note(data)+'<div class="news-items"></div>';
       root.querySelector('.news-items').insertAdjacentHTML('beforeend',data.rows.map(n=>article(n,manage)).join('')||(!more?'<p class="empty-state">Публикаций пока нет.</p>':''));
       state.offset+=data.rows.length;root.querySelector('[data-news-action="more"]')?.remove();
       if(data.hasMore)root.insertAdjacentHTML('beforeend','<button type="button" class="secondary news-more" data-news-action="more">Показать более ранние</button>');
     }catch(error){if(root.isConnected){if(!more)root.innerHTML='<p role="status">Не удалось загрузить новости.</p><button type="button" class="secondary" data-news-action="retry">Повторить</button>';else Portal.toast('Не удалось загрузить новости',error.message,'danger');}}
   }
   async function home(root,person){
-    root.innerHTML=`<div class="news-masthead"><span class="eyebrow">КТЭиП ПК · Учебная платформа</span><span class="edition-mark">КЫЗЫЛ / ВЫПУСК ${e(SiteRelease.version)}</span><h2>Главная</h2><p>События техникума и изменения учебной платформы.</p>${person.role==='admin'?'<button type="button" class="secondary" data-portal="navigate" data-tab="announcements">Опубликовать новость</button>':''}</div><nav class="news-feed-nav" aria-label="Ленты новостей"><a href="#news-site-title">Новости сайта ↓</a><a href="#news-college-title">Новости техникума ↓</a></nav><div class="news-columns">${['site','college'].map(c=>`<section class="news-column" aria-labelledby="news-${c}-title"><div class="news-column-heading"><span>${c==='site'?'01':'02'}</span><h2 id="news-${c}-title">${names[c]}</h2></div><p class="news-caption">${c==='site'?'Журнал обновлений и объявления':'Учебная жизнь, события и важные даты'}</p><div data-news-feed="${c}"></div></section>`).join('')}</div>`;
+    root.innerHTML=`<div class="news-masthead"><span class="eyebrow">КТЭиП ПК · Учебная платформа</span><span class="edition-mark">КЫЗЫЛ / ВЫПУСК ${e(SiteRelease.version)}</span><h2>Главная</h2><p>События техникума и изменения учебной платформы.</p><button type="button" class="secondary" data-news-action="refresh-home">Обновить новости</button>${person.role==='admin'?'<button type="button" class="secondary" data-portal="navigate" data-tab="announcements">Опубликовать новость</button>':''}</div><nav class="news-feed-nav" aria-label="Ленты новостей"><a href="#news-site-title">Новости сайта ↓</a><a href="#news-college-title">Новости техникума ↓</a></nav><div class="news-columns">${['site','college'].map(c=>`<section class="news-column" aria-labelledby="news-${c}-title"><div class="news-column-heading"><span>${c==='site'?'01':'02'}</span><h2 id="news-${c}-title">${names[c]}</h2></div><p class="news-caption">${c==='site'?'Журнал обновлений и объявления':'Учебная жизнь, события и важные даты'}</p><div data-news-feed="${c}"></div></section>`).join('')}</div>`;
     await Promise.allSettled([...root.querySelectorAll('[data-news-feed]')].map(node=>feed(node,node.dataset.newsFeed)));
   }
   function editor(root,post=null){
@@ -38,6 +38,7 @@ const News = (()=>{
     const button=event.target.closest('[data-news-action]');if(!button||button.disabled)return;button.disabled=true;
     const root=button.closest('[data-news-manager]'),list=button.closest('[data-news-feed]'),post=records.get(button.dataset.id);
     try{
+      if(button.dataset.newsAction==='refresh-home'){return await Promise.allSettled([...button.closest('#portalPage').querySelectorAll('[data-news-feed]')].map(node=>feed(node,node.dataset.newsFeed,false,false,true)));}
       if(button.dataset.newsAction==='more'||button.dataset.newsAction==='retry')return await feed(list,list.dataset.newsFeed,button.dataset.newsAction==='more',!!root);
       if(button.dataset.newsAction==='edit'){editor(root,post);root.querySelector('#newsTitle').focus();root.querySelector('#newsEditor').scrollIntoView({block:'start'});}
       if(button.dataset.newsAction==='cancel')editor(root);

@@ -11,7 +11,7 @@ const screenshots = process.env.LMS_SCREENSHOTS;
 const root = path.resolve(__dirname, '..');
 const assets = new Set(['index.html', 'student.html', 'teacher.html', 'admin.html', 'student.js',
   'schedule.js', 'schedule.css', 'firebase-config.js', 'portal.js', 'portal.css', 'mobile-nav.js', 'mobile-nav.css',
-  'subjects.css', 'assessment.css', 'gradebook.js', 'results-export.js', 'theme.css', 'release.js', 'news.js', 'subject-search.js', 'subscriptions.js', 'name-fields.mjs', 'supabase/functions/_shared/name-rules.mjs']);
+  'subjects.css', 'assessment.css', 'gradebook.js', 'results-export.js', 'theme.css', 'connection.js', 'release.js', 'news.js', 'subject-search.js', 'subscriptions.js', 'name-fields.mjs', 'supabase/functions/_shared/name-rules.mjs']);
 
 function fixtures(role) {
   let active = null;
@@ -54,7 +54,7 @@ function fixtures(role) {
 }
 
 async function prepare(browser, role) {
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  const context = await browser.newContext({ serviceWorkers:'block', viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   const page = await context.newPage();
   page.setDefaultTimeout(12000);
   const errors = [];
@@ -63,6 +63,7 @@ async function prepare(browser, role) {
     const user = { uid: role, email: role + '@example.test', getIdToken: async () => 'fixture-token', updateProfile: async () => {} };
     window.firebase = { initializeApp() {}, auth: () => ({ currentUser: user, onAuthStateChanged: callback => { queueMicrotask(() => callback(user)); return () => {}; }, signOut: async () => {} }) };
   }, { role });
+  await page.route('**/vendor/firebase/12.10.0/*.js', route => route.fulfill({ contentType: 'text/javascript', body: '' }));
   await page.route('https://www.gstatic.com/firebasejs/**', route => route.fulfill({ contentType: 'text/javascript', body: '' }));
   await page.route('**/portal.js?*', async route => { await new Promise(resolve => setTimeout(resolve, 150)); await route.continue(); });
   const api = fixtures(role);

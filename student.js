@@ -79,7 +79,7 @@ async function renderSubjectView(list) {
   const selection = subjectView;
   if (!selection) {
     const subjects = await callFunction('listSubjects');
-    list.innerHTML = `${SubjectSearch.toolbar()}<div class="subjects-grid">${subjects.map(subject => `
+    list.innerHTML = `${AppConnection.note(subjects)}${SubjectSearch.toolbar()}<div class="subjects-grid">${subjects.map(subject => `
       <article class="item subject-card" ${SubjectSearch.attrs(subject)}>
         <h3>${escapeHtml(subject.title)}</h3>
         <p class="subject-description subject-preview">${escapeHtml(subject.description)}</p>
@@ -214,14 +214,15 @@ async function startTest(button) {
 
 function sessionKey() { return 'lms-attempt-' + auth.currentUser.uid; }
 function draftKey(id) { return sessionKey() + '-' + id; }
+function draftStorage(){return AppConnection.draftStorage();}
 function draftMessage(message) {
   const el = document.getElementById('draftStatus');
   if (el) el.textContent = message;
 }
 function cacheDraft(active) {
   try {
-    if (active.dirty) localStorage.setItem(draftKey(active.attemptId), JSON.stringify({ revision: active.revision, answers: active.answers }));
-    else localStorage.removeItem(draftKey(active.attemptId));
+    if (active.dirty) draftStorage()?.setItem(draftKey(active.attemptId), JSON.stringify({ revision: active.revision, answers: active.answers }));
+    else draftStorage()?.removeItem(draftKey(active.attemptId));
   } catch { draftMessage('Браузер не смог сохранить локальную копию. Дождитесь сохранения на сервере.'); }
 }
 function setAnswer(index, value) {
@@ -260,12 +261,12 @@ async function adoptAttempt(data, tab, selection) {
   subjectView = selection;
   let conflict = false;
   try {
-    const local = JSON.parse(localStorage.getItem(draftKey(data.attemptId)) || 'null');
+    const local = JSON.parse(draftStorage()?.getItem(draftKey(data.attemptId)) || 'null');
     if (!data.result && local && (data.remainingMs === null || data.remainingMs > 0)) {
       if (local.revision === data.revision) { attempt.answers = local.answers; attempt.dirty = true; }
       else if (JSON.stringify(local.answers) !== JSON.stringify(data.answers)) conflict = true;
     }
-    if (data.result) localStorage.removeItem(draftKey(data.attemptId));
+    if (data.result) draftStorage()?.removeItem(draftKey(data.attemptId));
     sessionStorage.setItem(sessionKey(), JSON.stringify({ id: data.attemptId, tab, selection }));
   } catch { /* Server restoration still works when browser storage is disabled. */ }
   currentTab = tab;
@@ -292,7 +293,7 @@ async function refreshActiveAttempts() {
   el.innerHTML = `<p>Незавершённые работы</p>${active.map(a => `<button class="tab-btn" data-id="${escapeHtml(a.attemptId)}" onclick="resumeSavedAttempt(this)">Продолжить: ${escapeHtml(a.title)}</button>`).join('')}`;
 }
 function downloadLocalDraft() {
-  const raw = localStorage.getItem(draftKey(attempt.attemptId));
+  const raw = draftStorage()?.getItem(draftKey(attempt.attemptId));
   if (!raw) { showStatus('Локальных несохранённых ответов нет.'); return; }
   const url = URL.createObjectURL(new Blob([raw], { type: 'application/json' }));
   const a = document.createElement('a'); a.href = url; a.download = 'my-draft.json'; a.click();

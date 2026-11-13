@@ -22,3 +22,8 @@ test('creation is not retried after a lost response; reads have a bounded retry 
   calls=0;
   await assert.rejects(call('listResults',{})); assert.equal(calls,3);
 });
+
+test('a truncated response is never treated as success and a write is not repeated',async()=>{
+ let calls=0;const call=client(async()=>{calls++;return {ok:true,status:200,json:async()=>{throw new SyntaxError('Partial JSON');}};});
+ await assert.rejects(call('createTest',{}),e=>e.code==='unavailable');assert.equal(calls,1);
+});

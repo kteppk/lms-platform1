@@ -12,7 +12,7 @@ const Portal = (() => {
   const val=key=>document.getElementById(key).value;
   function avatar(person){
     const url=safeMaterialUrl(person.avatarUrl);
-    return url?`<img class="avatar" src="${e(url)}" alt="Фото ${e(person.name)}">`:
+    return url?`<img class="avatar" loading="lazy" decoding="async" src="${e(url)}" alt="Фото ${e(person.name)}">`:
       `<span class="avatar" aria-hidden="true">${e(person.name?.split(/\s+/).slice(0,2).map(p=>p[0]).join(''))}</span>`;
   }
   function navigate(tab){
@@ -36,7 +36,7 @@ const Portal = (() => {
     root.append(node);setTimeout(()=>node.remove(),severity==='danger'?20000:9000);
   }
   async function poll(initial=false){
-    if(polling||document.hidden)return;polling=true;
+    if(polling||document.hidden||!AppConnection.online())return;polling=true;
     try{
       const feed=await callFunction('listNotifications');
       const fresh=feed.rows.filter(n=>!n.read&&!seen.has(n.id));
@@ -64,13 +64,14 @@ const Portal = (() => {
         link.textContent=location.pathname.endsWith('teacher.html')?'Администрирование':profile.canTeach?'Учебный кабинет':'Администрирование';
         link.className='tab-btn';document.querySelector('.user-info').append(link);
       }
-      setInterval(()=>poll(),30000);
+      const connection=navigator.connection;const slow=connection?.saveData||['slow-2g','2g'].includes(connection?.effectiveType);
+      setInterval(()=>poll(),slow?300000:120000);
       document.addEventListener('visibilitychange',()=>{if(!document.hidden)poll();});
       // Current server roles, including demotion, are checked when the user returns.
       window.addEventListener('focus',()=>getProfile(auth.currentUser).then(p=>{if(p.role!==profile.role)location.replace(cabinetPage(p.role));}).catch(()=>{}));
     }
     if(typeof MobileNavigation!=='undefined')MobileNavigation.init(profile,navigate);
-    await poll(true);
+    poll(true);
   }
   async function home(container){return News.home(container,profile);}
   async function myProfile(container){
