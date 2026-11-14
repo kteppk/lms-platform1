@@ -181,10 +181,9 @@ export async function communityAction(db:SupabaseClient,actor:Actor,action:unkno
     case 'listNotifications':data=await dataOf(db.rpc('notification_feed',{p_user_id:actor.uid,p_offset:pageOffset(input.offset)}));break;
     case 'listNotificationSubscriptions':data=await dataOf(db.rpc('list_notification_subscriptions',{p_user_id:actor.uid}));break;
     case 'addNotificationSubscription':{
-      if(!['group','subject','mine'].includes(String(input.scope)))invalid('Выберите тип подписки.');
-      data=await dataOf(db.rpc('add_notification_subscription',{p_user_id:actor.uid,p_scope:input.scope,
-        p_group_id:input.scope==='mine'?null:id(input.groupId),p_subject_id:input.scope==='subject'&&input.subjectId?id(input.subjectId):null,
-        p_subject_title:input.scope==='subject'?text(input.subjectTitle,200,'Предмет'):null}));break;
+      if(input.scope!=='group')invalid('Доступна подписка только на расписание группы.');
+      data=await dataOf(db.rpc('add_notification_subscription',{p_user_id:actor.uid,p_scope:'group',
+        p_group_id:id(input.groupId),p_subject_id:null,p_subject_title:null}));break;
     }
     case 'removeNotificationSubscription':
       data=await dataOf(db.from('notification_subscriptions').delete().eq('user_id',actor.uid).eq('id',id(input.id)).select('id').maybeSingle());break;

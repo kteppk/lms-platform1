@@ -147,7 +147,7 @@ async function verify(page, role) {
   }
 
   const sections = await page.locator('main > .tabs [data-tab]').evaluateAll(nodes => nodes.map(n => n.dataset.tab));
-  const ready = { home: '.news-columns', subjects: '.subject-card', lectures: role === 'student' ? '#content .item' : '#lectureTitle',
+  const ready = { home: '.news-feed', subjects: '.subject-card', lectures: role === 'student' ? '#content .item' : '#lectureTitle',
     tests: role === 'student' ? '#content .item' : '#testTitle',
     students: '#studentsList', journal: '#gradeRows h3', results: '#gradeRows h3', teachers: '.teacher-card',
     schedule: '#scheduleGroupSelect', notifications: '.notice-card', profile: '#profileFirstName', accounts: '.table-wrap tbody tr', announcements: '#newsTitle' };

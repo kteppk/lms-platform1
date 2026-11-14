@@ -31,6 +31,13 @@ test('two chronological feeds paginate without mixing channels; news creates no 
  assert.equal(first.rows[0].title,'Событие 24');assert.ok((await rpc('news_feed',['site',0])).rows.every(n=>n.channel==='site'));
  assert.equal((await db.query('select count(*)::int n from notifications')).rows[0].n,before);
 });
+test('unified feed merges both tags in one deterministic chronological pagination',async()=>{
+ const expected=(await db.query('select id,channel from news_posts order by published_at desc,id')).rows;
+ const first=await rpc('news_feed',['all',0]),second=await rpc('news_feed',['all',20]);
+ assert.deepEqual([...first.rows,...second.rows].map(n=>n.id),expected.map(n=>n.id));assert.equal(first.hasMore,true);assert.equal(second.hasMore,false);
+ assert.ok(first.rows.some(n=>n.channel==='site'));assert.ok(first.rows.some(n=>n.channel==='college'));
+});
+
 test('explicit notifications import once; legacy publisher remains compatible; imported commits cannot be edited',async()=>{
  const p=await save('admin','Общее объявление','site',null,true);
  assert.equal((await db.query('select count(*)::int n from news_posts where title=$1',[p.title])).rows[0].n,1);

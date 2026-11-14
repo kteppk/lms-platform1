@@ -38,9 +38,9 @@ export async function newsAction(db:SupabaseClient,actor:Actor,action:unknown,in
   let data:unknown;
   switch(action){
     case 'listNews':{
-      if(!['site','college'].includes(String(input.channel)))invalid('Выберите ленту новостей.');
+      if(!['all','site','college'].includes(String(input.channel)))invalid('Выберите категорию новостей.');
       const offset=input.offset??0;if(!Number.isInteger(offset)||Number(offset)<0||Number(offset)>100000)invalid('Некорректная страница.');
-      if(input.channel==='site')await syncGitHubNews(db);
+      if(input.channel==='site'||input.channel==='all')await syncGitHubNews(db);
       data=await dataOf(db.rpc('news_feed',{p_channel:input.channel,p_offset:offset}));break;
     }
     case 'saveNewsPost':

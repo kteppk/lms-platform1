@@ -51,31 +51,28 @@ test('legacy public spam is hidden, explicit announcements stay visible, welcome
   await rpc('read_notifications',['outside',['old-global',(await feed('new')).find(n=>n.title==='Ваш доступ обновлён').id]]);
   assert.equal((await db.query("select count(*)::int n from notification_reads where user_id='outside'")).rows[0].n,0);
 });
-test('no implicit subscription; exact group, subject and own-teacher scopes deduplicate recipients',async()=>{
-  await save(1,1,{status:'lesson',title:'Математика',teacherId:'t',room:'20'});
-  for(const uid of ['s','math','t','outside'])assert.equal((await notices(uid)).length,0);
-  const a=await subscribe('s');assert.equal((await subscribe('s')).id,a.id);
-  await subscribe('s','subject',group,'Математика');await subscribe('math','subject',group,'  Математика  ');
-  await subscribe('physics','subject',group,'Физика');await subscribe('t','mine');await subscribe('t');
-  await assert.rejects(subscribe('outside','mine'),{code:'42501'});
-  await save(1,2,{status:'lesson',title:'Математика',teacherId:'t',room:'12'});
-  assert.equal((await notices('s')).length,1);assert.equal((await notices('math')).length,1);assert.equal((await notices('t')).length,1);
-  assert.equal((await notices('physics')).length,0);assert.equal((await notices('outside')).length,0);
-  await save(1,2,{status:'lesson',title:'Математика',room:'13'},null,otherGroup);
-  assert.equal((await notices('s')).length,1,'9241 does not subscribe to 92410');
-  assert.equal((await rpc('list_notification_subscriptions',['outside'])).length,0);
+test('only explicit group subscriptions deliver; repeated requests are idempotent and old scopes stay inactive',async()=>{
+ await save(1,1,{status:'lesson',title:'Математика',teacherId:'t',room:'20'});
+ for(const uid of ['s','math','t','outside'])assert.equal((await notices(uid)).length,0);
+ const a=await subscribe('s');assert.equal((await subscribe('s')).id,a.id);await subscribe('t');
+ await db.query("insert into notification_subscriptions(user_id,scope,group_id,subject_title,subject_key) values('math','subject',$1,'Математика','математика')",[group.id]);
+ await db.query("insert into notification_subscriptions(user_id,scope) values('other','mine')");
+ await assert.rejects(subscribe('physics','subject',group,'Физика'),{code:'22023'});await assert.rejects(subscribe('outside','mine'),{code:'22023'});
+ assert.equal((await rpc('list_notification_subscriptions',['math'])).length,0);assert.equal((await rpc('list_notification_subscriptions',['other'])).length,0);
+ await save(1,2,{status:'lesson',title:'Математика',teacherId:'other',room:'12'});
+ assert.equal((await notices('s')).length,1);assert.equal((await notices('t')).length,1);assert.equal((await notices('math')).length,0);assert.equal((await notices('other')).length,0);
+ await save(1,2,{status:'lesson',title:'Математика',room:'13'},null,otherGroup);assert.equal((await notices('s')).length,1);
 });
-test('replacement, cancellation and teacher reassignment notify old and new interested users; unsubscribe stops future delivery',async()=>{
-  await subscribe('other','mine');
-  const original=(await db.query('select * from weekly_schedule_cells where group_id=$1 and weekday=1 and lesson_number=2',[group.id])).rows[0];
-  const changed=await save(1,2,{status:'lesson',title:'Физика',teacherId:'other',room:'26'},original);
-  assert.equal((await notices('math')).length,2,'old subject gets replacement notice');assert.equal((await notices('physics')).length,1,'new subject gets replacement notice');
-  assert.equal((await notices('t')).length,2,'old teacher gets replacement');assert.equal((await notices('other')).length,1);
-  const cancelled=await save(1,2,{status:'free'},changed);assert.equal((await notices('physics')).length,2);assert.match((await notices('physics'))[0].body,/Нет пары/);
-  await db.query("delete from notification_subscriptions where user_id='math'");
-  await save(1,3,{status:'lesson',title:'Математика',teacherId:'other'});assert.equal((await notices('math')).length,2);
-  assert.equal((await notices('outside')).length,0);assert.equal(cancelled.status,'free');
+
+test('group subscribers receive replacements and cancellations; unsubscribe stops future events',async()=>{
+ const original=(await db.query('select * from weekly_schedule_cells where group_id=$1 and weekday=1 and lesson_number=2',[group.id])).rows[0];
+ const changed=await save(1,2,{status:'lesson',title:'Физика',teacherId:'other',room:'26'},original);
+ assert.equal((await notices('s')).length,2);assert.equal((await notices('t')).length,2);
+ const cancelled=await save(1,2,{status:'free'},changed);assert.equal((await notices('s')).length,3);assert.ok((await notices('s')).some(n=>n.body.includes('Нет пары')));
+ await db.query("delete from notification_subscriptions where user_id='s'");await save(1,3,{status:'lesson',title:'Математика',teacherId:'other'});
+ assert.equal((await notices('s')).length,3);assert.equal((await notices('t')).length,4);assert.equal((await notices('math')).length,0);assert.equal((await notices('other')).length,0);assert.equal(cancelled.status,'free');
 });
+
 test('catalog/material edits create no global notifications; tables and RPCs are closed to direct clients',async()=>{
   const before=(await db.query('select count(*)::int n from notifications')).rows[0].n;
   await db.query("insert into materials(kind,teacher_id,teacher_name,title,body) values('lectures','other','Учитель','Новая лекция','Текст')");

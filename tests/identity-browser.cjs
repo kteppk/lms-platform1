@@ -42,49 +42,7 @@ module.exports=async({admin,teacher,student,other,stamp,outputDir})=>{
   await other.goto(new URL('index.html',other.url()).href);await other.waitForURL('**/teacher.html');await home(other).waitFor();
   console.log('PASS role changes: owner-only welcome, administrator-only audit and no messages to unrelated accounts');
 
-  const first=(await rpc(admin,'createScheduleGroup',{name:'Подписки '+stamp,lessonsPerDay:6})).data;
-  const second=(await rpc(admin,'createScheduleGroup',{name:'Подписки '+stamp+'0',lessonsPerDay:6})).data;
-  assert.ok(first?.id&&second?.id);
-  const teacherId=(await rpc(teacher,'profile')).data.uid;
-  await nav(student,'schedule');await student.locator('#scheduleGroupSelect').selectOption(first.id);await student.locator('.schedule-week-grid').waitFor();
-  assert.equal((await rpc(student,'listNotificationSubscriptions')).data.length,0,'reading a group does not subscribe');
-  await student.getByRole('button',{name:'Выбрать предмет',exact:true}).click();await student.locator('#subDialogTitle').fill('Математика');
-  await student.locator('#subscriptionDialog [type="submit"]').click();await student.locator('#subscriptionDialog').waitFor({state:'hidden'});
-  const subjectSub=(await rpc(student,'listNotificationSubscriptions')).data[0];assert.equal(subjectSub.scope,'subject');
-  assert.equal((await rpc(student,'addNotificationSubscription',{scope:'mine'})).code,'permission-denied');
-  await rpc(other,'removeNotificationSubscription',{id:subjectSub.id});assert.equal((await rpc(student,'listNotificationSubscriptions')).data.length,1);
-  await teacher.evaluate(()=>Portal.openSubscriptions());await teacher.getByRole('heading',{name:'Мои подписки',exact:true}).waitFor();
-  await teacher.getByRole('button',{name:'Уведомлять о моих занятиях',exact:true}).click();await teacher.getByRole('button',{name:'Отключить мои занятия',exact:true}).waitFor();
-  const changes=async page=>(await rpc(page,'listNotifications')).data.rows.filter(n=>n.category==='schedule');
-  const save=async(group,cell,previous=null)=>(await rpc(admin,'saveScheduleCell',{groupId:group.id,weekday:2,lessonNumber:2,id:previous?.id??null,revision:previous?.revision??0,...cell})).data;
-  await save(second,{status:'lesson',title:'Математика',teacherId,room:'20'});
-  assert.equal((await changes(student)).length,0);assert.equal((await changes(teacher)).length,1);assert.equal((await changes(other)).length,0);
-  const original=await save(first,{status:'lesson',title:'Математика',teacherId,room:'12'});assert.ok(original?.id);
-  assert.equal((await changes(student)).length,1);assert.equal((await changes(teacher)).length,2);
-  const replaced=await save(first,{status:'lesson',title:'Физика',teacherId:null,room:'26'},original);
-  assert.equal((await changes(student)).length,2,'replacing the subscribed subject sends a cancellation/replacement');
-  assert.equal((await changes(teacher)).length,3,'old instructor is notified of the change');
-  const irrelevant=await save(first,{status:'lesson',title:'Физика',teacherId:null,room:'27'},replaced);
-  assert.equal((await changes(student)).length,2);assert.equal((await changes(teacher)).length,3);
-  await student.getByRole('button',{name:'Подписаться на группу',exact:true}).click();
-  const before=(await changes(student)).length;
-  const overlap=await save(first,{status:'lesson',title:'Математика',teacherId,room:'20'},irrelevant);
-  assert.equal((await changes(student)).length,before+1,'overlapping group+subject subscriptions deliver once');
-  const personalTeacherNotice=(await changes(teacher))[0];await rpc(student,'readNotifications',{ids:[personalTeacherNotice.id]});
-  assert.equal((await changes(teacher)).find(n=>n.id===personalTeacherNotice.id).read,false);
-  await student.evaluate(()=>Portal.openSubscriptions());await student.locator('.subscription-list').waitFor();
-  if(outputDir){fs.mkdirSync(outputDir,{recursive:true});await student.setViewportSize({width:390,height:844});await student.screenshot({path:path.join(outputDir,'subscriptions-mobile.png'),fullPage:true});await student.setViewportSize({width:1440,height:1000});}
-  while(await student.getByRole('button',{name:'Отписаться',exact:true}).count()){
-    const count=await student.getByRole('button',{name:'Отписаться',exact:true}).count();await student.getByRole('button',{name:'Отписаться',exact:true}).first().click();
-    await student.waitForFunction(n=>document.querySelector('.subscription-list')&&document.querySelectorAll('[data-sub-action="remove"]').length<n,count);
-  }
-  assert.equal((await rpc(student,'listNotificationSubscriptions')).data.length,0,'all displayed subscriptions were removed');
-  const past=(await changes(student)).length;await save(first,{status:'free'},overlap);assert.equal((await changes(student)).length,past);
-  const notice=(await changes(student))[0];await nav(student,'notifications');
-  await student.locator('[data-portal="notice-open"][data-id="'+notice.id+'"]').click();await student.locator('.schedule-week-grid').waitFor();
-  assert.equal(await student.locator('#scheduleGroupSelect').inputValue(),first.id);
-  assert.equal((await changes(other)).length,0);
-  console.log('PASS opt-in subscriptions: exact group, subject replacements, own lessons, overlap deduplication, owner-only settings, unsubscribe and correct deep link');
+  await require('./schedule-subscriptions-browser.cjs')({teacher,student,other,admin,stamp,outputDir});
   if(outputDir){
     for(const [role,page] of [['admin',admin],['teacher',teacher],['student',student]]){
       await page.setViewportSize({width:1440,height:1000});await nav(page,'home');await home(page).waitFor();await page.locator('#toastRegion').evaluate(e=>e.replaceChildren());

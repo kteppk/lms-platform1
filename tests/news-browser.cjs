@@ -7,7 +7,7 @@ module.exports=async({admin,teacher,student,other,stamp,outputDir})=>{
  const nav=(page,tab)=>page.evaluate(t=>document.querySelector('.tabs [data-tab="'+t+'"]').click(),tab);
  const pages=[admin,teacher,student];
  for(const p of pages){
-  await nav(p,'home');await p.getByRole('heading',{name:'Новости сайта',exact:true}).waitFor();await p.getByRole('heading',{name:'Новости техникума',exact:true}).waitFor();
+  await nav(p,'home');await p.getByRole('heading',{name:'Новости',exact:true}).waitFor();assert.equal(await p.locator('[data-news-feed]').count(),1);
   assert.equal(await p.locator('.tabs [data-tab="books"]').count(),0);assert.equal(await p.locator('.tabs [data-site-version]').textContent(),'Версия '+version);
  }
  const totals=(await rpc(admin,'registrationStatistics')).data;assert.equal(totals.total,totals.students+totals.teachers+totals.admins);assert.equal(totals.months.length,6);
@@ -22,14 +22,14 @@ module.exports=async({admin,teacher,student,other,stamp,outputDir})=>{
  await admin.locator('.news-management .news-article').filter({has:admin.getByRole('heading',{name:site,exact:true})}).waitFor();
  assert.equal((await rpc(student,'listNotifications')).data.unreadCount,before,'posting news does not broadcast notifications');
  for(const p of [student,teacher]){
-  await nav(p,'home');await p.getByRole('button',{name:'Обновить новости',exact:true}).click();await p.locator('[data-news-feed="site"]').getByRole('heading',{name:site,exact:true}).waitFor();
-  const article=p.locator('[data-news-feed="college"] .news-article').filter({has:p.getByRole('heading',{name:college,exact:true})});await article.waitFor();await article.locator('summary').click();assert.equal(await article.locator('.news-full .news-body').textContent(),body);assert.equal(await article.locator('script').count(),0);
+  await nav(p,'home');await p.getByRole('button',{name:'Обновить новости',exact:true}).click();await p.locator('[data-news-feed="all"]').getByRole('heading',{name:site,exact:true}).waitFor();
+  const article=p.locator('[data-news-feed="all"] .news-article').filter({has:p.getByRole('heading',{name:college,exact:true})});await article.waitFor();await article.locator('summary').click();assert.equal(await article.locator('.news-full .news-body').textContent(),body);assert.equal(await article.locator('script').count(),0);assert.equal(await article.locator('.news-tag').textContent(),'Новости техникума');assert.equal(await p.locator('.news-article').filter({has:p.getByRole('heading',{name:site,exact:true})}).locator('.news-tag').textContent(),'Новости сайта');
  }
  const post=(await rpc(admin,'listNews',{channel:'site'})).data.rows.find(n=>n.title===site);
  await nav(admin,'announcements');await admin.locator('.news-article').filter({has:admin.getByRole('heading',{name:site,exact:true})}).getByRole('button',{name:'Редактировать',exact:true}).click();await admin.locator('#newsBody').fill('Исправленный текст.');await admin.getByRole('button',{name:'Сохранить изменения',exact:true}).click();
  await admin.locator('.news-article').filter({has:admin.getByRole('heading',{name:site,exact:true})}).getByText('Исправленный текст.',{exact:true}).waitFor();
  assert.equal((await rpc(admin,'saveNewsPost',{id:post.id,revision:post.revision,channel:'site',kind:'announcement',title:site,body:'Из старой вкладки'})).code,'conflict');
- console.log('PASS two home feeds, safe full text, administrator news CRUD, no implicit broadcasts, stale edits and private statistics');
+ console.log('PASS one chronological home feed with channel tags, safe full text, administrator news CRUD, no implicit broadcasts, stale edits and private statistics');
 
  const description=('Полное описание предмета.\n'.repeat(28))+'Последняя строка описания.';
  const title='Ёмкая дисциплина '+stamp;
@@ -57,7 +57,7 @@ module.exports=async({admin,teacher,student,other,stamp,outputDir})=>{
  await nav(admin,'accounts');await admin.locator('.registration-totals strong').first().waitFor();assert.equal(Number(await admin.locator('.registration-totals strong').first().textContent()),totals.total);await admin.locator('.registration-months summary').click();assert.equal(await admin.locator('.registration-months tbody tr').count(),6);
  if(outputDir){fs.mkdirSync(outputDir,{recursive:true});await admin.screenshot({path:path.join(outputDir,'registrations-desktop.png'),fullPage:true});}
  for(const [role,p] of [['admin',admin],['teacher',teacher],['student',student]]){
-  await p.setViewportSize({width:1440,height:1000});await nav(p,'home');await p.locator('[data-news-feed="college"] .news-article').first().waitFor();if(outputDir)await p.screenshot({path:path.join(outputDir,role+'-news-desktop.png'),fullPage:true});
+  await p.setViewportSize({width:1440,height:1000});await nav(p,'home');await p.locator('[data-news-feed="all"] .news-article').first().waitFor();if(outputDir)await p.screenshot({path:path.join(outputDir,role+'-news-desktop.png'),fullPage:true});
   await p.setViewportSize({width:390,height:844});assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);if(outputDir)await p.screenshot({path:path.join(outputDir,role+'-news-mobile.png'),fullPage:true});
   await p.locator('#mobileMore').click();await p.locator('#mobileMenu').waitFor();assert.equal(await p.locator('#mobileMenu [data-mobile-tab="books"]').count(),0);assert.equal(await p.locator('#mobileMenu [data-site-version]').textContent(),'Версия '+version);await p.keyboard.press('Escape');await p.setViewportSize({width:1280,height:900});
  }
