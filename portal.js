@@ -16,6 +16,7 @@ const Portal = (() => {
       `<span class="avatar" aria-hidden="true">${e(person.name?.split(/\s+/).slice(0,2).map(p=>p[0]).join(''))}</span>`;
   }
   function navigate(tab){
+    ActionMenu.closeAll();
     if(typeof MobileNavigation!=='undefined')MobileNavigation.closeMenu();
     document.getElementById('notificationsDialog')?.close();
     const target=document.querySelector(`.tabs [data-tab="${tab}"]`);
@@ -32,7 +33,7 @@ const Portal = (() => {
     const root=document.getElementById('toastRegion');if(!root)return;
     while(root.children.length>=3)root.firstElementChild.remove();
     const node=document.createElement('div');node.className='toast'+(severity==='danger'?' danger':severity==='success'?' success':'');
-    node.innerHTML=`<strong>${e(title)}</strong>${button('✕','close-toast','aria-label="Закрыть уведомление"','')}${body?`<p>${e(body)}</p>`:''}${destination?button('Открыть','navigate',`data-tab="${e(destination)}"`,'toast-open'):''}`;
+    node.innerHTML=`<strong>${e(title)}</strong>${ActionMenu.icon('close','Закрыть уведомление','data-portal="close-toast"','ui-icon-button icon-close')}${body?`<p>${e(body)}</p>`:''}${destination?button('Открыть','navigate',`data-tab="${e(destination)}"`,'toast-open'):''}`;
     root.append(node);setTimeout(()=>node.remove(),severity==='danger'?20000:9000);
   }
   async function poll(initial=false){
@@ -56,7 +57,7 @@ const Portal = (() => {
     if(!document.getElementById('toastRegion')){
       const root=document.createElement('div');root.id='toastRegion';root.setAttribute('role','status');root.setAttribute('aria-live','polite');document.body.append(root);
       const dialog=document.createElement('dialog');dialog.id='notificationsDialog';dialog.className='notification-dialog';dialog.setAttribute('aria-labelledby','notificationDialogTitle');
-      dialog.innerHTML=`<div class="dialog-heading"><h2 id="notificationDialogTitle">Уведомления</h2>${button('Закрыть','close-dialog')}</div><div id="popupNotices"></div>`;document.body.append(dialog);
+      dialog.innerHTML=`<div class="dialog-heading"><h2 id="notificationDialogTitle">Уведомления</h2><div class="dialog-actions">${ActionMenu.render(button('Мои подписки','subscriptions')+button('Прочитать эту страницу','notices-read-page','disabled')+button('Вся история','navigate','data-tab="notifications"'),'Действия с уведомлениями')}${ActionMenu.icon('close','Закрыть уведомления','data-portal="close-dialog" autofocus','ui-icon-button icon-close')}</div></div><div id="popupNotices"></div>`;document.body.append(dialog);
       const bell=document.createElement('button');bell.id='notificationButton';bell.className='notification-button';bell.dataset.portal='open-notifications';bell.innerHTML='Уведомления <span class="badge" id="notificationCount">0</span>';
       document.querySelector('.user-info .logout').before(bell);
       if(profile.role==='admin'){
@@ -82,7 +83,7 @@ const Portal = (() => {
       ${!profile.nameConfirmed?`<p class="legacy-name">Ранее указано: <strong>${e(profile.name)}</strong>. Распределите данные по полям — мы не будем угадывать их порядок.</p>`:''}
       <form data-portal-form="name">${names.fields('profile',profile)}<button class="primary" type="submit">Сохранить ФИО</button></form>
       <div class="account-details"><span>${e(profile.email)}</span><span class="badge">${roles[profile.role]}</span></div>
-      ${profile.canTeach?`<section class="profile-block"><h2>Профессиональный профиль</h2><p>Образование, стаж, квалификация, дипломы и грамоты доступны пользователям платформы.</p><div class="actions">${button('Заполнить профиль преподавателя','edit-own-profile','','primary')}${button('Посмотреть свой профиль','view-teacher',`data-id="${e(profile.uid)}"`)}</div></section>`:''}`;
+      ${profile.canTeach?`<section class="profile-block"><h2>Профессиональный профиль</h2><p>Образование, стаж, квалификация, дипломы и грамоты доступны пользователям платформы.</p><div class="actions">${button('Заполнить профиль преподавателя','edit-own-profile','','primary')}${ActionMenu.render(button('Посмотреть свой профиль','view-teacher',`data-id="${e(profile.uid)}"`),'Действия с профилем')}</div></section>`:''}`;
   }
   async function renderTeachers(container){
     container.innerHTML='<h2>Преподаватели</h2><p>Загрузка профилей…</p>';
@@ -109,7 +110,7 @@ const Portal = (() => {
       <div class="full-width">${area('teacherBio','О себе',p.bio??'')}${area('teacherEducation','Образование: учебное заведение, специальность, год',p.education??'')}${area('teacherQualification','Квалификация и повышение квалификации',p.qualification??'',3000)}</div>
       ${field('teacherAvatar','Фотография (JPG, PNG, WebP, до 5 МБ)','','file','accept=".jpg,.jpeg,.png,.webp"')}<div><label class="check-label"><input id="removeAvatar" type="checkbox">Убрать текущую фотографию</label></div></div><button class="primary" type="submit">Сохранить профиль</button></form>
       <section class="profile-block"><h3>Добавить документ</h3><form data-portal-form="document"><div class="field-grid">${field('documentTitle','Название документа','','text','required maxlength="200"')}<div class="form-group"><label for="documentCategory">Вид документа</label><select id="documentCategory">${Object.entries(categories).map(([id,label])=>`<option value="${id}">${label}</option>`).join('')}</select></div>${field('documentYear','Год выдачи','','number','min="1950" max="2200"')}${field('documentFile','Файл (PDF или изображение, до 10 МБ)','','file','required accept=".pdf,.jpg,.jpeg,.png,.webp"')}</div><button class="primary" type="submit">Добавить документ</button></form></section>
-      <section class="profile-block"><h3>Загруженные документы</h3>${p.documents.map(d=>`<article class="item"><h4>${e(d.title)}</h4><p>${categories[d.category]} ${e(d.issued_year||'')}</p>${materialLink(d.url,'Открыть документ')}<div class="actions">${button('Удалить','delete-document',`data-id="${e(d.id)}"`,'danger-button')}</div></article>`).join('')||empty('Добавьте первый документ.')}</section>`;
+      <section class="profile-block"><h3>Загруженные документы</h3>${p.documents.map(d=>`<article class="item"><h4>${e(d.title)}</h4><p>${categories[d.category]} ${e(d.issued_year||'')}</p>${materialLink(d.url,'Открыть документ')}<div class="actions">${ActionMenu.render(button('Удалить','delete-document',`data-id="${e(d.id)}"`,'danger-button'),'Действия с документом')}</div></article>`).join('')||empty('Добавьте первый документ.')}</section>`;
   }
   async function uploadProfile(file,teacherId,purpose){
     const mime=file.type||({pdf:'application/pdf',jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',webp:'image/webp'})[file.name.split('.').pop().toLowerCase()];
@@ -120,11 +121,13 @@ const Portal = (() => {
   }
   async function renderSchedule(container){ return Schedule.render(container,profile); }
   function noticeCards(rows){
-    return rows.map(n=>`<article class="item notice-card ${n.read?'':'unread'} ${n.severity==='danger'?'danger':''}"><span class="notice-category">${n.category==='schedule'?'По подписке':n.category==='announcement'?'Объявление':'Личное'}</span><span class="meta">${e(new Date(n.created_at).toLocaleString('ru-RU'))}${n.read?'':' · Новое'}</span><h3>${e(n.title)}</h3><p>${e(n.body)}</p><div class="actions">${button('Открыть','notice-open',`data-id="${e(n.id)}" data-tab="${e(n.destination)}"`)}${n.read?'':button('Прочитано','notice-read',`data-id="${e(n.id)}"`)}</div></article>`).join('')||empty('Уведомлений пока нет.');
+    return rows.map(n=>`<article class="item notice-card ${n.read?'':'unread'} ${n.severity==='danger'?'danger':''}"><span class="notice-category">${n.category==='schedule'?'По подписке':n.category==='announcement'?'Объявление':'Личное'}</span><span class="meta">${e(new Date(n.created_at).toLocaleString('ru-RU'))}${n.read?'':' · Новое'}</span><h3>${e(n.title)}</h3><p>${e(n.body)}</p><div class="actions notice-actions">${button('Открыть','notice-open',`data-id="${e(n.id)}" data-tab="${e(n.destination)}"`)}${n.read?'':ActionMenu.render(button('Прочитано','notice-read',`data-id="${e(n.id)}"`),'Действия с уведомлением')}</div></article>`).join('')||empty('Уведомлений пока нет.');
   }
   async function renderNotices(container,popup=false){
     const feed=await callFunction('listNotifications',{offset:popup?0:noticeOffset});if(!container?.isConnected)return;noticeRows=feed.rows;feed.rows.forEach(n=>noticeById.set(n.id,n));
-    container.innerHTML=`${popup?'':'<h2>Уведомления</h2><p class="section-lead">Личные результаты, объявления и изменения расписаний по вашим подпискам.</p>'}<div class="actions" style="margin-bottom:20px">${button('Мои подписки','subscriptions')}${button('Прочитать эту страницу','notices-read-page')}${popup?button('Вся история','navigate','data-tab="notifications"'):''}</div>${noticeCards(feed.rows)}${popup?'':`<div class="actions">${button('← Назад','notices-prev',noticeOffset?'':'disabled')}${button('Далее →','notices-next',feed.rows.length===50?'':'disabled')}</div>`}`;
+    const tools=button('Мои подписки','subscriptions')+button('Прочитать эту страницу','notices-read-page',feed.rows.some(n=>!n.read)?'':'disabled');
+    if(popup)document.querySelector('#notificationsDialog [data-portal="notices-read-page"]').disabled=!feed.rows.some(n=>!n.read);
+    container.innerHTML=`${popup?'':`<div class="page-heading"><h2>Уведомления</h2>${ActionMenu.render(tools,'Действия с уведомлениями')}</div><p class="section-lead">Личные результаты, объявления и изменения расписаний по вашим подпискам.</p>`}${noticeCards(feed.rows)}${popup?'':`<div class="actions pagination-actions">${button('← Назад','notices-prev',noticeOffset?'':'disabled')}${button('Далее →','notices-next',feed.rows.length===50?'':'disabled')}</div>`}`;
     document.getElementById('notificationCount').textContent=feed.unreadCount;
   }
   async function renderAccounts(container){
@@ -172,7 +175,7 @@ const Portal = (() => {
     if(name==='accounts-next'||name==='accounts-prev'){accountOffset=Math.max(0,accountOffset+(name.endsWith('next')?50:-50));return renderAccounts(container);}
     if(name==='notices-next'||name==='notices-prev'){noticeOffset=Math.max(0,noticeOffset+(name.endsWith('next')?50:-50));return renderNotices(container);}
     if(['notice-read','notice-open','notices-read-page'].includes(name)){
-      const noticeRoot=node.closest('#popupNotices')||container;
+      const noticeRoot=node.closest('#notificationsDialog')?document.getElementById('popupNotices'):container;
       const ids=name==='notices-read-page'?[...noticeRoot.querySelectorAll('[data-portal="notice-open"]')].map(n=>n.dataset.id):[node.dataset.id];
       await callFunction('readNotifications',{ids});await poll();
       if(name==='notice-open'){const notice=noticeById.get(node.dataset.id);if(notice?.context?.groupId)Schedule.selectGroup(notice.context.groupId);return navigate(node.dataset.tab);}

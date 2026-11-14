@@ -113,7 +113,7 @@ async function renderSubjectView(list) {
       <article class="item subject-card">
         <div class="subject-heading">${teacherAvatar(teacher.name)}<h3>${escapeHtml(teacher.name)}</h3></div>
         <div class="actions"><button class="primary" data-id="${escapeHtml(teacher.id)}" onclick="chooseInstructor(this)">Выбрать</button>
-        <button class="secondary" data-id="${escapeHtml(teacher.id)}" onclick="Portal.openTeacher(this.dataset.id)">О преподавателе</button></div>
+        ${ActionMenu.render(`<button type="button" data-id="${escapeHtml(teacher.id)}" onclick="Portal.openTeacher(this.dataset.id)">О преподавателе</button>`,'Действия с преподавателем')}</div>
       </article>`).join('') || '<p>У этого предмета пока нет преподавателей.</p>'}</div>`;
 }
 

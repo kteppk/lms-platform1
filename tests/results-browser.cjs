@@ -28,7 +28,7 @@ module.exports=async({teacher,student,other,student2,stamp,outputDir})=>{
   await teacher.locator('#scaleThree').fill('50');await teacher.locator('#scaleFour').fill('70');await teacher.locator('#scaleFive').fill('85');
   await teacher.getByRole('button',{name:'Сохранить шкалу',exact:true}).click();
   await teacher.locator('[data-result-id="'+attempts[1]+'"] .result-mark').filter({hasText:'2'}).waitFor();
-  await teacher.locator('[data-result-id="'+attempts[1]+'"] [data-grade="history"]').click();
+  await teacher.locator('[data-result-id="'+attempts[1]+'"] [data-action-menu-toggle]').click();await teacher.locator('[data-result-id="'+attempts[1]+'"] [data-grade="history"]').click();
   await teacher.locator('.results-history-scope').waitFor();
   assert.equal(await teacher.locator('.results-table [data-result-id]').count(),2);
   assert.equal(await teacher.locator('[data-result-id="'+attempts[0]+'"] .result-mark').textContent(),'5');
@@ -45,12 +45,12 @@ module.exports=async({teacher,student,other,student2,stamp,outputDir})=>{
   await student.locator('[data-result-id="'+attempts[0]+'"] [data-grade="open"]').click();
   await student.getByText('1 из 1 (100%)',{exact:true}).waitFor();await student.getByRole('button',{name:'← К результатам',exact:true}).click();
   await student.locator('#resultsHeading').filter({hasText:title}).waitFor();
-  const download=teacher.waitForEvent('download');await teacher.getByRole('button',{name:'Скачать Excel (.xlsx)',exact:true}).click();
+  const download=teacher.waitForEvent('download');await teacher.getByRole('button',{name:'Действия с результатами',exact:true}).click();await teacher.getByRole('button',{name:'Скачать Excel (.xlsx)',exact:true}).click();
   const file=await download;assert.match(file.suggestedFilename(),/\.xlsx$/);
   const bytes=fs.readFileSync(await file.path());assert.equal(bytes.subarray(0,2).toString(),'PK');
   if(outputDir){fs.mkdirSync(outputDir,{recursive:true});fs.copyFileSync(await file.path(),path.join(outputDir,'results.xlsx'));}
   await teacher.addInitScript(()=>{window.print=()=>{window.__resultsPrintCalled=true;};});
-  await teacher.getByRole('button',{name:'Печать',exact:true}).click();
+  await teacher.getByRole('button',{name:'Действия с результатами',exact:true}).click();await teacher.getByRole('button',{name:'Печать',exact:true}).click();
   await teacher.waitForFunction(()=>document.getElementById('resultsPrintFrame')?.contentWindow.__resultsPrintCalled===true);
   const printFrame=teacher.frameLocator('#resultsPrintFrame');
   assert.equal(await printFrame.locator('tbody tr').count(),2);assert.equal(await printFrame.locator('script').count(),0);
@@ -66,7 +66,7 @@ module.exports=async({teacher,student,other,student2,stamp,outputDir})=>{
   if(outputDir)await student.screenshot({path:path.join(outputDir,'student-results-mobile.png'),fullPage:true});
   for(const page of [teacher,student])await page.setViewportSize({width:1280,height:900});
   await nav(teacher,'tests');teacher.once('dialog',d=>d.accept());
-  await teacher.locator('.item').filter({has:teacher.getByRole('heading',{name:title,exact:true})}).getByRole('button',{name:'В архив',exact:true}).click();
+  await teacher.locator('.item').filter({has:teacher.getByRole('heading',{name:title,exact:true})}).locator('[data-action-menu-toggle]').click();await teacher.locator('.item').filter({has:teacher.getByRole('heading',{name:title,exact:true})}).getByRole('button',{name:'В архив',exact:true}).click();
   await teacher.locator('.item').filter({has:teacher.getByRole('heading',{name:title,exact:true})}).getByText(/В архиве/).waitFor();
   await nav(teacher,'journal');await teacher.locator('#resultTestSelect').selectOption(testId);
   await teacher.locator('#resultsHeading').filter({hasText:title}).waitFor();

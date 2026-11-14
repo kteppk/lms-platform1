@@ -91,9 +91,9 @@ module.exports=async function verifyCommunity({teacher,student,other,admin,roleS
     const dialog=page.locator('#notificationsDialog');
     const card=dialog.locator('.notice-card').filter({has:page.getByRole('heading',{name:announcement,exact:true})});
     await card.waitFor();assert.match(await card.getAttribute('class'),/danger/);
-    await card.getByRole('button',{name:'Прочитано',exact:true}).click();
+    await card.locator('[data-action-menu-toggle]').click();await card.getByRole('button',{name:'Прочитано',exact:true}).click();
     await dialog.locator('.notice-card:not(.unread)').filter({has:page.getByRole('heading',{name:announcement,exact:true})}).waitFor();
-    await dialog.getByRole('button',{name:'Закрыть',exact:true}).click();
+    await dialog.getByRole('button',{name:'Закрыть уведомления',exact:true}).click();
   }
   console.log('PASS red FIO warning resolves persistently; important announcements reach both cabinets; popup and per-user read status work');
   if(screenshotDir){
@@ -112,7 +112,7 @@ module.exports=async function verifyCommunity({teacher,student,other,admin,roleS
   }
   teacher.once('dialog',d=>d.accept());
   await nav(teacher,'profile');await teacher.getByRole('button',{name:'Заполнить профиль преподавателя',exact:true}).click();
-  await teacher.getByRole('button',{name:'Удалить',exact:true}).click();
+  await teacher.getByRole('button',{name:'Действия с документом',exact:true}).click();await teacher.getByRole('button',{name:'Удалить',exact:true}).click();
   await teacher.getByRole('heading',{name:'Диплом проверки '+stamp,exact:true}).waitFor({state:'detached'});
   assert.equal((await rpc(teacher,'getTeacherProfile',{teacherId:uid})).data.documents.length,0);
   console.log('PASS profile document deletion, schedule cancellation, desktop/mobile navigation and no horizontal page overflow');

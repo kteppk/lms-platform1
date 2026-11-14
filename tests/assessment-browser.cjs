@@ -57,7 +57,7 @@ module.exports = async function verifyAssessment({ teacher, student, other, crea
   await student.locator('#draftStatus').filter({hasText:'Ответы сохранены на сервере.'}).waitFor();
   console.log('PASS autosave, reload restoration, unchanged deadline, single active attempt and stale-write rejection');
   teacher.once('dialog',d=>d.accept());
-  await teacher.locator('.item').filter({has:teacher.getByRole('heading',{name:title,exact:true})}).getByRole('button',{name:'В архив',exact:true}).click();
+  await teacher.locator('.item').filter({has:teacher.getByRole('heading',{name:title,exact:true})}).locator('[data-action-menu-toggle]').click();await teacher.locator('.item').filter({has:teacher.getByRole('heading',{name:title,exact:true})}).getByRole('button',{name:'В архив',exact:true}).click();
   await teacher.locator('.item').filter({has:teacher.getByRole('heading',{name:title,exact:true})}).getByText(/В архиве/).waitFor();
   const student2=await createStudent();
   assert.equal((await rpc(student2,'startStudentTest',{testId})).code,'not-found');
@@ -94,7 +94,7 @@ module.exports = async function verifyAssessment({ teacher, student, other, crea
   await result.getByRole('button',{name:'Посмотреть',exact:true}).click();
   await student.getByText('Текст принят, фото нужно исправить.',{exact:true}).waitFor();
   const download=teacher.waitForEvent('download');
-  await teacher.getByRole('button',{name:'Скачать Excel (.xlsx)',exact:true}).click();
+  await teacher.getByRole('button',{name:'Действия с результатами',exact:true}).click();await teacher.getByRole('button',{name:'Скачать Excel (.xlsx)',exact:true}).click();
   const file=await download;
   const xlsx=fs.readFileSync(await file.path());
   assert.equal(xlsx.subarray(0,2).toString(),'PK');assert.ok(xlsx.toString('utf8').includes(title));

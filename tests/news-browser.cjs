@@ -22,11 +22,11 @@ module.exports=async({admin,teacher,student,other,stamp,outputDir})=>{
  await admin.locator('.news-management .news-article').filter({has:admin.getByRole('heading',{name:site,exact:true})}).waitFor();
  assert.equal((await rpc(student,'listNotifications')).data.unreadCount,before,'posting news does not broadcast notifications');
  for(const p of [student,teacher]){
-  await nav(p,'home');await p.getByRole('button',{name:'Обновить новости',exact:true}).click();await p.locator('[data-news-feed="all"]').getByRole('heading',{name:site,exact:true}).waitFor();
+  await nav(p,'home');await p.getByRole('button',{name:'Действия с новостями',exact:true}).click();await p.getByRole('button',{name:'Обновить новости',exact:true}).click();await p.locator('[data-news-feed="all"]').getByRole('heading',{name:site,exact:true}).waitFor();
   const article=p.locator('[data-news-feed="all"] .news-article').filter({has:p.getByRole('heading',{name:college,exact:true})});await article.waitFor();await article.locator('summary').click();assert.equal(await article.locator('.news-full .news-body').textContent(),body);assert.equal(await article.locator('script').count(),0);assert.equal(await article.locator('.news-tag').textContent(),'Новости техникума');assert.equal(await p.locator('.news-article').filter({has:p.getByRole('heading',{name:site,exact:true})}).locator('.news-tag').textContent(),'Новости сайта');
  }
  const post=(await rpc(admin,'listNews',{channel:'site'})).data.rows.find(n=>n.title===site);
- await nav(admin,'announcements');await admin.locator('.news-article').filter({has:admin.getByRole('heading',{name:site,exact:true})}).getByRole('button',{name:'Редактировать',exact:true}).click();await admin.locator('#newsBody').fill('Исправленный текст.');await admin.getByRole('button',{name:'Сохранить изменения',exact:true}).click();
+ await nav(admin,'announcements');await admin.locator('.news-article').filter({has:admin.getByRole('heading',{name:site,exact:true})}).locator('[data-action-menu-toggle]').click();await admin.locator('.news-article').filter({has:admin.getByRole('heading',{name:site,exact:true})}).getByRole('button',{name:'Редактировать',exact:true}).click();await admin.locator('#newsBody').fill('Исправленный текст.');await admin.getByRole('button',{name:'Сохранить изменения',exact:true}).click();
  await admin.locator('.news-article').filter({has:admin.getByRole('heading',{name:site,exact:true})}).getByText('Исправленный текст.',{exact:true}).waitFor();
  assert.equal((await rpc(admin,'saveNewsPost',{id:post.id,revision:post.revision,channel:'site',kind:'announcement',title:site,body:'Из старой вкладки'})).code,'conflict');
  console.log('PASS one chronological home feed with channel tags, safe full text, administrator news CRUD, no implicit broadcasts, stale edits and private statistics');
@@ -43,6 +43,11 @@ module.exports=async({admin,teacher,student,other,stamp,outputDir})=>{
   await p.locator('#subjectSearch').fill('Предмета с таким названием нет');assert.equal(await p.locator('[data-subject-search]:visible').count(),0);await p.locator('#subjectSearchStatus').filter({hasText:'Ничего не найдено'}).waitFor();
   await p.locator('#subjectSearch').fill('');
  }
+ const ownCard=teacher.locator('[data-subject-search]').filter({has:teacher.getByRole('heading',{name:title,exact:true})});
+ assert.equal(await ownCard.getByRole('button',{name:'Редактировать',exact:true}).isVisible(),false);
+ await ownCard.locator('[data-action-menu-toggle]').click();await ownCard.getByRole('button',{name:'Редактировать',exact:true}).click();
+ assert.equal(await teacher.locator('#subjectTitle').inputValue(),title);assert.equal(await teacher.locator('#subjectTitle').evaluate(n=>document.activeElement===n),true);
+ await teacher.locator('#subjectForm button[type="submit"]').click();await teacher.getByRole('heading',{name:'Добавить предмет',exact:true}).waitFor();
  await student.locator('[data-subject-search]').filter({has:student.getByRole('heading',{name:title,exact:true})}).getByRole('button',{name:'Открыть предмет',exact:true}).click();await student.locator('.subject-full-description').waitFor();assert.equal(await student.locator('.subject-full-description').textContent(),description);
  await teacher.locator('[data-subject-search]').filter({has:teacher.getByRole('heading',{name:title,exact:true})}).getByRole('button',{name:'Открыть предмет',exact:true}).click();await teacher.locator('.subject-full-description p').waitFor();assert.equal(await teacher.locator('.subject-full-description p').textContent(),description);
  // A legacy PDF record remains accessible after its navigation section is removed.

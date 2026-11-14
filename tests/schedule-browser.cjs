@@ -8,7 +8,7 @@ module.exports=async({admin,teacher,student,stamp,screenshotDir})=>{
   const title='Занятие проверки '+stamp,foreign='Другая группа '+stamp;
   const teacherName=(await rpc(teacher,'profile')).data.name;
   await admin.setViewportSize({width:390,height:844});
-  await nav(admin);await admin.getByRole('button',{name:'+ Добавить группу',exact:true}).click();
+  await nav(admin);await admin.getByRole('button',{name:'Действия с расписанием',exact:true}).click();await admin.getByRole('button',{name:'+ Добавить группу',exact:true}).click();
   await admin.getByLabel('Номер / название группы',{exact:true}).fill('Проверка '+stamp);
   await admin.getByLabel('Курс',{exact:true}).fill('4');
   await admin.getByLabel('Специальность',{exact:true}).fill('Информационные системы и программирование');

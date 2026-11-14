@@ -4,25 +4,26 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Кабинет преподавателя</title>
-  <script src="connection.js?v=0.7.3"></script>
-  <script src="vendor/firebase/12.10.0/firebase-app-compat.js?v=0.7.3"></script>
-  <script src="vendor/firebase/12.10.0/firebase-auth-compat.js?v=0.7.3"></script>
-  <script src="firebase-config.js?v=0.7.3"></script>
-  <script src="results-export.js?v=0.7.3"></script>
-  <script src="gradebook.js?v=0.7.3"></script>
-  <script src="release.js?v=0.7.3"></script>
-  <script src="news.js?v=0.7.3" defer></script>
-  <script src="subject-search.js?v=0.7.3" defer></script>
-  <script src="mobile-nav.js?v=0.7.3" defer></script>
-  <script src="schedule.js?v=0.7.3" defer></script>
-  <script src="subscriptions.js?v=0.7.3" defer></script>
-  <script src="portal.js?v=0.7.3" defer></script>
-  <link rel="stylesheet" href="assessment.css?v=0.7.3">
-  <link rel="stylesheet" href="subjects.css?v=0.7.3">
-  <link rel="stylesheet" href="portal.css?v=0.7.3">
-  <link rel="stylesheet" href="mobile-nav.css?v=0.7.3">
-  <link rel="stylesheet" href="schedule.css?v=0.7.3">
-  <link rel="stylesheet" href="theme.css?v=0.7.3">
+  <script src="connection.js?v=0.7.4"></script>
+  <script src="vendor/firebase/12.10.0/firebase-app-compat.js?v=0.7.4"></script>
+  <script src="vendor/firebase/12.10.0/firebase-auth-compat.js?v=0.7.4"></script>
+  <script src="firebase-config.js?v=0.7.4"></script>
+  <script src="results-export.js?v=0.7.4"></script>
+  <script src="gradebook.js?v=0.7.4"></script>
+  <script src="release.js?v=0.7.4"></script>
+  <script src="action-menu.js?v=0.7.4" defer></script>
+  <script src="news.js?v=0.7.4" defer></script>
+  <script src="subject-search.js?v=0.7.4" defer></script>
+  <script src="mobile-nav.js?v=0.7.4" defer></script>
+  <script src="schedule.js?v=0.7.4" defer></script>
+  <script src="subscriptions.js?v=0.7.4" defer></script>
+  <script src="portal.js?v=0.7.4" defer></script>
+  <link rel="stylesheet" href="assessment.css?v=0.7.4">
+  <link rel="stylesheet" href="subjects.css?v=0.7.4">
+  <link rel="stylesheet" href="portal.css?v=0.7.4">
+  <link rel="stylesheet" href="mobile-nav.css?v=0.7.4">
+  <link rel="stylesheet" href="schedule.css?v=0.7.4">
+  <link rel="stylesheet" href="theme.css?v=0.7.4">
 </head>
 <body>
   <header>
@@ -47,7 +48,7 @@
 <button class="tab-btn" data-tab="schedule" onclick="switchTab('schedule',this)">Расписание</button>
 <button class="tab-btn" data-tab="notifications" onclick="switchTab('notifications',this)">Уведомления</button>
 <button class="tab-btn" data-tab="profile" onclick="switchTab('profile',this)">Мой профиль</button>
-      <small class="site-version" data-site-version>Версия 0.7.3</small>
+      <small class="site-version" data-site-version>Версия 0.7.4</small>
     </nav>
 
     <div id="content" class="content"></div>
@@ -221,22 +222,9 @@
     }
 
     function subjectCard(subject) {
-      const id = escapeHtml(subject.id);
-      return `<article class="item subject-card" ${SubjectSearch.attrs(subject)}>
-        <h3>${escapeHtml(subject.title)}</h3>
-        <p class="subject-description subject-preview">${escapeHtml(subject.description)}</p>
-        <p class="meta">Преподавателей: ${escapeHtml(subject.teacherCount)}</p>
-        <div class="subject-actions">
-          ${subject.joined ? `
-            <button class="primary" data-id="${id}" onclick="openSubjectPublication(this)">Открыть предмет</button>
-            <button class="secondary" data-id="${id}" onclick="changeSubject(this, 'leaveSubject')">Перестать вести</button>
-          ` : `<button class="primary" data-id="${id}" onclick="changeSubject(this, 'joinSubject')">Присоединиться</button>`}
-          ${subject.canEdit ? `
-            <button class="secondary" data-id="${id}" onclick="editSubject(this)">Редактировать</button>
-            <button class="secondary" data-id="${id}" onclick="changeSubject(this, 'deleteSubject')">Удалить предмет</button>
-          ` : ''}
-        </div>
-      </article>`;
+      const id=escapeHtml(subject.id);
+      const extra=(subject.joined?`<button type="button" class="secondary" data-id="${id}" onclick="changeSubject(this,'leaveSubject')">Перестать вести</button>`:'')+(subject.canEdit?`<button type="button" class="secondary" data-id="${id}" onclick="editSubject(this)">Редактировать</button><button type="button" class="danger-button" data-id="${id}" onclick="changeSubject(this,'deleteSubject')">Удалить предмет</button>`:'');
+      return `<article class="item subject-card" ${SubjectSearch.attrs(subject)}><h3>${escapeHtml(subject.title)}</h3><p class="subject-description subject-preview">${escapeHtml(subject.description)}</p><p class="meta">Преподавателей: ${escapeHtml(subject.teacherCount)}</p><div class="subject-actions">${subject.joined?`<button type="button" class="primary" data-id="${id}" onclick="openSubjectPublication(this)">Открыть предмет</button>`:`<button type="button" class="primary" data-id="${id}" onclick="changeSubject(this,'joinSubject')">Присоединиться</button>`}${ActionMenu.render(extra,'Действия с предметом '+subject.title)}</div></article>`;
     }
 
     async function saveSubject() {
@@ -372,7 +360,7 @@
       const selected=subjectCatalog.find(s=>s.id===selectedSubjectId);
       if(selected){const note=document.createElement('section');note.className='subject-full-description';const h=document.createElement('h3');h.textContent=selected.title;const body=document.createElement('p');body.className='subject-description';body.textContent=selected.description;note.append(h,body);document.getElementById('content').querySelector('h2').after(note);}
       const rows=[...lectures.map(d=>({...d,_kind:'lectures'})),...pdfs.map(d=>({...d,_kind:'books'}))].sort((a,b)=>Date.parse(b.createdAt)-Date.parse(a.createdAt));
-      list.innerHTML=rows.map(data=>`<article class="item"><h3>${escapeHtml(data.title)}</h3><div class="meta">${new Date(data.createdAt).toLocaleString('ru-RU')}</div>${subjectLabel(data.subjectId)}${data.author?`<p class="meta">Автор: ${escapeHtml(data.author)}</p>`:''}<p>${escapeHtml(data._kind==='books'?data.description:data.text)}</p>${(data._kind==='books'?[data.fileUrl]:data.files??[]).map((url,i)=>`<p>${materialLink(url,data._kind==='books'?'Открыть PDF':'Открыть файл '+(i+1))}</p>`).join('')}<div class="item-actions"><button type="button" class="secondary" data-id="${escapeHtml(data.id)}" data-kind="${data._kind}" onclick="deleteItem(this.dataset.kind,this.dataset.id,'Удалить материал?')">Удалить</button></div></article>`).join('')||'<p>Материалов пока нет.</p>';
+      list.innerHTML=rows.map(data=>`<article class="item"><h3>${escapeHtml(data.title)}</h3><div class="meta">${new Date(data.createdAt).toLocaleString('ru-RU')}</div>${subjectLabel(data.subjectId)}${data.author?`<p class="meta">Автор: ${escapeHtml(data.author)}</p>`:''}<p>${escapeHtml(data._kind==='books'?data.description:data.text)}</p>${(data._kind==='books'?[data.fileUrl]:data.files??[]).map((url,i)=>`<p>${materialLink(url,data._kind==='books'?'Открыть PDF':'Открыть файл '+(i+1))}</p>`).join('')}<div class="item-actions">${ActionMenu.render(`<button type="button" class="danger-button" data-id="${escapeHtml(data.id)}" data-kind="${data._kind}" onclick="deleteItem(this.dataset.kind,this.dataset.id,'Удалить материал?')">Удалить</button>`,'Действия с материалом')}</div></article>`).join('')||'<p>Материалов пока нет.</p>';
     }
 
     function deleteItem(collection, id, message) {
@@ -416,8 +404,8 @@
           <div class="meta">${data.questionCount} вопросов ${data.timer ? `• Таймер: ${escapeHtml(data.timer)} мин` : ''} ${data.archived ? '• В архиве' : ''}</div>
           ${subjectLabel(data.subjectId)}
           <div class="item-actions">
-            <button class="secondary" data-id="${escapeHtml(data.id)}" onclick="Gradebook.openTest(this.dataset.id)">Результаты</button>
-            ${data.archived ? '' : `<button class="secondary" data-id="${escapeHtml(data.id)}" onclick="deleteItem('tests', this.dataset.id, 'Убрать тест в архив? Начатые попытки и оценки сохранятся.')">В архив</button>`}
+            <button type="button" class="primary" data-id="${escapeHtml(data.id)}" onclick="Gradebook.openTest(this.dataset.id)">Результаты</button>
+            ${ActionMenu.render(data.archived?'':`<button type="button" class="danger-button" data-id="${escapeHtml(data.id)}" onclick="deleteItem('tests', this.dataset.id, 'Убрать тест в архив? Начатые попытки и оценки сохранятся.')">В архив</button>`,'Действия с тестом')}
           </div>
         </div>`;
       }).join('') || '<p>Нет тестов</p>';
