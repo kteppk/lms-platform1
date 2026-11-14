@@ -22,6 +22,7 @@ module.exports=async({admin,teacher,student,other,outputDir})=>{
   const ids=await dialog.locator('[data-portal="notice-open"]').evaluateAll(nodes=>nodes.map(n=>n.dataset.id));
   await dialog.locator('.dialog-heading [data-action-menu-toggle]').click();await dialog.getByRole('button',{name:'Прочитать эту страницу',exact:true}).click();
   await dialog.locator('.notice-card.unread').first().waitFor({state:'detached'});const feed=await rpc(page,'listNotifications');assert.ok(ids.every(id=>feed.rows.find(n=>n.id===id)?.read));
+  await page.waitForFunction(()=>document.querySelector('#notificationsDialog [data-portal="notices-read-page"]').disabled);
   await dialog.locator('.dialog-heading [data-action-menu-toggle]').click();await dialog.getByRole('heading',{name:'Уведомления',exact:true}).click();assert.equal(await dialog.locator('.dialog-heading .action-menu-panel').isVisible(),false);
   if(outputDir){fs.mkdirSync(outputDir,{recursive:true});await page.locator('#toastRegion').evaluate(n=>n.replaceChildren());await page.screenshot({path:path.join(outputDir,role+'-notifications-compact.png')});await dialog.locator('.dialog-heading [data-action-menu-toggle]').click();await page.screenshot({path:path.join(outputDir,role+'-notifications-menu.png')});await page.keyboard.press('Escape');}
   await dialog.locator('[data-portal="close-dialog"]').click();assert.equal(await dialog.evaluate(n=>n.open),false);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);

@@ -210,7 +210,12 @@ const Portal = (() => {
   }
   document.addEventListener('click',async event=>{
     const node=event.target.closest('[data-portal]');if(!node||node.disabled)return;
-    node.disabled=true;try{await action(node.dataset.portal,node);}catch(error){showStatus(error.message);toast('Не удалось выполнить действие',error.message,'danger');}finally{node.disabled=false;}
+    node.disabled=true;try{await action(node.dataset.portal,node);}catch(error){showStatus(error.message);toast('Не удалось выполнить действие',error.message,'danger');}finally{
+      if(node.dataset.portal==='notices-read-page'){
+        const root=node.closest('#notificationsDialog')?.querySelector('#popupNotices')||node.closest('#portalPage');
+        node.disabled=!root?.querySelector('.notice-card.unread');
+      }else node.disabled=false;
+    }
   });
   document.addEventListener('submit',async event=>{
     const form=event.target.closest('[data-portal-form]');if(!form)return;event.preventDefault();
