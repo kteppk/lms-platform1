@@ -34,7 +34,7 @@ module.exports=async({admin,teacher,student,stamp,outputDir,loginStudent})=>{
   await student.goto(new URL('offline.html',student.url()).href);await student.locator('#offlineSchedule .empty-state').waitFor();
   await student.goto(new URL('index.html',student.url()).href);
   if(new URL(student.url()).hostname==='127.0.0.1'){
-    await student.getByRole('button',{name:'Забыли пароль?',exact:true}).click();await student.locator('#resetEmail').fill(email);await student.getByRole('button',{name:'Отправить ссылку',exact:true}).click();await student.locator('#resetStatus').filter({hasText:'Если аккаунт'}).waitFor();await student.getByRole('button',{name:'Закрыть',exact:true}).click();
+    await student.getByRole('button',{name:'Забыли пароль?',exact:true}).click();await student.locator('#resetEmail').fill(email);await student.getByRole('button',{name:'Отправить ссылку',exact:true}).click();await student.locator('#resetStatus').filter({hasText:'Если аккаунт'}).waitFor();await student.getByRole('button',{name:'Закрыть восстановление пароля',exact:true}).click();
   }
   await loginStudent(student,false);
   await nav(student,'schedule');await student.locator('#scheduleGroupSelect').selectOption(group.id);await student.locator('.schedule-week-grid').waitFor();

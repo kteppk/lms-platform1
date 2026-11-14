@@ -4,13 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>LMS Platform - Вход</title>
-  <script src="connection.js?v=0.7.5"></script>
-  <script src="vendor/firebase/12.10.0/firebase-app-compat.js?v=0.7.5"></script>
-  <script src="vendor/firebase/12.10.0/firebase-auth-compat.js?v=0.7.5"></script>
-  <script src="firebase-config.js?v=0.7.5"></script>
-  <link rel="stylesheet" href="portal.css?v=0.7.5">
-  <link rel="stylesheet" href="mobile-nav.css?v=0.7.5">
-  <link rel="stylesheet" href="theme.css?v=0.7.5">
+  <script src="connection.js?v=0.7.6"></script>
+  <script src="vendor/firebase/12.10.0/firebase-app-compat.js?v=0.7.6"></script>
+  <script src="vendor/firebase/12.10.0/firebase-auth-compat.js?v=0.7.6"></script>
+  <script src="firebase-config.js?v=0.7.6"></script>
+  <script src="action-menu.js?v=0.7.6" defer></script>
+  <link rel="stylesheet" href="portal.css?v=0.7.6">
+  <link rel="stylesheet" href="mobile-nav.css?v=0.7.6">
+  <link rel="stylesheet" href="theme.css?v=0.7.6">
 </head>
 <body class="auth-page">
   <aside class="auth-intro"><div class="auth-wordmark">КТЭиП ПК <span class="section-kicker">Кызыл</span></div><h1>Учебная среда<br>техникума</h1><p>Материалы преподавателей, проверочные работы и расписание в вашем кабинете.</p><div class="auth-index"><p><span>01</span>Предметы и материалы</p><p><span>02</span>Тесты и результаты</p><p><span>03</span>Расписание групп</p></div></aside>
@@ -133,7 +134,7 @@
     document.addEventListener('click',event=>{const button=event.target.closest('[data-show-password]');if(!button)return;const input=document.getElementById(button.dataset.showPassword),show=input.type==='password';input.type=show?'text':'password';button.textContent=show?'Скрыть':'Показать';button.setAttribute('aria-pressed',String(show));});
     function openPasswordReset(){
       document.getElementById('passwordReset')?.remove();const dialog=document.createElement('dialog');dialog.id='passwordReset';dialog.className='subscription-dialog';dialog.setAttribute('aria-labelledby','resetTitle');
-      dialog.innerHTML='<h2 id="resetTitle">Восстановить пароль</h2><form id="resetForm"><label for="resetEmail">Email аккаунта<input id="resetEmail" type="email" required autocomplete="email" inputmode="email"></label><p id="resetStatus" role="status"></p><div class="actions"><button type="submit" class="primary">Отправить ссылку</button><button type="button" class="secondary" id="resetClose">Закрыть</button></div></form>';document.body.append(dialog);dialog.querySelector('#resetEmail').value=document.getElementById('loginEmail').value;
+      dialog.innerHTML=`<div class="dialog-heading"><h2 id="resetTitle">Восстановить пароль</h2>${ActionMenu.icon('close','Закрыть восстановление пароля','id="resetClose"','ui-icon-button icon-close')}</div><form id="resetForm"><label for="resetEmail">Email аккаунта<input id="resetEmail" type="email" required autocomplete="email" inputmode="email" autofocus></label><p id="resetStatus" role="status"></p><div class="actions"><button type="submit" class="primary">Отправить ссылку</button></div></form>`;document.body.append(dialog);dialog.querySelector('#resetEmail').value=document.getElementById('loginEmail').value;
       dialog.querySelector('#resetClose').onclick=()=>dialog.close();dialog.querySelector('form').onsubmit=async event=>{event.preventDefault();const button=dialog.querySelector('[type="submit"]');if(button.disabled)return;button.disabled=true;try{await auth.sendPasswordResetEmail(dialog.querySelector('#resetEmail').value.trim());dialog.querySelector('#resetStatus').textContent='Если аккаунт с этим email существует, на него придёт письмо со ссылкой. Проверьте также папку «Спам».';}catch(error){dialog.querySelector('#resetStatus').textContent=authMessage(error);}finally{button.disabled=false;}};dialog.showModal();
     }
     auth.onAuthStateChanged(account => {

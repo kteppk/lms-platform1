@@ -51,8 +51,9 @@ const Schedule = (() => {
     ctx.root.querySelector('dialog')?.remove();
     const node=document.createElement('dialog');node.className='schedule-dialog';
     node.setAttribute('aria-labelledby','scheduleDialogTitle');
-    node.innerHTML=`<h2 id="scheduleDialogTitle">${title}</h2>${body}<p class="schedule-error" role="alert" hidden></p>`;
+    node.innerHTML=`<div class="dialog-heading"><h2 id="scheduleDialogTitle">${title}</h2>${ActionMenu.icon('close','Закрыть редактор расписания','data-schedule="close"','ui-icon-button icon-close')}</div>${body}<p class="schedule-error" role="alert" hidden></p>`;
     ctx.root.append(node);node.showModal();
+    node.querySelector('input,select,textarea')?.focus();
     node.addEventListener('cancel',event=>{if(node.dataset.busy)event.preventDefault();});
     return node;
   }
@@ -64,7 +65,7 @@ const Schedule = (() => {
     const cell=ctx.cells.find(c=>c.weekday===weekday&&c.lesson_number===number);
     ctx.editing={weekday,number,cell};
     const modal=dialog(ctx,`${days[weekday-1]} · ${number} пара`,
-      `<p>Группа ${e(ctx.group.name)} · каждую неделю</p><form data-schedule-form="cell"><fieldset><legend class="schedule-sr-only">Ячейка расписания</legend><div class="schedule-status-choice"><label><input type="radio" name="scheduleStatus" value="lesson" ${cell?.status!=='free'?'checked':''}> Занятие</label><label><input type="radio" name="scheduleStatus" value="free" ${cell?.status==='free'?'checked':''}> Нет пары</label></div><div id="scheduleLessonFields" class="schedule-fields">${input('scheduleTitle','Предмет',cell?.title,'list="scheduleSubjects" maxlength="200" required placeholder="Выберите или впишите предмет"')}<datalist id="scheduleSubjects">${subjects.map(s=>`<option value="${e(s.title)}"></option>`).join('')}</datalist>${input('scheduleTeacher','Преподаватель',cell?.teacher_label,'list="scheduleTeachers" maxlength="800" placeholder="ФИО или инициалы"')}<datalist id="scheduleTeachers">${staff.map(t=>`<option value="${e(t.name)}"></option>`).join('')}</datalist>${input('scheduleRoom','Аудитория',cell?.room,'maxlength="100" placeholder="Например, 20"')}<details><summary>Время и примечание (необязательно)</summary><div class="schedule-time-fields">${input('scheduleStart','Начало',cell?.starts_at?.slice(0,5),'type="time"')}${input('scheduleEnd','Окончание',cell?.ends_at?.slice(0,5),'type="time"')}</div><label for="scheduleNote">Примечание<textarea id="scheduleNote" maxlength="1000">${e(cell?.note)}</textarea></label></details></div><div class="actions"><button class="primary" type="submit">Сохранить</button>${button('Отмена','close')}</div></fieldset></form>`);
+      `<p>Группа ${e(ctx.group.name)} · каждую неделю</p><form data-schedule-form="cell"><fieldset><legend class="schedule-sr-only">Ячейка расписания</legend><div class="schedule-status-choice"><label><input type="radio" name="scheduleStatus" value="lesson" ${cell?.status!=='free'?'checked':''}> Занятие</label><label><input type="radio" name="scheduleStatus" value="free" ${cell?.status==='free'?'checked':''}> Нет пары</label></div><div id="scheduleLessonFields" class="schedule-fields">${input('scheduleTitle','Предмет',cell?.title,'list="scheduleSubjects" maxlength="200" required placeholder="Выберите или впишите предмет"')}<datalist id="scheduleSubjects">${subjects.map(s=>`<option value="${e(s.title)}"></option>`).join('')}</datalist>${input('scheduleTeacher','Преподаватель',cell?.teacher_label,'list="scheduleTeachers" maxlength="800" placeholder="ФИО или инициалы"')}<datalist id="scheduleTeachers">${staff.map(t=>`<option value="${e(t.name)}"></option>`).join('')}</datalist>${input('scheduleRoom','Аудитория',cell?.room,'maxlength="100" placeholder="Например, 20"')}<details><summary>Время и примечание (необязательно)</summary><div class="schedule-time-fields">${input('scheduleStart','Начало',cell?.starts_at?.slice(0,5),'type="time"')}${input('scheduleEnd','Окончание',cell?.ends_at?.slice(0,5),'type="time"')}</div><label for="scheduleNote">Примечание<textarea id="scheduleNote" maxlength="1000">${e(cell?.note)}</textarea></label></details></div><div class="actions"><button class="primary" type="submit">Сохранить</button></div></fieldset></form>`);
     updateStatus(modal);
   }
   function updateStatus(modal){
@@ -107,9 +108,9 @@ const Schedule = (() => {
     try{
       if(node.dataset.schedule==='refresh')await render(ctx.root,ctx.actor,ctx.groupId,true);
       if(node.dataset.schedule==='cell')await editCell(ctx,node);
-      if(node.dataset.schedule==='close')node.closest('dialog').close();
+      if(node.dataset.schedule==='close'&&!node.closest('dialog').dataset.busy)node.closest('dialog').close();
       if(node.dataset.schedule==='reload'){node.closest('dialog').close();await render(ctx.root,ctx.actor,ctx.groupId);}
-      if(node.dataset.schedule==='add-group')dialog(ctx,'Добавить группу',`<form data-schedule-form="group"><fieldset><legend class="schedule-sr-only">Новая группа</legend><div class="schedule-fields">${input('scheduleGroupName','Номер / название группы','','required maxlength="100" placeholder="Например, 9241"')}${input('scheduleCourse','Курс','','maxlength="40" placeholder="Например, 4"')}${input('scheduleProgram','Специальность','','maxlength="200"')}${input('scheduleSlots','Пар в день','6','type="number" min="1" max="12" required')}</div><div class="actions"><button class="primary" type="submit">Добавить группу</button>${button('Отмена','close')}</div></fieldset></form>`);
+      if(node.dataset.schedule==='add-group')dialog(ctx,'Добавить группу',`<form data-schedule-form="group"><fieldset><legend class="schedule-sr-only">Новая группа</legend><div class="schedule-fields">${input('scheduleGroupName','Номер / название группы','','required maxlength="100" placeholder="Например, 9241"')}${input('scheduleCourse','Курс','','maxlength="40" placeholder="Например, 4"')}${input('scheduleProgram','Специальность','','maxlength="200"')}${input('scheduleSlots','Пар в день','6','type="number" min="1" max="12" required')}</div><div class="actions"><button class="primary" type="submit">Добавить группу</button></div></fieldset></form>`);
     }catch(error){Portal.toast('Не удалось открыть редактор',error.message,'danger');}finally{node.disabled=false;}
   });
   document.addEventListener('submit',async event=>{
@@ -117,11 +118,11 @@ const Schedule = (() => {
     event.preventDefault();const modal=form.closest('dialog');if(modal.dataset.busy)return;
     modal.dataset.busy='true';const fields=form.querySelector('fieldset');
     // Read radio values before disabling the fieldset; individual input values remain available.
-    fields.disabled=true;const errorNode=modal.querySelector('.schedule-error');errorNode.hidden=true;
+    fields.disabled=true;const close=modal.querySelector('[data-schedule="close"]');close.disabled=true;const errorNode=modal.querySelector('.schedule-error');errorNode.hidden=true;
     try{await submit(ctx,form);}catch(error){
       errorNode.textContent=error.message;errorNode.hidden=false;
-      if(error.code==='conflict'&&!modal.querySelector('[data-schedule="reload"]'))errorNode.insertAdjacentHTML('afterend',button('Закрыть и обновить расписание','reload'));
-    }finally{fields.disabled=false;delete modal.dataset.busy;}
+      if(error.code==='conflict'&&!modal.querySelector('[data-schedule="reload"]'))errorNode.insertAdjacentHTML('afterend',button('Обновить расписание','reload','title="Закрыть редактор и загрузить актуальные данные"'));
+    }finally{fields.disabled=false;close.disabled=false;delete modal.dataset.busy;}
   });
   document.addEventListener('lms-reference-updated',event=>{const ctx=current;if(ctx?.root.isConnected&&ctx.readOnly&&!ctx.root.querySelector('dialog[open]')&&event.detail.action==='getWeeklySchedule'&&event.detail.data?.groupId===ctx.groupId)render(ctx.root,ctx.actor,ctx.groupId).catch(()=>{});});
   return {render,selectGroup:id=>{pendingGroup=id;}};

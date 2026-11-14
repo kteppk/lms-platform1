@@ -53,7 +53,7 @@ module.exports=async({admin,teacher,student,stamp,screenshotDir})=>{
   await admin.locator('dialog button[type="submit"]').click();
   await admin.locator('dialog .schedule-error:not([hidden])').waitFor();
   assert.equal(await admin.getByLabel('Аудитория',{exact:true}).inputValue(),'99','conflict retains unsaved editor values');
-  await admin.getByRole('button',{name:'Закрыть и обновить расписание',exact:true}).click();
+  await admin.getByRole('button',{name:'Обновить расписание',exact:true}).click();
   await slot(admin).filter({hasText:'20'}).waitFor();
   await slot(admin).click();await admin.getByRole('radio',{name:'Нет пары',exact:true}).check();
   assert.equal(await admin.locator('#scheduleLessonFields').isVisible(),false);
@@ -70,7 +70,7 @@ module.exports=async({admin,teacher,student,stamp,screenshotDir})=>{
     await select(page,groupId);
   }
   await slot(admin).click();await admin.getByRole('radio',{name:'Занятие',exact:true}).check();
-  await admin.getByLabel('Предмет',{exact:true}).fill('Не сохранять');await admin.getByRole('button',{name:'Отмена',exact:true}).click();
+  await admin.getByLabel('Предмет',{exact:true}).fill('Не сохранять');await admin.getByRole('button',{name:'Закрыть редактор расписания',exact:true}).click();
   assert.equal((await rpc(admin,'getWeeklySchedule',{groupId})).data.cells[0].status,'free');
   if(screenshotDir){require('node:fs').mkdirSync(screenshotDir,{recursive:true});for(const [role,page] of [['student',student],['teacher',teacher],['admin',admin]])await page.screenshot({path:path.join(screenshotDir,role+'-weekly.png'),fullPage:true});}
   for(const page of [admin,teacher,student])await page.setViewportSize({width:1280,height:900});

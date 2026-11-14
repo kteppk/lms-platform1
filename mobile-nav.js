@@ -13,7 +13,6 @@ const MobileNavigation = (() => {
     tests: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="m8 8 1 1 2-2m2 1h3m-8 6 1 1 2-2m2 1h3"/>',
     announcements: '<path d="m3 11 17-7v16L3 15zm4 5 2 5h3l-2-4M20 9h2m-2 6h2"/>',
     more: '<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',
-    close: '<path d="m6 6 12 12M18 6 6 18"/>',
     logout: '<path d="M10 4H4v16h6m4-13 5 5-5 5m-6-5h11"/>',
   };
   const svg = name => `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name] || icons.lectures}</svg>`;
@@ -76,7 +75,7 @@ const MobileNavigation = (() => {
     menu.className = 'mobile-menu';
     menu.setAttribute('aria-labelledby', 'mobileMenuTitle');
     menu.innerHTML = `<div class="mobile-menu-handle" aria-hidden="true"></div>
-      <div class="mobile-menu-heading"><div><p class="eyebrow">${{ student: 'Кабинет студента', teacher: 'Кабинет преподавателя', admin: 'Кабинет администратора' }[person.role]}</p><h2 id="mobileMenuTitle">Все разделы</h2></div><button type="button" class="mobile-icon-button" data-mobile-action="close" aria-label="Закрыть меню">${svg('close')}</button></div>
+      <div class="mobile-menu-heading"><div><p class="eyebrow">${{ student: 'Кабинет студента', teacher: 'Кабинет преподавателя', admin: 'Кабинет администратора' }[person.role]}</p><h2 id="mobileMenuTitle">Все разделы</h2></div>${ActionMenu.icon('close','Закрыть меню','data-mobile-action="close"','ui-icon-button icon-close')}</div>
       <p id="mobileProfileName" class="mobile-profile-name"></p>
       <nav class="mobile-menu-grid" aria-label="Все разделы кабинета">${tabs.map(button => `<button type="button" data-mobile-tab="${button.dataset.tab}">${svg(button.dataset.tab === 'students' ? 'accounts' : button.dataset.tab)}<span>${escapeHtml(button.textContent.trim())}</span></button>`).join('')}</nav>
       <p class="site-version" data-site-version>Версия ${escapeHtml(SiteRelease.version)}</p>
