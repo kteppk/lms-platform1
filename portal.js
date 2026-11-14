@@ -51,6 +51,7 @@ const Portal = (() => {
   }
   async function init(person){
     profile=person;
+    AccountTools.init(profile,update=>{profile={...profile,...update};});
     Subscriptions.init(profile);
     document.getElementById('userName').textContent=profile.name;
     nameNotice();
@@ -83,6 +84,7 @@ const Portal = (() => {
       ${!profile.nameConfirmed?`<p class="legacy-name">Ранее указано: <strong>${e(profile.name)}</strong>. Распределите данные по полям — мы не будем угадывать их порядок.</p>`:''}
       <form data-portal-form="name">${names.fields('profile',profile)}<button class="primary" type="submit">Сохранить ФИО</button></form>
       <div class="account-details"><span>${e(profile.email)}</span><span class="badge">${roles[profile.role]}</span></div>
+      ${AccountTools.profileSections(profile)}
       ${profile.canTeach?`<section class="profile-block"><h2>Профессиональный профиль</h2><p>Образование, стаж, квалификация, дипломы и грамоты доступны пользователям платформы.</p><div class="actions">${button('Заполнить профиль преподавателя','edit-own-profile','','primary')}${ActionMenu.render(button('Посмотреть свой профиль','view-teacher',`data-id="${e(profile.uid)}"`),'Действия с профилем')}</div></section>`:''}`;
   }
   async function renderTeachers(container){
@@ -138,7 +140,7 @@ const Portal = (() => {
   }
   async function announcements(container){return News.manager(container);}
   async function render(tab,parent){
-    if(!['home','profile','teachers','schedule','notifications','accounts','announcements'].includes(tab))return false;
+    if(!['home','profile','teachers','schedule','notifications','accounts','announcements','people','help'].includes(tab))return false;
     parent.innerHTML='<section id="portalPage" aria-live="polite"></section>';const target=parent.firstElementChild;
     if(tab==='home')await home(target);
     if(tab==='profile')await myProfile(target);
@@ -147,6 +149,7 @@ const Portal = (() => {
     if(tab==='notifications'){if(pendingSubscriptions){pendingSubscriptions=false;await Subscriptions.render(target);}else await renderNotices(target);}
     if(tab==='accounts')await renderAccounts(target);
     if(tab==='announcements')await announcements(target);
+    if(tab==='people'||tab==='help')await AccountTools.render(tab,target);
     return true;
   }
   async function action(name,node){

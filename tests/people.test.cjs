@@ -1,0 +1,50 @@
+const {test,before,after}=require('node:test');
+const assert=require('node:assert/strict');const fs=require('node:fs');const {PGlite}=require('@electric-sql/pglite');
+let db;const rpc=async(name,args)=>(await db.query('select '+name+'('+args.map((_,i)=>'$'+(i+1)).join(',')+') value',args)).rows[0].value;
+before(async()=>{
+ db=new PGlite();await db.exec('create role anon;create role authenticated;create role service_role bypassrls;create schema storage;create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);');
+ const files=fs.readdirSync('supabase/migrations').sort();
+ for(const f of files.filter(f=>f<'20261115000100'))await db.exec(fs.readFileSync('supabase/migrations/'+f,'utf8'));
+ await db.exec("insert into profiles(id,name,email) values('admin','Админ Первый','private-admin@test'),('teacher','Семёнов Иван','private-teacher@test'),('student','Студент Первый','private-student@test');insert into teachers values('teacher');update account_roles set role='admin' where user_id='admin';insert into teacher_profiles(user_id,avatar_path) values('teacher','teacher/old-photo');");
+ for(const f of files.filter(f=>f>='20261115000100'))await db.exec(fs.readFileSync('supabase/migrations/'+f,'utf8'));
+ await db.exec('set role service_role');
+});
+after(async()=>await db?.close());
+test('existing teacher photos survive migration; role-independent avatars synchronize with older teacher clients without trigger recursion',async()=>{
+ assert.equal((await db.query("select path,revision from account_avatars where user_id='teacher'")).rows[0].path,'teacher/old-photo');
+ assert.equal((await db.query("select avatar_path from teacher_directory where id='teacher'")).rows[0].avatar_path,'teacher/old-photo');
+ const student=await rpc('save_account_avatar',['student','student/new-photo',0]);assert.equal(student.revision,1);
+ await rpc('save_account_avatar',['admin','admin/new-photo',0]);
+ const current=await rpc('save_account_avatar',['teacher','teacher/new-photo',0]);assert.equal(current.revision,1);
+ assert.equal((await db.query("select avatar_path from teacher_profiles where user_id='teacher'")).rows[0].avatar_path,'teacher/new-photo');
+ await db.query("update teacher_profiles set avatar_path='teacher/legacy-update' where user_id='teacher'");
+ assert.equal((await db.query("select path,revision from account_avatars where user_id='teacher'")).rows[0].revision,2);
+ await assert.rejects(rpc('save_account_avatar',['teacher','teacher/stale',1]),{code:'PT409'});
+ await assert.rejects(rpc('save_account_avatar',['student','teacher/foreign-photo',1]),{code:'22023'});
+ await rpc('save_account_avatar',['teacher',null,2]);assert.equal((await db.query("select avatar_path from teacher_profiles where user_id='teacher'")).rows[0].avatar_path,null);
+ assert.equal((await db.query("select avatar_path from teacher_directory where id='teacher'")).rows[0].avatar_path,null);
+});
+test('people search matches name tokens and е/ё, treats wildcards literally, filters current roles and exposes no email',async()=>{
+ const result=await rpc('people_directory',['иван семенов','teacher',0]);assert.equal(result.rows.length,1);assert.equal(result.rows[0].id,'teacher');
+ assert.equal(JSON.stringify(result).includes('private-'),false);assert.equal('email' in result.rows[0],false);
+ assert.equal((await rpc('people_directory',['private-teacher@test','',0])).rows.length,0);
+ assert.equal((await rpc('people_directory',['%','',0])).rows.length,0);
+ await db.query("insert into profiles(id,name,email) values('yo','Ёлкин Пётр','private-yo@test')");assert.equal((await rpc('people_directory',['ЕЛКИН','',0])).rows[0].id,'yo');
+ await db.query("update account_roles set role='student' where user_id='teacher'");
+ assert.equal((await rpc('people_directory',['Семёнов','teacher',0])).rows.length,0);
+ const p=(await rpc('people_directory',['Семёнов','student',0])).rows[0];assert.equal(p.has_teacher_profile,false);assert.equal(p.position,null);
+ await assert.rejects(rpc('people_directory',['','bogus',0]),{code:'22023'});
+ for(let n=0;n<35;n++)await db.query('insert into profiles(id,name,email) values($1,$2,$3)',['p'+n,'Одинаковая фамилия','p'+n+'@test']);
+ const a=await rpc('people_directory',['Одинаковая','',0]),b=await rpc('people_directory',['Одинаковая','',30]);
+ assert.equal(a.hasMore,true);assert.equal(b.hasMore,false);assert.equal(new Set([...a.rows.slice(0,30),...b.rows].map(p=>p.id)).size,35);
+});
+test('only administrators can configure Google Forms; settings are revision-safe and all new tables/RPCs are service-only',async()=>{
+ await assert.rejects(rpc('save_portal_settings',['student','https://forms.gle/example',0]),{code:'42501'});
+ await assert.rejects(rpc('save_portal_settings',['admin','https://example.com/form',0]),{code:'23514'});
+ const saved=await rpc('save_portal_settings',['admin','https://forms.gle/example',0]);assert.equal(saved.revision,1);
+ await assert.rejects(rpc('save_portal_settings',['admin','https://forms.gle/stale',0]),{code:'PT409'});
+ await rpc('save_portal_settings',['admin',null,1]);
+ assert.equal((await db.query('select feedback_url from portal_settings')).rows[0].feedback_url,null);
+ const perms=(await db.query("select has_table_privilege('anon','account_avatars','select') avatars,has_table_privilege('authenticated','portal_settings','update') settings,has_function_privilege('authenticated','people_directory(text,text,integer)','execute') people,has_function_privilege('anon','save_account_avatar(text,text,integer)','execute') save")).rows[0];
+ assert.deepEqual(perms,{avatars:false,settings:false,people:false,save:false});
+});

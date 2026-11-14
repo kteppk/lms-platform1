@@ -4,6 +4,7 @@ import type { Actor, Input } from './shared.ts';
 import { scheduleAction } from './schedule.ts';
 import { saveNames } from './names.ts';
 import { newsAction } from './news.ts';
+import { peopleAction } from './people.ts';
 
 const profileBucket='lms-profiles';
 const imageTypes=['image/jpeg','image/png','image/webp'];
@@ -45,16 +46,17 @@ async function teacherProfile(db:SupabaseClient,actor:Actor,input:Input) {
   const role=await dataOf(db.from('account_roles').select('role').eq('user_id',uid).maybeSingle());
   const instructor=await dataOf(db.from('teachers').select('user_id').eq('user_id',uid).maybeSingle());
   if(!role || (actor.role!=='admin'&&(!instructor||!['teacher','admin'].includes(role.role))))missing('Преподаватель не найден.');
-  const [person,profile,documents,subjects]=await Promise.all([
+  const [person,profile,documents,subjects,photo]=await Promise.all([
     dataOf(db.from('profiles').select('id,name').eq('id',uid).single()),
     dataOf(db.from('teacher_profiles').select('position,bio,education,qualification,experience_years,avatar_path,revision,updated_at').eq('user_id',uid).maybeSingle()),
     dataOf(db.from('teacher_documents').select('id,title,category,issued_year,path,file_name,mime').eq('teacher_id',uid).order('created_at',{ascending:false})),
     dataOf(db.from('subject_instructors').select('subject_id').eq('teacher_id',uid)),
+    dataOf(db.from('account_avatars').select('path').eq('user_id',uid).maybeSingle()),
   ]);
-  const paths=[...(documents??[]).map(d=>d.path),...(profile?.avatar_path?[profile.avatar_path]:[])];
+  const paths=[...(documents??[]).map(d=>d.path),...(photo?.path?[photo.path]:[])];
   const signed=paths.length?await dataOf(db.storage.from(profileBucket).createSignedUrls(paths,3600)):[];
   const links=new Map((signed??[]).filter(f=>f.path&&!f.error).map(f=>[f.path,f.signedUrl]));
-  return {...person,...profile,revision:profile?.revision??0,avatarUrl:links.get(profile?.avatar_path)??null,
+  return {...person,...profile,revision:profile?.revision??0,avatarUrl:links.get(photo?.path)??null,
     canEdit:actor.role==='admin'||(actor.role==='teacher'&&actor.uid===uid),subjectIds:(subjects??[]).map(s=>s.subject_id),
     documents:(documents??[]).map(d=>({...d,url:links.get(d.path)??null})),avatar_path:undefined};
 }
@@ -77,7 +79,7 @@ async function checkFile(db:SupabaseClient,uid:string,value:unknown,avatar=false
 }
 async function saveTeacherProfile(db:SupabaseClient,actor:Actor,input:Input) {
   const uid=await canEditTeacher(db,actor,input.teacherId);
-  const previous=await dataOf(db.from('teacher_profiles').select('avatar_path').eq('user_id',uid).maybeSingle());
+  const previous=await dataOf(db.from('account_avatars').select('path').eq('user_id',uid).maybeSingle());
   const years=input.experienceYears;
   if(years!==null&&(typeof years!=='number'||!Number.isInteger(years)||years<0||years>80))invalid('Укажите стаж от 0 до 80 лет или оставьте поле пустым.');
   const fields:Input={position:text(input.position??'',200,'Должность',true),bio:text(input.bio??'',5000,'Описание',true),
@@ -87,9 +89,9 @@ async function saveTeacherProfile(db:SupabaseClient,actor:Actor,input:Input) {
   await dataOf(db.from('teacher_profiles').upsert({user_id:uid},{onConflict:'user_id',ignoreDuplicates:true}));
   const saved=await dataOf(db.from('teacher_profiles').update(fields).eq('user_id',uid).eq('revision',input.revision).select('revision').maybeSingle());
   if(!saved)throw new ApiError(409,'conflict','Профиль уже изменён. Откройте его заново.');
-  if(previous?.avatar_path && fields.avatar_path!==undefined && previous.avatar_path!==fields.avatar_path){
-    const used=await dataOf(db.from('teacher_documents').select('id').eq('path',previous.avatar_path).maybeSingle());
-    if(!used)await db.storage.from(profileBucket).remove([previous.avatar_path]);
+  if(previous?.path && fields.avatar_path!==undefined && previous.path!==fields.avatar_path){
+    const used=await dataOf(db.from('teacher_documents').select('id').eq('path',previous.path).maybeSingle());
+    if(!used)await db.storage.from(profileBucket).remove([previous.path]);
   }
   return saved;
 }
@@ -105,7 +107,7 @@ async function deleteDocument(db:SupabaseClient,actor:Actor,input:Input) {
   const uid=await canEditTeacher(db,actor,input.teacherId);
   const row=await dataOf(db.from('teacher_documents').delete().eq('teacher_id',uid).eq('id',id(input.id)).select('path').maybeSingle());
   if(!row)missing('Документ не найден.');
-  const avatar=await dataOf(db.from('teacher_profiles').select('user_id').eq('avatar_path',row.path).maybeSingle());
+  const avatar=await dataOf(db.from('account_avatars').select('user_id').eq('path',row.path).maybeSingle());
   if(!avatar)await dataOf(db.storage.from(profileBucket).remove([row.path]));
   return null;
 }
@@ -161,7 +163,7 @@ export async function communityAction(db:SupabaseClient,actor:Actor,action:unkno
       if(!path.startsWith(uid+'/')||!/^[A-Za-z0-9_-]+$/.test(path.slice(uid.length+1)))invalid('Некорректный файл.');
       const [document,profile]=await Promise.all([
         dataOf(db.from('teacher_documents').select('id').eq('path',path).maybeSingle()),
-        dataOf(db.from('teacher_profiles').select('user_id').eq('avatar_path',path).maybeSingle()),
+        dataOf(db.from('account_avatars').select('user_id').eq('path',path).maybeSingle()),
       ]);
       if(document||profile){data=false;break;}
       await dataOf(db.storage.from(profileBucket).remove([path]));data=true;break;
@@ -196,7 +198,7 @@ export async function communityAction(db:SupabaseClient,actor:Actor,action:unkno
       requireAdmin(actor);
       data=await dataOf(db.from('notifications').insert({actor_id:actor.uid,category:'announcement',title:text(input.title,200,'Заголовок'),body:text(input.body,2000,'Текст'),destination:'notifications',severity:input.important===true?'danger':'info'}).select('id').single());break;
     }
-    default:return await newsAction(db,actor,action,input) ?? await scheduleAction(db,actor,action,input);
+    default:return await peopleAction(db,actor,action,input) ?? await newsAction(db,actor,action,input) ?? await scheduleAction(db,actor,action,input);
   }
   return {data};
 }

@@ -2,7 +2,7 @@
   "name": "lms-platform",
   "private": true,
   "scripts": {
-    "test": "node --experimental-transform-types --test tests/assessment.test.cjs tests/client-retry.test.cjs tests/schedule.test.cjs tests/results.test.cjs tests/identity-notifications.test.cjs tests/news.test.cjs tests/connection.test.cjs",
+    "test": "node --experimental-transform-types --test tests/assessment.test.cjs tests/client-retry.test.cjs tests/schedule.test.cjs tests/results.test.cjs tests/identity-notifications.test.cjs tests/news.test.cjs tests/connection.test.cjs tests/people.test.cjs",
     "test:mobile": "node tests/mobile-navigation.cjs",
     "release": "node scripts/release.cjs"
   },
@@ -10,5 +10,5 @@
     "@electric-sql/pglite": "0.5.16",
     "playwright-core": "1.65.0"
   },
-  "version": "0.7.6"
+  "version": "0.8.0"
 }

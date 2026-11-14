@@ -1,5 +1,5 @@
-/* Generated for release "0.7.6". Static files only; no API, tokens or uploads. */
-const VERSION="0.7.6";
+/* Generated for release "0.8.0". Static files only; no API, tokens or uploads. */
+const VERSION="0.8.0";
 importScripts('./sw-manifest.js?v='+VERSION);
 const PREFIX='lms-shell:'+self.registration.scope+':',CACHE=PREFIX+VERSION;
 const urls=new Set(OFFLINE_ASSETS.map(p=>new URL(p,self.registration.scope).href));

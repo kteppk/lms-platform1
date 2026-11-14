@@ -4,26 +4,27 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Кабинет преподавателя</title>
-  <script src="connection.js?v=0.7.6"></script>
-  <script src="vendor/firebase/12.10.0/firebase-app-compat.js?v=0.7.6"></script>
-  <script src="vendor/firebase/12.10.0/firebase-auth-compat.js?v=0.7.6"></script>
-  <script src="firebase-config.js?v=0.7.6"></script>
-  <script src="results-export.js?v=0.7.6"></script>
-  <script src="gradebook.js?v=0.7.6"></script>
-  <script src="release.js?v=0.7.6"></script>
-  <script src="action-menu.js?v=0.7.6" defer></script>
-  <script src="news.js?v=0.7.6" defer></script>
-  <script src="subject-search.js?v=0.7.6" defer></script>
-  <script src="mobile-nav.js?v=0.7.6" defer></script>
-  <script src="schedule.js?v=0.7.6" defer></script>
-  <script src="subscriptions.js?v=0.7.6" defer></script>
-  <script src="portal.js?v=0.7.6" defer></script>
-  <link rel="stylesheet" href="assessment.css?v=0.7.6">
-  <link rel="stylesheet" href="subjects.css?v=0.7.6">
-  <link rel="stylesheet" href="portal.css?v=0.7.6">
-  <link rel="stylesheet" href="mobile-nav.css?v=0.7.6">
-  <link rel="stylesheet" href="schedule.css?v=0.7.6">
-  <link rel="stylesheet" href="theme.css?v=0.7.6">
+  <script src="connection.js?v=0.8.0"></script>
+  <script src="vendor/firebase/12.10.0/firebase-app-compat.js?v=0.8.0"></script>
+  <script src="vendor/firebase/12.10.0/firebase-auth-compat.js?v=0.8.0"></script>
+  <script src="firebase-config.js?v=0.8.0"></script>
+  <script src="results-export.js?v=0.8.0"></script>
+  <script src="gradebook.js?v=0.8.0"></script>
+  <script src="release.js?v=0.8.0"></script>
+  <script src="action-menu.js?v=0.8.0" defer></script>
+  <script src="news.js?v=0.8.0" defer></script>
+  <script src="subject-search.js?v=0.8.0" defer></script>
+  <script src="mobile-nav.js?v=0.8.0" defer></script>
+  <script src="schedule.js?v=0.8.0" defer></script>
+  <script src="subscriptions.js?v=0.8.0" defer></script>
+  <script src="account-tools.js?v=0.8.0" defer></script>
+  <script src="portal.js?v=0.8.0" defer></script>
+  <link rel="stylesheet" href="assessment.css?v=0.8.0">
+  <link rel="stylesheet" href="subjects.css?v=0.8.0">
+  <link rel="stylesheet" href="portal.css?v=0.8.0">
+  <link rel="stylesheet" href="mobile-nav.css?v=0.8.0">
+  <link rel="stylesheet" href="schedule.css?v=0.8.0">
+  <link rel="stylesheet" href="theme.css?v=0.8.0">
 </head>
 <body>
   <header>
@@ -47,8 +48,10 @@
       <span class="nav-label">Информация</span><button class="tab-btn" data-tab="teachers" onclick="switchTab('teachers',this)">Преподаватели</button>
 <button class="tab-btn" data-tab="schedule" onclick="switchTab('schedule',this)">Расписание</button>
 <button class="tab-btn" data-tab="notifications" onclick="switchTab('notifications',this)">Уведомления</button>
+<button class="tab-btn" data-tab="people" onclick="switchTab('people',this)">Люди</button>
+<button class="tab-btn" data-tab="help" onclick="switchTab('help',this)">Справочник</button>
 <button class="tab-btn" data-tab="profile" onclick="switchTab('profile',this)">Мой профиль</button>
-      <small class="site-version" data-site-version>Версия 0.7.6</small>
+      <small class="site-version" data-site-version>Версия 0.8.0</small>
     </nav>
 
     <div id="content" class="content"></div>

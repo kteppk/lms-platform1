@@ -11,7 +11,7 @@ const screenshots = process.env.LMS_SCREENSHOTS;
 const root = path.resolve(__dirname, '..');
 const assets = new Set(['index.html', 'student.html', 'teacher.html', 'admin.html', 'student.js',
   'schedule.js', 'schedule.css', 'firebase-config.js', 'portal.js', 'portal.css', 'mobile-nav.js', 'mobile-nav.css',
-  'subjects.css', 'assessment.css', 'gradebook.js', 'results-export.js', 'theme.css', 'connection.js', 'action-menu.js', 'release.js', 'news.js', 'subject-search.js', 'subscriptions.js', 'name-fields.mjs', 'supabase/functions/_shared/name-rules.mjs']);
+  'subjects.css', 'assessment.css', 'gradebook.js', 'results-export.js', 'theme.css', 'connection.js', 'action-menu.js', 'account-tools.js', 'release.js', 'news.js', 'subject-search.js', 'subscriptions.js', 'name-fields.mjs', 'supabase/functions/_shared/name-rules.mjs']);
 
 function fixtures(role) {
   let active = null;
@@ -22,6 +22,8 @@ function fixtures(role) {
     switch (action) {
       case 'profile': return { uid: role, role, name, email: role + '@example.test', canTeach: role === 'teacher', noPatronymic: false,firstNameRaw:'Александра',lastNameRaw:'Константинопольская',patronymicRaw:'Владимировна',patronymicStatus:'provided',nameRevision:1,nameConfirmed:true,needsNameReview:false };
       case 'listNews': return {rows:[],hasMore:false};
+      case 'searchPeople': return {rows:[{id:'person',name,role:'student',avatarUrl:null}],hasMore:false};
+      case 'getPortalSettings': return {feedbackUrl:null,revision:0};
       case 'registrationStatistics': return {total:27,students:22,teachers:4,admins:1,last7:5,last30:27,months:[]};
       case 'listSubjects': return [{ id: 'subject', title: 'Экономика и финансовая грамотность', description: 'Материалы и задания по предмету.', teacherCount: 1, joined: true, canEdit: true }];
       case 'listTeachers': return [teacher];
@@ -63,7 +65,7 @@ async function prepare(browser, role) {
     const user = { uid: role, email: role + '@example.test', getIdToken: async () => 'fixture-token', updateProfile: async () => {} };
     window.firebase = { initializeApp() {}, auth: () => ({ currentUser: user, onAuthStateChanged: callback => { queueMicrotask(() => callback(user)); return () => {}; }, signOut: async () => {} }) };
   }, { role });
-  await page.route('**/vendor/firebase/12.10.0/*.js', route => route.fulfill({ contentType: 'text/javascript', body: '' }));
+  await page.route('**/vendor/firebase/12.10.0/*.js*', route => route.fulfill({ contentType: 'text/javascript', body: '' }));
   await page.route('https://www.gstatic.com/firebasejs/**', route => route.fulfill({ contentType: 'text/javascript', body: '' }));
   await page.route('**/portal.js?*', async route => { await new Promise(resolve => setTimeout(resolve, 150)); await route.continue(); });
   const api = fixtures(role);
@@ -150,7 +152,7 @@ async function verify(page, role) {
   const ready = { home: '.news-feed', subjects: '.subject-card', lectures: role === 'student' ? '#content .item' : '#lectureTitle',
     tests: role === 'student' ? '#content .item' : '#testTitle',
     students: '#studentsList', journal: '#gradeRows h3', results: '#gradeRows h3', teachers: '.teacher-card',
-    schedule: '#scheduleGroupSelect', notifications: '.notice-card', profile: '#profileFirstName', accounts: '.table-wrap tbody tr', announcements: '#newsTitle' };
+    schedule: '#scheduleGroupSelect', notifications: '.notice-card', profile: '#profileFirstName', accounts: '.table-wrap tbody tr', announcements: '#newsTitle', people: '.people-search', help: '.help-answers' };
   for (const tab of sections) {
     await choose(page, tab);
     await page.locator(ready[tab]).first().waitFor();

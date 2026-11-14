@@ -11,6 +11,7 @@ import { communityAction } from "./community.ts";
 import { resultsAction } from "./results.ts";
 import { namePayload, profileNameColumns, validatedNames } from './names.ts';
 import { fullName } from '../_shared/name-rules.mjs';
+import { ownAvatar } from './people.ts';
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -565,7 +566,7 @@ export function createHandler(db: SupabaseClient, verify = verifyFirebase) {
       const actor = await getActor(db, identity, action === "profile" ? input.nameFields ?? input.name ?? "" : undefined);
       let result;
       switch (action) {
-        case "profile": result = { uid: actor.uid, name: actor.name, email: actor.email, role: actor.role, canTeach: actor.teacher, noPatronymic: actor.noPatronymic,...actor.nameData }; break;
+        case "profile": result = { uid: actor.uid, name: actor.name, email: actor.email, role: actor.role, canTeach: actor.teacher, noPatronymic: actor.noPatronymic,...actor.nameData,...await ownAvatar(db,actor.uid) }; break;
         case "listSubjects": result = await listSubjects(db, actor); break;
         case "saveSubject": result = await saveSubject(db, actor, input); break;
         case "deleteSubject":

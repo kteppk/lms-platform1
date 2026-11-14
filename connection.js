@@ -1,7 +1,7 @@
 const AppConnection=(()=>{
   const prefix='lms-reference-v1:',ownerKey='lms-reference-owner-v1',modeKey='lms-reference-mode-v1';
   const policies={listScheduleGroups:300000,getWeeklySchedule:30000,listSchedule:30000,listSubjects:60000,listNews:60000};
-  const reads=new Set(['profile','listSubjects','listSubjectTeachers','getSubjectContent','listMaterials','listStudentTests','listTeacherTests','listStudents','getStudentAttempt','listActiveAttempts','listResults','getResult','listResultTests','getTestResults','exportTestResults','listTeachers','getTeacherProfile','listSchedule','listScheduleGroups','getWeeklySchedule','listNotifications','listNotificationSubscriptions','listRoleChanges','listNews','registrationStatistics','listAccounts']);
+  const reads=new Set(['profile','listSubjects','listSubjectTeachers','getSubjectContent','listMaterials','listStudentTests','listTeacherTests','listStudents','getStudentAttempt','listActiveAttempts','listResults','getResult','listResultTests','getTestResults','exportTestResults','listTeachers','getTeacherProfile','listSchedule','listScheduleGroups','getWeeklySchedule','listNotifications','listNotificationSubscriptions','listRoleChanges','listNews','registrationStatistics','searchPeople','getPerson','getPortalSettings','listAccounts']);
   const memory=new Map(),pending=new Map();let owner=null,epoch=0,worker=null;
   const online=()=>navigator.onLine!==false;
   const e=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
