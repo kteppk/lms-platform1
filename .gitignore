@@ -4,3 +4,7 @@ node_modules/
 supabase/.temp/
 supabase/.branches/
 supabase/functions/.env*
+
+.mirror-site/
+.test-*.log
+.qa-output/

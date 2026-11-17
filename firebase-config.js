@@ -40,7 +40,7 @@ async function sendFunction(action, data, account = auth.currentUser) {
   const token = await account.getIdToken();
   const retryable = new Set(['profile','listSubjects','listSubjectTeachers','getSubjectContent','listMaterials',
     'listStudentTests','listTeacherTests','listStudents','getStudentAttempt','listActiveAttempts','listResults',
-    'getResult','listResultTests','getTestResults','exportTestResults','saveStudentDraft','submitStudentTest','listTeachers','getTeacherProfile','listSchedule','listScheduleGroups','getWeeklySchedule','listNotifications','listNotificationSubscriptions','listRoleChanges','listNews','registrationStatistics','searchPeople','getPerson','getPortalSettings','listAccounts','readNotifications']).has(action);
+    'getResult','listResultTests','getTestResults','exportTestResults','saveStudentDraft','submitStudentTest','listTeachers','getTeacherProfile','listSchedule','listScheduleGroups','getWeeklySchedule','listNotifications','listNotificationSubscriptions','listRoleChanges','listNews','registrationStatistics','listCuratorMessages','getPushSettings','searchPeople','getPerson','getPortalSettings','listAccounts','readNotifications']).has(action);
   for (let attempt = 0; ; attempt++) {
     let response, result;
     const controller=typeof AbortController!=='undefined'?new AbortController():null;
@@ -117,7 +117,7 @@ function watchCabinet(role, onReady) {
     try {
       const profile = await getProfile(account);
       if (auth.currentUser?.uid !== account.uid) return;
-      if (profile.role !== role && !(role === 'teacher' && profile.role === 'admin' && profile.canTeach)) {
+      if (profile.role !== role && !(role === 'student' && profile.role === 'curator') && !(role === 'teacher' && profile.role === 'admin' && profile.canTeach)) {
         location.replace(cabinetPage(profile.role));
         return;
       }
@@ -130,6 +130,7 @@ function watchCabinet(role, onReady) {
       if(typeof AppConnection!=='undefined')AppConnection.ready();
       if (typeof Portal !== 'undefined') await Portal.init(profile);
       await onReady();
+      const target=sessionStorage.getItem('lms-open-section');sessionStorage.removeItem('lms-open-section');if(['home','schedule'].includes(target))Portal.navigate(target);
     } catch (error) {
       showStatus('Не удалось открыть кабинет. ' + error.message);
       if(typeof AppConnection!=='undefined')AppConnection.recovery(error);
@@ -141,6 +142,8 @@ async function logout() {
   try {
     const uid=auth.currentUser?.uid;
     if(uid&&typeof AppConnection!=='undefined'&&AppConnection.hasDrafts(uid)&&!confirm('На устройстве есть несохранённые ответы теста. При выходе локальные копии будут удалены. Сначала можно вернуться к работе и скачать копию. Выйти?'))return;
+    if(typeof PushSettings!=='undefined')await PushSettings.detach().catch(()=>{});
+    if(typeof CuratorChat!=='undefined')CuratorChat.clear();
     await auth.signOut();
     if(uid&&typeof AppConnection!=='undefined')AppConnection.clearUser(uid);
   } catch (error) {

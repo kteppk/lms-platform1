@@ -1,0 +1,7515 @@
+{
+  "source": "Фотографии расписания, полученные 17.11.2026",
+  "recurrence": "weekly",
+  "duplicatePhotos": [
+    [
+      1,
+      2
+    ]
+  ],
+  "stats": {
+    "groups": 18,
+    "lessons": 356,
+    "free": 273,
+    "unknown": 19
+  },
+  "groups": [
+    {
+      "key": "н901",
+      "name": "Н 9-01",
+      "course": "",
+      "program": "Социально-экономический профиль (на базе основного общего образования, 9 классов)",
+      "lessonsPerDay": 6,
+      "photos": [
+        1,
+        2
+      ],
+      "cells": [
+        {
+          "weekday": 1,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Литература",
+            "teacherLabel": "Аракчаа С.Ю.",
+            "room": "29",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "ОБЗР",
+            "teacherLabel": "Монгуш А.Б.",
+            "room": "29",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Математика",
+            "teacherLabel": "Бурбу Ч.М.",
+            "room": "29",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Право",
+            "teacherLabel": "Ондар С.А.",
+            "room": "29",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "География",
+            "teacherLabel": "",
+            "room": "29",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "История",
+            "teacherLabel": "Ооржак Ш.С.",
+            "room": "29",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Математика",
+            "teacherLabel": "Бурбу Ч.М.",
+            "room": "29",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Русский язык",
+            "teacherLabel": "Аракчаа С.Ю.",
+            "room": "29",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "География",
+            "teacherLabel": "",
+            "room": "29",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Обществознание",
+            "teacherLabel": "",
+            "room": "29",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Обществознание",
+            "teacherLabel": "",
+            "room": "29",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Экономика",
+            "teacherLabel": "Гузик Т.А.",
+            "room": "17",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Право",
+            "teacherLabel": "Ондар С.А.",
+            "room": "29",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "ОБЗР",
+            "teacherLabel": "Монгуш А.Б.",
+            "room": "29",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Математика",
+            "teacherLabel": "Бурбу Ч.М.",
+            "room": "29",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Обществознание",
+            "teacherLabel": "",
+            "room": "17",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Школа счастливой семьи",
+            "teacherLabel": "Дадар Ч.Ч.",
+            "room": "29",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "ОБЗР",
+            "teacherLabel": "Монгуш А.Б.",
+            "room": "29",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "История",
+            "teacherLabel": "Ооржак Ш.С.",
+            "room": "29",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Иностранный язык",
+            "teacherLabel": "",
+            "room": "29",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        }
+      ]
+    },
+    {
+      "key": "н902",
+      "name": "Н 9-02",
+      "course": "",
+      "program": "Социально-экономический профиль (на базе основного общего образования, 9 классов)",
+      "lessonsPerDay": 6,
+      "photos": [
+        1,
+        2
+      ],
+      "cells": [
+        {
+          "weekday": 1,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Математика",
+            "teacherLabel": "Бурбу Ч.М.",
+            "room": "34",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Литература",
+            "teacherLabel": "Аракчаа С.Ю.",
+            "room": "34",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "ОБЗР",
+            "teacherLabel": "Монгуш А.Б.",
+            "room": "34",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Право",
+            "teacherLabel": "Ондар С.А.",
+            "room": "34",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "География",
+            "teacherLabel": "",
+            "room": "34",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Обществознание",
+            "teacherLabel": "",
+            "room": "34",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Математика",
+            "teacherLabel": "Бурбу Ч.М.",
+            "room": "34",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Русский язык",
+            "teacherLabel": "Аракчаа С.Ю.",
+            "room": "34",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "ОБЗР",
+            "teacherLabel": "Монгуш А.Б.",
+            "room": "34",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "География",
+            "teacherLabel": "",
+            "room": "34",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "История",
+            "teacherLabel": "Ооржак Ш.С.",
+            "room": "34",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Экономика",
+            "teacherLabel": "Гузик Т.А.",
+            "room": "17",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "ОБЗР",
+            "teacherLabel": "Монгуш А.Б.",
+            "room": "34",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Обществознание",
+            "teacherLabel": "",
+            "room": "34",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Право",
+            "teacherLabel": "Ондар С.А.",
+            "room": "34",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Иностранный язык",
+            "teacherLabel": "",
+            "room": "34",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Обществознание",
+            "teacherLabel": "",
+            "room": "17",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Математика",
+            "teacherLabel": "Бурбу Ч.М.",
+            "room": "34",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Школа счастливой семьи",
+            "teacherLabel": "Дадар Ч.Ч.",
+            "room": "34",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "История",
+            "teacherLabel": "Ооржак Ш.С.",
+            "room": "34",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        }
+      ]
+    },
+    {
+      "key": "н903",
+      "name": "Н 9-03",
+      "course": "",
+      "program": "Социально-экономический профиль (на базе основного общего образования, 9 классов)",
+      "lessonsPerDay": 6,
+      "photos": [
+        3
+      ],
+      "cells": [
+        {
+          "weekday": 1,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Право",
+            "teacherLabel": "Ондар С.А.",
+            "room": "25",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Математика",
+            "teacherLabel": "Бурбу Ч.М.",
+            "room": "25",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Литература",
+            "teacherLabel": "Аракчаа С.Ю.",
+            "room": "25",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "ОБЗР",
+            "teacherLabel": "Монгуш А.Б.",
+            "room": "25",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "История",
+            "teacherLabel": "Ооржак Ш.С.",
+            "room": "25",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Обществознание",
+            "teacherLabel": "",
+            "room": "25",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "География",
+            "teacherLabel": "",
+            "room": "25",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Право",
+            "teacherLabel": "Ондар С.А.",
+            "room": "25",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Математика",
+            "teacherLabel": "Бурбу Ч.М.",
+            "room": "25",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Русский язык",
+            "teacherLabel": "Аракчаа С.Ю.",
+            "room": "25",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Обществознание",
+            "teacherLabel": "",
+            "room": "25",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "География",
+            "teacherLabel": "",
+            "room": "25",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Математика",
+            "teacherLabel": "Бурбу Ч.М.",
+            "room": "25",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Экономика",
+            "teacherLabel": "Гузик Т.А.",
+            "room": "25",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "История",
+            "teacherLabel": "Ооржак Ш.С.",
+            "room": "25",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "ОБЗР",
+            "teacherLabel": "Монгуш А.Б.",
+            "room": "25",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Иностранный язык",
+            "teacherLabel": "Донгак С.А.",
+            "room": "25",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Школа счастливой семьи",
+            "teacherLabel": "Дадар Ч.Ч.",
+            "room": "25",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "ОБЗР",
+            "teacherLabel": "Монгуш А.Б.",
+            "room": "25",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Обществознание",
+            "teacherLabel": "",
+            "room": "25",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        }
+      ]
+    },
+    {
+      "key": "н904",
+      "name": "Н 9-04",
+      "course": "",
+      "program": "Социально-экономический профиль (на базе основного общего образования, 9 классов)",
+      "lessonsPerDay": 6,
+      "photos": [
+        3
+      ],
+      "cells": [
+        {
+          "weekday": 1,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "ОБЗР",
+            "teacherLabel": "Монгуш А.Б.",
+            "room": "26",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Право",
+            "teacherLabel": "Ондар С.А.",
+            "room": "26",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Обществознание",
+            "teacherLabel": "",
+            "room": "26",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Литература",
+            "teacherLabel": "Аракчаа С.Ю.",
+            "room": "26",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "История",
+            "teacherLabel": "",
+            "room": "26",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Математика",
+            "teacherLabel": "Бурбу Ч.М.",
+            "room": "26",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "ОБЗР",
+            "teacherLabel": "Монгуш А.Б.",
+            "room": "26",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Школа счастливой семьи",
+            "teacherLabel": "Дадар Ч.Ч.",
+            "room": "26",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "География",
+            "teacherLabel": "",
+            "room": "26",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "История",
+            "teacherLabel": "",
+            "room": "26",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Экономика",
+            "teacherLabel": "Гузик Т.А.",
+            "room": "17",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Право",
+            "teacherLabel": "Ондар С.А.",
+            "room": "26",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "ОБЗР",
+            "teacherLabel": "Монгуш А.Б.",
+            "room": "26",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Русский язык",
+            "teacherLabel": "Аракчаа С.Ю.",
+            "room": "26",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "География",
+            "teacherLabel": "",
+            "room": "26",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Обществознание",
+            "teacherLabel": "",
+            "room": "17",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Математика",
+            "teacherLabel": "Бурбу Ч.М.",
+            "room": "26",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Обществознание",
+            "teacherLabel": "",
+            "room": "17",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Математика",
+            "teacherLabel": "Бурбу Ч.М.",
+            "room": "26",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Иностранный язык",
+            "teacherLabel": "Донгак С.А.",
+            "room": "26",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        }
+      ]
+    },
+    {
+      "key": "н905",
+      "name": "Н 9-05",
+      "course": "",
+      "program": "Социально-экономический профиль (на базе основного общего образования, 9 классов)",
+      "lessonsPerDay": 6,
+      "photos": [
+        4
+      ],
+      "cells": [
+        {
+          "weekday": 1,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Математика",
+            "teacherLabel": "Ондар А.А.",
+            "room": "30",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Иностранный язык",
+            "teacherLabel": "Донгак С.А.",
+            "room": "30",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "География",
+            "teacherLabel": "",
+            "room": "30",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "История",
+            "teacherLabel": "",
+            "room": "33",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "ОБЗР",
+            "teacherLabel": "Монгуш А.Б.",
+            "room": "30",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Литература",
+            "teacherLabel": "Аракчаа С.Ю.",
+            "room": "30",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Математика",
+            "teacherLabel": "Ондар А.А.",
+            "room": "30",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Математика",
+            "teacherLabel": "Ондар А.А.",
+            "room": "30",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Право",
+            "teacherLabel": "Ондар С.А.",
+            "room": "30",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Экономика",
+            "teacherLabel": "Гузик Т.А.",
+            "room": "17",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Русский язык",
+            "teacherLabel": "Аракчаа С.Ю.",
+            "room": "30",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "ОБЗР",
+            "teacherLabel": "Монгуш А.Б.",
+            "room": "30",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Обществознание",
+            "teacherLabel": "",
+            "room": "30",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "География",
+            "teacherLabel": "",
+            "room": "30",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Математика",
+            "teacherLabel": "Ондар А.А.",
+            "room": "30",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Обществознание",
+            "teacherLabel": "",
+            "room": "17",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "ОБЗР",
+            "teacherLabel": "Монгуш А.Б.",
+            "room": "30",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "История",
+            "teacherLabel": "",
+            "room": "30",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Обществознание",
+            "teacherLabel": "",
+            "room": "17",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Право",
+            "teacherLabel": "Ондар С.А.",
+            "room": "33",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Школа счастливой семьи",
+            "teacherLabel": "Дадар Ч.Ч.",
+            "room": "33",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 6,
+          "unknown": "Нижняя часть шестой пары обрезана на фото 4."
+        }
+      ]
+    },
+    {
+      "key": "н906",
+      "name": "Н 9-06",
+      "course": "",
+      "program": "Социально-экономический профиль (на базе основного общего образования, 9 классов)",
+      "lessonsPerDay": 6,
+      "photos": [
+        4
+      ],
+      "cells": [
+        {
+          "weekday": 1,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "География",
+            "teacherLabel": "",
+            "room": "33",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Математика",
+            "teacherLabel": "Ондар А.А.",
+            "room": "33",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Право",
+            "teacherLabel": "Ондар С.А.",
+            "room": "33",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Химия",
+            "teacherLabel": "Тюлюш С.Л.",
+            "room": "33",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Право",
+            "teacherLabel": "Ондар С.А.",
+            "room": "33",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Литература",
+            "teacherLabel": "Аракчаа С.Ю.",
+            "room": "33",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "История",
+            "teacherLabel": "",
+            "room": "33",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Экономика",
+            "teacherLabel": "Гузик Т.А.",
+            "room": "17",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Математика",
+            "teacherLabel": "Ондар А.А.",
+            "room": "33",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Школа счастливой семьи",
+            "teacherLabel": "Дадар Ч.Ч.",
+            "room": "33",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Экономика",
+            "teacherLabel": "Гузик Т.А.",
+            "room": "17",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "География",
+            "teacherLabel": "",
+            "room": "33",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "История",
+            "teacherLabel": "",
+            "room": "33",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Математика",
+            "teacherLabel": "Ондар А.А.",
+            "room": "33",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Обществознание",
+            "teacherLabel": "",
+            "room": "17",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Химия",
+            "teacherLabel": "Тюлюш С.Л.",
+            "room": "33",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Русский язык",
+            "teacherLabel": "Аракчаа С.Ю.",
+            "room": "33",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Иностранный язык",
+            "teacherLabel": "Донгак С.А.",
+            "room": "33",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Обществознание",
+            "teacherLabel": "",
+            "room": "17",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 3,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 6,
+          "unknown": "Нижняя часть шестой пары обрезана на фото 4."
+        }
+      ]
+    },
+    {
+      "key": "н907",
+      "name": "Н 9-07",
+      "course": "",
+      "program": "Социально-экономический профиль (на базе основного общего образования, 9 классов)",
+      "lessonsPerDay": 6,
+      "photos": [
+        5
+      ],
+      "cells": [
+        {
+          "weekday": 1,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "История",
+            "teacherLabel": "",
+            "room": "27",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "География",
+            "teacherLabel": "",
+            "room": "27",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Математика",
+            "teacherLabel": "Ондар А.А.",
+            "room": "27",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Литература",
+            "teacherLabel": "Аракчаа С.Ю.",
+            "room": "28",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Математика",
+            "teacherLabel": "Ондар А.А.",
+            "room": "27",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Иностранный язык",
+            "teacherLabel": "Донгак С.А.",
+            "room": "28",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "История",
+            "teacherLabel": "",
+            "room": "24",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Химия",
+            "teacherLabel": "Тюлюш С.Л.",
+            "room": "27",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Экономика",
+            "teacherLabel": "Гузик Т.А.",
+            "room": "17",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "География",
+            "teacherLabel": "",
+            "room": "30",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Экономика",
+            "teacherLabel": "Гузик Т.А.",
+            "room": "17",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Математика",
+            "teacherLabel": "Ондар А.А.",
+            "room": "34",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Химия",
+            "teacherLabel": "Тюлюш С.Л.",
+            "room": "27",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Школа счастливой семьи",
+            "teacherLabel": "Дадар Ч.Ч.",
+            "room": "24",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Обществознание",
+            "teacherLabel": "",
+            "room": "17",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Русский язык",
+            "teacherLabel": "Аракчаа С.Ю.",
+            "room": "30",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Право",
+            "teacherLabel": "Ондар С.А.",
+            "room": "34",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Право",
+            "teacherLabel": "Ондар С.А.",
+            "room": "30",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Обществознание",
+            "teacherLabel": "",
+            "room": "17",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 3,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 5,
+          "unknown": "Низ субботы обрезан на фото 5."
+        },
+        {
+          "weekday": 6,
+          "lesson": 6,
+          "unknown": "Низ субботы обрезан на фото 5."
+        }
+      ]
+    },
+    {
+      "key": "н908",
+      "name": "Н 9-08",
+      "course": "",
+      "program": "Социально-экономический профиль (на базе основного общего образования, 9 классов)",
+      "lessonsPerDay": 6,
+      "photos": [
+        5
+      ],
+      "cells": [
+        {
+          "weekday": 1,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Химия",
+            "teacherLabel": "Тюлюш С.Л.",
+            "room": "24",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "История",
+            "teacherLabel": "",
+            "room": "24",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Экономика",
+            "teacherLabel": "Гузик Т.А.",
+            "room": "24",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Школа счастливой семьи",
+            "teacherLabel": "Дадар Ч.Ч.",
+            "room": "24",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Математика",
+            "teacherLabel": "Ондар А.А.",
+            "room": "24",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "ОБЗР",
+            "teacherLabel": "Монгуш А.Б.",
+            "room": "24",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Экономика",
+            "teacherLabel": "Гузик Т.А.",
+            "room": "24",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "География",
+            "teacherLabel": "",
+            "room": "",
+            "note": "Уточнить аудиторию: блик на фото 5, вторник, 4 пара. Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "ОБЗР",
+            "teacherLabel": "Монгуш А.Б.",
+            "room": "24",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Математика",
+            "teacherLabel": "Ондар А.А.",
+            "room": "24",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Право",
+            "teacherLabel": "Ондар С.А.",
+            "room": "24",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Математика",
+            "teacherLabel": "Ондар А.А.",
+            "room": "24",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Право",
+            "teacherLabel": "Ондар С.А.",
+            "room": "24",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Иностранный язык",
+            "teacherLabel": "Донгак С.А.",
+            "room": "24",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Литература",
+            "teacherLabel": "Аракчаа С.Ю.",
+            "room": "24",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Математика",
+            "teacherLabel": "Ондар А.А.",
+            "room": "24",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "География",
+            "teacherLabel": "",
+            "room": "24",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Русский язык",
+            "teacherLabel": "Аракчаа С.Ю.",
+            "room": "24",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 1,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 2,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Химия",
+            "teacherLabel": "Тюлюш С.Л.",
+            "room": "24",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "История",
+            "teacherLabel": "",
+            "room": "24",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 5,
+          "unknown": "Низ субботы обрезан на фото 5."
+        },
+        {
+          "weekday": 6,
+          "lesson": 6,
+          "unknown": "Низ субботы обрезан на фото 5."
+        }
+      ]
+    },
+    {
+      "key": "1261",
+      "name": "1261",
+      "course": "1",
+      "program": "38.02.01 Экономика и бухгалтерский учёт",
+      "lessonsPerDay": 6,
+      "photos": [
+        6
+      ],
+      "cells": [
+        {
+          "weekday": 1,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Статистика",
+            "teacherLabel": "Донгак А.А.",
+            "room": "7",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Информационные технологии в профессиональной деятельности",
+            "teacherLabel": "Шыыран С.О.",
+            "room": "12",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Психология общения",
+            "teacherLabel": "Дадар Ч.Ч.",
+            "room": "35",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 1,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 2,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 3,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Экономика организации",
+            "teacherLabel": "Гузик Т.А.",
+            "room": "35",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 5,
+          "payload": {
+            "status": "lesson",
+            "title": "Основы философии",
+            "teacherLabel": "Биче-оол М.Б.",
+            "room": "13",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 6,
+          "payload": {
+            "status": "lesson",
+            "title": "Иностранный язык в профессиональной деятельности",
+            "teacherLabel": "",
+            "room": "35",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Основы бухгалтерского учёта",
+            "teacherLabel": "Дапык С.М.",
+            "room": "7",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "История России",
+            "teacherLabel": "Ооржак Ш.С.",
+            "room": "35",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Анализ финансово-хозяйственной деятельности",
+            "teacherLabel": "Дапык С.М.",
+            "room": "26",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Информационные технологии в профессиональной деятельности",
+            "teacherLabel": "Шыыран С.О.",
+            "room": "12",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Основы философии",
+            "teacherLabel": "Биче-оол М.Б.",
+            "room": "7",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Основы бережливого производства",
+            "teacherLabel": "Ооржак Н.Б.",
+            "room": "13",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Основы бухгалтерского учёта",
+            "teacherLabel": "Дапык С.М.",
+            "room": "35",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Экономика организации",
+            "teacherLabel": "Гузик Т.А.",
+            "room": "7",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Анализ финансово-хозяйственной деятельности",
+            "teacherLabel": "Дапык С.М.",
+            "room": "7",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Основы философии",
+            "teacherLabel": "Биче-оол М.Б.",
+            "room": "35",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Основы бухгалтерского учёта",
+            "teacherLabel": "Дапык С.М.",
+            "room": "13",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Безопасность жизнедеятельности",
+            "teacherLabel": "Донгак А-К.А.",
+            "room": "27",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Документационное обеспечение управления",
+            "teacherLabel": "Ооржак А.Ч.",
+            "room": "7",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Безопасность жизнедеятельности",
+            "teacherLabel": "Донгак А-К.А.",
+            "room": "7",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 3,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        }
+      ]
+    },
+    {
+      "key": "1251",
+      "name": "1251",
+      "course": "2",
+      "program": "38.02.01 Экономика и бухгалтерский учёт",
+      "lessonsPerDay": 6,
+      "photos": [
+        6
+      ],
+      "cells": [
+        {
+          "weekday": 1,
+          "lesson": 1,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Основы организации кооперативного бизнеса",
+            "teacherLabel": "Донгак А.А.",
+            "room": "7",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Организация расчётов с бюджетами бюджетной системы Российской Федерации",
+            "teacherLabel": "Дапык С.М.",
+            "room": "7",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Иностранный язык в профессиональной деятельности",
+            "teacherLabel": "Шыыран Р.А.",
+            "room": "7",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 5,
+          "payload": {
+            "status": "lesson",
+            "title": "Организация расчётов с бюджетами бюджетной системы Российской Федерации",
+            "teacherLabel": "Дапык С.М.",
+            "room": "7",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 6,
+          "payload": {
+            "status": "lesson",
+            "title": "Технология составления бухгалтерской отчётности",
+            "teacherLabel": "Дапык С.М.",
+            "room": "7",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 1,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Автоматизация бухгалтерского учёта в «1С:Бухгалтерия»",
+            "teacherLabel": "",
+            "room": "7",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Автоматизация бухгалтерского учёта в «1С:Бухгалтерия»",
+            "teacherLabel": "",
+            "room": "7",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Практические основы бухгалтерского учёта активов организации и источников их формирования",
+            "teacherLabel": "Дапык С.М.",
+            "room": "7",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 5,
+          "payload": {
+            "status": "lesson",
+            "title": "Основы анализа бухгалтерской отчётности",
+            "teacherLabel": "Дапык С.М.",
+            "room": "7",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 6,
+          "payload": {
+            "status": "lesson",
+            "title": "Технология составления бухгалтерской отчётности",
+            "teacherLabel": "Дапык С.М.",
+            "room": "7",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 1,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Автоматизация бухгалтерского учёта в «1С:Бухгалтерия»",
+            "teacherLabel": "",
+            "room": "7",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Автоматизация бухгалтерского учёта в «1С:Бухгалтерия»",
+            "teacherLabel": "",
+            "room": "7",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Практические основы бухгалтерского учёта активов организации и источников их формирования",
+            "teacherLabel": "Дапык С.М.",
+            "room": "7",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 5,
+          "payload": {
+            "status": "lesson",
+            "title": "Основы анализа бухгалтерской отчётности",
+            "teacherLabel": "Дапык С.М.",
+            "room": "7",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 6,
+          "payload": {
+            "status": "lesson",
+            "title": "Основы организации кооперативного бизнеса",
+            "teacherLabel": "Донгак А.А.",
+            "room": "7",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 1,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Автоматизация бухгалтерского учёта в «1С:Бухгалтерия»",
+            "teacherLabel": "",
+            "room": "7",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Автоматизация бухгалтерского учёта в «1С:Бухгалтерия»",
+            "teacherLabel": "",
+            "room": "7",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Технология составления бухгалтерской отчётности",
+            "teacherLabel": "Дапык С.М.",
+            "room": "25",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 5,
+          "payload": {
+            "status": "lesson",
+            "title": "Организация расчётов с бюджетами бюджетной системы Российской Федерации",
+            "teacherLabel": "Дапык С.М.",
+            "room": "7",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 6,
+          "payload": {
+            "status": "lesson",
+            "title": "Технология составления бухгалтерской отчётности",
+            "teacherLabel": "Дапык С.М.",
+            "room": "7",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 1,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Бухгалтерский учёт с применением цифровых технологий",
+            "teacherLabel": "",
+            "room": "7",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Бухгалтерский учёт с применением цифровых технологий",
+            "teacherLabel": "",
+            "room": "7",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Технология составления бухгалтерской отчётности",
+            "teacherLabel": "Дапык С.М.",
+            "room": "7",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 5,
+          "payload": {
+            "status": "lesson",
+            "title": "Организация расчётов с бюджетами бюджетной системы Российской Федерации",
+            "teacherLabel": "Дапык С.М.",
+            "room": "7",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 6,
+          "payload": {
+            "status": "lesson",
+            "title": "Основы анализа бухгалтерской отчётности",
+            "teacherLabel": "Дапык С.М.",
+            "room": "7",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 1,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 2,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 3,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        }
+      ]
+    },
+    {
+      "key": "6261",
+      "name": "6261",
+      "course": "1",
+      "program": "38.02.07 Банковское дело",
+      "lessonsPerDay": 6,
+      "photos": [
+        7
+      ],
+      "cells": [
+        {
+          "weekday": 1,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Бухгалтерский учёт",
+            "teacherLabel": "Дапык С.М.",
+            "room": "14",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Безопасность жизнедеятельности",
+            "teacherLabel": "Донгак А-К.А.",
+            "room": "14",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Организация безналичных расчётов",
+            "teacherLabel": "Донгак Д.С.",
+            "room": "14",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Бухгалтерский учёт",
+            "teacherLabel": "Дапык С.М.",
+            "room": "7",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Финансы организации",
+            "teacherLabel": "Донгак Д.С.",
+            "room": "14",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Иностранный язык в профессиональной деятельности",
+            "teacherLabel": "Шыыран Р.А.",
+            "room": "9",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "История России",
+            "teacherLabel": "Ооржак Ш.С.",
+            "room": "25",
+            "note": "Аудитория 25 вписана от руки на фото 7."
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Организация безналичных расчётов",
+            "teacherLabel": "Донгак Д.С.",
+            "room": "14",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Безопасность жизнедеятельности",
+            "teacherLabel": "Донгак А-К.А.",
+            "room": "14",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Менеджмент",
+            "teacherLabel": "Ооржак Н.Б.",
+            "room": "14",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Основы банковского дела",
+            "teacherLabel": "",
+            "room": "14",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Организация безналичных расчётов",
+            "teacherLabel": "Донгак Д.С.",
+            "room": "14",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Финансы организации",
+            "teacherLabel": "Донгак Д.С.",
+            "room": "14",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Кассовые операции банка",
+            "teacherLabel": "Донгак Д.С.",
+            "room": "14",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Основы банковского дела",
+            "teacherLabel": "",
+            "room": "14",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Менеджмент",
+            "teacherLabel": "Ооржак Н.Б.",
+            "room": "14",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "История России",
+            "teacherLabel": "Ооржак Ш.С.",
+            "room": "14",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Кассовые операции банка",
+            "teacherLabel": "Донгак Д.С.",
+            "room": "14",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 3,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 6,
+          "unknown": "Низ шестой пары обрезан на фото 7."
+        }
+      ]
+    },
+    {
+      "key": "6251",
+      "name": "6251",
+      "course": "2",
+      "program": "38.02.07 Банковское дело",
+      "lessonsPerDay": 6,
+      "photos": [
+        7
+      ],
+      "cells": [
+        {
+          "weekday": 1,
+          "lesson": 1,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 2,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 3,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Основы бережливого производства",
+            "teacherLabel": "Ооржак Н.Б.",
+            "room": "14",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 5,
+          "payload": {
+            "status": "lesson",
+            "title": "Учёт кредитных операций банка",
+            "teacherLabel": "Донгак Д.С.",
+            "room": "14",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 6,
+          "payload": {
+            "status": "lesson",
+            "title": "Иностранный язык в профессиональной деятельности",
+            "teacherLabel": "Шыыран Р.А.",
+            "room": "9",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 1,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 2,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 3,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Основы предпринимательской деятельности",
+            "teacherLabel": "Донгак А.А.",
+            "room": "14",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 5,
+          "payload": {
+            "status": "lesson",
+            "title": "Организация кредитной работы",
+            "teacherLabel": "Донгак Д.С.",
+            "room": "14",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 6,
+          "payload": {
+            "status": "lesson",
+            "title": "Организация кредитной работы",
+            "teacherLabel": "Донгак Д.С.",
+            "room": "14",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 1,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 2,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 3,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Организация кредитной работы",
+            "teacherLabel": "Донгак Д.С.",
+            "room": "14",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 5,
+          "payload": {
+            "status": "lesson",
+            "title": "Основы бережливого производства",
+            "teacherLabel": "Ооржак Н.Б.",
+            "room": "14",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 6,
+          "payload": {
+            "status": "lesson",
+            "title": "Документационное обеспечение профессиональной деятельности",
+            "teacherLabel": "Ооржак А.Ч.",
+            "room": "14",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 1,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 2,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 3,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Технология выполнения работ по должности служащего «Агент банка»",
+            "teacherLabel": "Донгак А.А.",
+            "room": "14",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 5,
+          "payload": {
+            "status": "lesson",
+            "title": "Учёт кредитных операций банка",
+            "teacherLabel": "Донгак Д.С.",
+            "room": "14",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 6,
+          "payload": {
+            "status": "lesson",
+            "title": "Учёт кредитных операций банка",
+            "teacherLabel": "Донгак Д.С.",
+            "room": "14",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 1,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 2,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 3,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Технология выполнения работ по должности служащего «Агент банка»",
+            "teacherLabel": "Донгак А.А.",
+            "room": "14",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 5,
+          "payload": {
+            "status": "lesson",
+            "title": "Технология выполнения работ по должности служащего «Агент банка»",
+            "teacherLabel": "Донгак А.А.",
+            "room": "14",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 6,
+          "payload": {
+            "status": "lesson",
+            "title": "Организация кредитной работы",
+            "teacherLabel": "Донгак Д.С.",
+            "room": "14",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Организация кредитной работы",
+            "teacherLabel": "Донгак Д.С.",
+            "room": "9",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Основы предпринимательской деятельности",
+            "teacherLabel": "Донгак А.А.",
+            "room": "28",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Учёт кредитных операций банка",
+            "teacherLabel": "Донгак Д.С.",
+            "room": "14",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 6,
+          "unknown": "Низ шестой пары обрезан на фото 7."
+        }
+      ]
+    },
+    {
+      "key": "3261",
+      "name": "3261",
+      "course": "1",
+      "program": "41.02.02 Правоохранительная деятельность",
+      "lessonsPerDay": 6,
+      "photos": [
+        8
+      ],
+      "cells": [
+        {
+          "weekday": 1,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Начальная профессиональная подготовка и введение в специальность",
+            "teacherLabel": "Каштак В.В.",
+            "room": "28",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Конституционное право России",
+            "teacherLabel": "Куулар Л.В.",
+            "room": "28",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Уголовное право",
+            "teacherLabel": "",
+            "room": "28",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 1,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 2,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Уголовное право",
+            "teacherLabel": "",
+            "room": "14",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Теория государства и права",
+            "teacherLabel": "Монгуш А.С.",
+            "room": "28",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 5,
+          "payload": {
+            "status": "lesson",
+            "title": "Начальная профессиональная подготовка и введение в специальность",
+            "teacherLabel": "Каштак В.В.",
+            "room": "31",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 6,
+          "payload": {
+            "status": "lesson",
+            "title": "История России",
+            "teacherLabel": "",
+            "room": "28",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Начальная профессиональная подготовка и введение в специальность",
+            "teacherLabel": "Каштак В.В.",
+            "room": "31",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Уголовное право",
+            "teacherLabel": "",
+            "room": "28",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Иностранный язык в профессиональной деятельности",
+            "teacherLabel": "Шыыран Р.А.",
+            "room": "28",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 1,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 2,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 3,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Конституционное право России",
+            "teacherLabel": "Куулар Л.В.",
+            "room": "26",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 5,
+          "payload": {
+            "status": "lesson",
+            "title": "История России",
+            "teacherLabel": "",
+            "room": "26",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 6,
+          "payload": {
+            "status": "lesson",
+            "title": "Административное право",
+            "teacherLabel": "Кыргыс К.А.",
+            "room": "33",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Административное право",
+            "teacherLabel": "Кыргыс К.А.",
+            "room": "28",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Теория государства и права",
+            "teacherLabel": "Монгуш А.С.",
+            "room": "28",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Введение в специальность — общие компетенции профессионала",
+            "teacherLabel": "",
+            "room": "28",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Начальная профессиональная подготовка и введение в специальность",
+            "teacherLabel": "Каштак В.В.",
+            "room": "28",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Теория государства и права",
+            "teacherLabel": "Монгуш А.С.",
+            "room": "28",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Административное право",
+            "teacherLabel": "Кыргыс К.А.",
+            "room": "31",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Конституционное право России",
+            "teacherLabel": "Куулар Л.В.",
+            "room": "28",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 5,
+          "unknown": "Низ субботы обрезан на фото 8."
+        },
+        {
+          "weekday": 6,
+          "lesson": 6,
+          "unknown": "Низ субботы обрезан на фото 8."
+        }
+      ]
+    },
+    {
+      "key": "3262",
+      "name": "3262",
+      "course": "1",
+      "program": "41.02.02 Правоохранительная деятельность",
+      "lessonsPerDay": 6,
+      "photos": [
+        8
+      ],
+      "cells": [
+        {
+          "weekday": 1,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Уголовное право",
+            "teacherLabel": "",
+            "room": "31",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Иностранный язык в профессиональной деятельности",
+            "teacherLabel": "Шыыран Р.А.",
+            "room": "31",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Начальная профессиональная подготовка и введение в специальность",
+            "teacherLabel": "Каштак В.В.",
+            "room": "31",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 1,
+          "unknown": "Блик закрывает первую пару во вторник на фото 8."
+        },
+        {
+          "weekday": 2,
+          "lesson": 2,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Теория государства и права",
+            "teacherLabel": "Монгуш А.С.",
+            "room": "31",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Уголовное право",
+            "teacherLabel": "",
+            "room": "29",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 5,
+          "payload": {
+            "status": "lesson",
+            "title": "История России",
+            "teacherLabel": "",
+            "room": "25",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 6,
+          "payload": {
+            "status": "lesson",
+            "title": "Начальная профессиональная подготовка и введение в специальность",
+            "teacherLabel": "Каштак В.В.",
+            "room": "31",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 1,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 2,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 3,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Начальная профессиональная подготовка и введение в специальность",
+            "teacherLabel": "Каштак В.В.",
+            "room": "26",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 5,
+          "payload": {
+            "status": "lesson",
+            "title": "История России",
+            "teacherLabel": "",
+            "room": "31",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 6,
+          "payload": {
+            "status": "lesson",
+            "title": "Административное право",
+            "teacherLabel": "Кыргыс К.А.",
+            "room": "31",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Конституционное право России",
+            "teacherLabel": "Куулар Л.В.",
+            "room": "31",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Административное право",
+            "teacherLabel": "Кыргыс К.А.",
+            "room": "31",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Введение в специальность — общие компетенции профессионала",
+            "teacherLabel": "",
+            "room": "31",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Теория государства и права",
+            "teacherLabel": "Монгуш А.С.",
+            "room": "31",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Уголовное право",
+            "teacherLabel": "",
+            "room": "31",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Конституционное право России",
+            "teacherLabel": "Куулар Л.В.",
+            "room": "31",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Начальная профессиональная подготовка и введение в специальность",
+            "teacherLabel": "Каштак В.В.",
+            "room": "31",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Конституционное право России",
+            "teacherLabel": "Куулар Л.В.",
+            "room": "9",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Административное право",
+            "teacherLabel": "Кыргыс К.А.",
+            "room": "35",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Теория государства и права",
+            "teacherLabel": "Монгуш А.С.",
+            "room": "31",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 5,
+          "unknown": "Низ субботы обрезан на фото 8."
+        },
+        {
+          "weekday": 6,
+          "lesson": 6,
+          "unknown": "Низ субботы обрезан на фото 8."
+        }
+      ]
+    },
+    {
+      "key": "3251",
+      "name": "3251",
+      "course": "1",
+      "program": "41.02.02 Правоохранительная деятельность",
+      "lessonsPerDay": 6,
+      "photos": [
+        9
+      ],
+      "cells": [
+        {
+          "weekday": 1,
+          "lesson": 1,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 2,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 3,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Тактико-специальная подготовка",
+            "teacherLabel": "Каштак В.В.",
+            "room": "34",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 5,
+          "payload": {
+            "status": "lesson",
+            "title": "Основы предпринимательства",
+            "teacherLabel": "Донгак А.А.",
+            "room": "30",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 6,
+          "payload": {
+            "status": "lesson",
+            "title": "Уголовно-процессуальное право",
+            "teacherLabel": "",
+            "room": "30",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 1,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 2,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 3,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Тактико-специальная подготовка",
+            "teacherLabel": "Каштак В.В.",
+            "room": "34",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 5,
+          "payload": {
+            "status": "lesson",
+            "title": "Уголовно-процессуальное право",
+            "teacherLabel": "",
+            "room": "30",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 6,
+          "payload": {
+            "status": "lesson",
+            "title": "Трудовое право",
+            "teacherLabel": "Ондар С.А.",
+            "room": "30",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 1,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 2,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 3,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Трудовое право",
+            "teacherLabel": "Ондар С.А.",
+            "room": "31",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 5,
+          "payload": {
+            "status": "lesson",
+            "title": "Криминология",
+            "teacherLabel": "Куулар Л.В.",
+            "room": "30",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 6,
+          "payload": {
+            "status": "lesson",
+            "title": "Специальная техника",
+            "teacherLabel": "Базыр В.С.",
+            "room": "27",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 1,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 2,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 3,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Тактико-специальная подготовка",
+            "teacherLabel": "Каштак В.В.",
+            "room": "17",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 5,
+          "payload": {
+            "status": "lesson",
+            "title": "Основы предпринимательства",
+            "teacherLabel": "Донгак А.А.",
+            "room": "30",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 6,
+          "payload": {
+            "status": "lesson",
+            "title": "Тактико-специальная подготовка",
+            "teacherLabel": "Каштак В.В.",
+            "room": "30",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 1,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 2,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 3,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Иностранный язык в профессиональной деятельности",
+            "teacherLabel": "Шыыран Р.А.",
+            "room": "9",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 5,
+          "payload": {
+            "status": "lesson",
+            "title": "Трудовое право",
+            "teacherLabel": "Ондар С.А.",
+            "room": "26",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 6,
+          "payload": {
+            "status": "lesson",
+            "title": "Гражданское право и гражданский процесс",
+            "teacherLabel": "",
+            "room": "30",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Специальная техника",
+            "teacherLabel": "Базыр В.С.",
+            "room": "22",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Огневая подготовка",
+            "teacherLabel": "Базыр В.С.",
+            "room": "1",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Трудовое право",
+            "teacherLabel": "Ондар С.А.",
+            "room": "17",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Трудовое право",
+            "teacherLabel": "Ондар С.А.",
+            "room": "17",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        }
+      ]
+    },
+    {
+      "key": "3252",
+      "name": "3252",
+      "course": "1",
+      "program": "41.02.02 Правоохранительная деятельность",
+      "lessonsPerDay": 6,
+      "photos": [
+        9
+      ],
+      "cells": [
+        {
+          "weekday": 1,
+          "lesson": 1,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 2,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 3,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Специальная техника",
+            "teacherLabel": "Базыр В.С.",
+            "room": "31",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 5,
+          "payload": {
+            "status": "lesson",
+            "title": "Уголовно-процессуальное право",
+            "teacherLabel": "",
+            "room": "31",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 6,
+          "payload": {
+            "status": "lesson",
+            "title": "Тактико-специальная подготовка",
+            "teacherLabel": "Каштак В.В.",
+            "room": "31",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 1,
+          "unknown": "Блик закрывает первую пару во вторник на фото 9."
+        },
+        {
+          "weekday": 2,
+          "lesson": 2,
+          "unknown": "Блик закрывает вторую пару во вторник на фото 9."
+        },
+        {
+          "weekday": 2,
+          "lesson": 3,
+          "unknown": "Блик закрывает третью пару во вторник на фото 9."
+        },
+        {
+          "weekday": 2,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Трудовое право",
+            "teacherLabel": "Ондар С.А.",
+            "room": "31",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 5,
+          "payload": {
+            "status": "lesson",
+            "title": "Основы предпринимательства",
+            "teacherLabel": "Донгак А.А.",
+            "room": "26",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 6,
+          "payload": {
+            "status": "lesson",
+            "title": "Специальная техника",
+            "teacherLabel": "Базыр В.С.",
+            "room": "26",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Криминология",
+            "teacherLabel": "Куулар Л.В.",
+            "room": "28",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Тактико-специальная подготовка",
+            "teacherLabel": "Каштак В.В.",
+            "room": "",
+            "note": "Уточнить аудиторию: блик на фото 9, среда, 2 пара."
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Уголовно-процессуальное право",
+            "teacherLabel": "",
+            "room": "",
+            "note": "Уточнить аудиторию: блик на фото 9, среда, 3 пара. Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Огневая подготовка",
+            "teacherLabel": "Базыр В.С.",
+            "room": "1",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 1,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 2,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 3,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Тактико-специальная подготовка",
+            "teacherLabel": "Каштак В.В.",
+            "room": "17",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 5,
+          "payload": {
+            "status": "lesson",
+            "title": "Трудовое право",
+            "teacherLabel": "Ондар С.А.",
+            "room": "31",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 6,
+          "payload": {
+            "status": "lesson",
+            "title": "Основы предпринимательства",
+            "teacherLabel": "Донгак А.А.",
+            "room": "31",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 1,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 2,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Иностранный язык в профессиональной деятельности",
+            "teacherLabel": "Шыыран Р.А.",
+            "room": "9",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Трудовое право",
+            "teacherLabel": "Ондар С.А.",
+            "room": "31",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 5,
+          "payload": {
+            "status": "lesson",
+            "title": "Гражданское право и гражданский процесс",
+            "teacherLabel": "",
+            "room": "31",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 6,
+          "payload": {
+            "status": "lesson",
+            "title": "Тактико-специальная подготовка",
+            "teacherLabel": "Каштак В.В.",
+            "room": "31",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 1,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 2,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Трудовое право",
+            "teacherLabel": "Ондар С.А.",
+            "room": "17",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Трудовое право",
+            "teacherLabel": "Ондар С.А.",
+            "room": "17",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        }
+      ]
+    },
+    {
+      "key": "3241",
+      "name": "3241",
+      "course": "2",
+      "program": "41.02.02 Правоохранительная деятельность",
+      "lessonsPerDay": 6,
+      "photos": [
+        10
+      ],
+      "cells": [
+        {
+          "weekday": 1,
+          "lesson": 1,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 2,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 3,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Уголовно-процессуальное право",
+            "teacherLabel": "",
+            "room": "28",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 5,
+          "payload": {
+            "status": "lesson",
+            "title": "Криминалистика",
+            "teacherLabel": "Куулар Л.В.",
+            "room": "28",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 6,
+          "payload": {
+            "status": "lesson",
+            "title": "Основы предпринимательства",
+            "teacherLabel": "Донгак А.А.",
+            "room": "28",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 1,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 2,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 3,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Безопасность жизнедеятельности",
+            "teacherLabel": "Монгуш А.Б.",
+            "room": "27",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 5,
+          "payload": {
+            "status": "lesson",
+            "title": "Эффективное поведение на рынке труда",
+            "teacherLabel": "Ооржак Н.Б.",
+            "room": "28",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 6,
+          "payload": {
+            "status": "lesson",
+            "title": "Криминалистика",
+            "teacherLabel": "Куулар Л.В.",
+            "room": "13",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 1,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 2,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 3,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Криминалистика",
+            "teacherLabel": "Куулар Л.В.",
+            "room": "27",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 5,
+          "payload": {
+            "status": "lesson",
+            "title": "Безопасность жизнедеятельности",
+            "teacherLabel": "Монгуш А.Б.",
+            "room": "28",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 6,
+          "payload": {
+            "status": "lesson",
+            "title": "Иностранный язык в профессиональной деятельности",
+            "teacherLabel": "Шыыран Р.А.",
+            "room": "9",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Уголовно-процессуальное право",
+            "teacherLabel": "",
+            "room": "28",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Криминалистика",
+            "teacherLabel": "Куулар Л.В.",
+            "room": "27",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Криминалистика",
+            "teacherLabel": "Куулар Л.В.",
+            "room": "17",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 1,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 2,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 3,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Уголовно-процессуальное право",
+            "teacherLabel": "",
+            "room": "13",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 5,
+          "payload": {
+            "status": "lesson",
+            "title": "Основы управления в правоохранительных органах",
+            "teacherLabel": "Каштак В.В.",
+            "room": "28",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 6,
+          "payload": {
+            "status": "lesson",
+            "title": "Криминалистика",
+            "teacherLabel": "Куулар Л.В.",
+            "room": "34",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 1,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Основы управления в правоохранительных органах",
+            "teacherLabel": "Каштак В.В.",
+            "room": "12",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Безопасность жизнедеятельности",
+            "teacherLabel": "Монгуш А.Б.",
+            "room": "30",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Криминалистика",
+            "teacherLabel": "Куулар Л.В.",
+            "room": "34",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 5,
+          "payload": {
+            "status": "lesson",
+            "title": "Криминалистика",
+            "teacherLabel": "Куулар Л.В.",
+            "room": "12",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        }
+      ]
+    },
+    {
+      "key": "3242",
+      "name": "3242",
+      "course": "2",
+      "program": "41.02.02 Правоохранительная деятельность",
+      "lessonsPerDay": 6,
+      "photos": [
+        10
+      ],
+      "cells": [
+        {
+          "weekday": 1,
+          "lesson": 1,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 2,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 3,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Криминалистика",
+            "teacherLabel": "Куулар Л.В.",
+            "room": "35",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 5,
+          "payload": {
+            "status": "lesson",
+            "title": "Эффективное поведение на рынке труда",
+            "teacherLabel": "Ооржак Н.Б.",
+            "room": "33",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 1,
+          "lesson": 6,
+          "payload": {
+            "status": "lesson",
+            "title": "Безопасность жизнедеятельности",
+            "teacherLabel": "",
+            "room": "13",
+            "note": "Уточнить преподавателя: блик на фото 10, понедельник, 6 пара."
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 1,
+          "unknown": "Блик закрывает первую пару во вторник на фото 10."
+        },
+        {
+          "weekday": 2,
+          "lesson": 2,
+          "unknown": "Блик закрывает вторую пару во вторник на фото 10."
+        },
+        {
+          "weekday": 2,
+          "lesson": 3,
+          "unknown": "Блик закрывает третью пару во вторник на фото 10."
+        },
+        {
+          "weekday": 2,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Криминалистика",
+            "teacherLabel": "Куулар Л.В.",
+            "room": "33",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 5,
+          "payload": {
+            "status": "lesson",
+            "title": "Безопасность жизнедеятельности",
+            "teacherLabel": "Монгуш А.Б.",
+            "room": "",
+            "note": "Уточнить аудиторию: блик на фото 10, вторник, 5 пара."
+          }
+        },
+        {
+          "weekday": 2,
+          "lesson": 6,
+          "payload": {
+            "status": "lesson",
+            "title": "Уголовно-процессуальное право",
+            "teacherLabel": "",
+            "room": "33",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 1,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 2,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 3,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Криминалистика",
+            "teacherLabel": "Куулар Л.В.",
+            "room": "27",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 5,
+          "payload": {
+            "status": "lesson",
+            "title": "Основы предпринимательства",
+            "teacherLabel": "Донгак А.А.",
+            "room": "33",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 3,
+          "lesson": 6,
+          "payload": {
+            "status": "lesson",
+            "title": "Уголовно-процессуальное право",
+            "teacherLabel": "",
+            "room": "33",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Иностранный язык в профессиональной деятельности",
+            "teacherLabel": "Шыыран Р.А.",
+            "room": "9",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Криминалистика",
+            "teacherLabel": "Куулар Л.В.",
+            "room": "27",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Криминалистика",
+            "teacherLabel": "Куулар Л.В.",
+            "room": "17",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 4,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 4,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 1,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 2,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 3,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Криминалистика",
+            "teacherLabel": "Куулар Л.В.",
+            "room": "33",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 5,
+          "payload": {
+            "status": "lesson",
+            "title": "Безопасность жизнедеятельности",
+            "teacherLabel": "Монгуш А.Б.",
+            "room": "13",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 5,
+          "lesson": 6,
+          "payload": {
+            "status": "lesson",
+            "title": "Криминалистика",
+            "teacherLabel": "Куулар Л.В.",
+            "room": "33",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 1,
+          "payload": {
+            "status": "lesson",
+            "title": "Криминалистика",
+            "teacherLabel": "Куулар Л.В.",
+            "room": "12",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 2,
+          "payload": {
+            "status": "lesson",
+            "title": "Уголовно-процессуальное право",
+            "teacherLabel": "",
+            "room": "15",
+            "note": "Фамилия преподавателя на фото требует уточнения."
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 3,
+          "payload": {
+            "status": "lesson",
+            "title": "Основы управления в правоохранительных органах",
+            "teacherLabel": "Каштак В.В.",
+            "room": "12",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 4,
+          "payload": {
+            "status": "lesson",
+            "title": "Основы управления в правоохранительных органах",
+            "teacherLabel": "Каштак В.В.",
+            "room": "12",
+            "note": ""
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 5,
+          "payload": {
+            "status": "free"
+          }
+        },
+        {
+          "weekday": 6,
+          "lesson": 6,
+          "payload": {
+            "status": "free"
+          }
+        }
+      ]
+    }
+  ],
+  "issues": [
+    {
+      "group": "Н 9-01",
+      "weekday": 2,
+      "lesson": 1,
+      "photos": [
+        1,
+        2
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя географии.",
+      "guess": "Ховалыгмаа М.А.",
+      "key": "G",
+      "title": "География"
+    },
+    {
+      "group": "Н 9-01",
+      "weekday": 3,
+      "lesson": 2,
+      "photos": [
+        1,
+        2
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя географии.",
+      "guess": "Ховалыгмаа М.А.",
+      "key": "G",
+      "title": "География"
+    },
+    {
+      "group": "Н 9-01",
+      "weekday": 3,
+      "lesson": 3,
+      "photos": [
+        1,
+        2
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя истории/обществознания (на фото читается как «Амр-Санаа Н.А.»).",
+      "guess": "Амр-Санаа Н.А.",
+      "key": "S",
+      "title": "Обществознание"
+    },
+    {
+      "group": "Н 9-01",
+      "weekday": 4,
+      "lesson": 1,
+      "photos": [
+        1,
+        2
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя истории/обществознания (на фото читается как «Амр-Санаа Н.А.»).",
+      "guess": "Амр-Санаа Н.А.",
+      "key": "S",
+      "title": "Обществознание"
+    },
+    {
+      "group": "Н 9-01",
+      "weekday": 5,
+      "lesson": 3,
+      "photos": [
+        1,
+        2
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя истории/обществознания (на фото читается как «Амр-Санаа Н.А.»).",
+      "guess": "Амр-Санаа Н.А.",
+      "key": "S",
+      "title": "Обществознание"
+    },
+    {
+      "group": "Н 9-01",
+      "weekday": 6,
+      "lesson": 3,
+      "photos": [
+        1,
+        2
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить фамилию преподавателя иностранного языка (читается как «Мижит-Доржу О.С.»).",
+      "guess": "Мижит-Доржу О.С.",
+      "key": "X",
+      "title": "Иностранный язык"
+    },
+    {
+      "group": "Н 9-02",
+      "weekday": 2,
+      "lesson": 2,
+      "photos": [
+        1,
+        2
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя географии.",
+      "guess": "Ховалыгмаа М.А.",
+      "key": "G",
+      "title": "География"
+    },
+    {
+      "group": "Н 9-02",
+      "weekday": 2,
+      "lesson": 3,
+      "photos": [
+        1,
+        2
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя истории/обществознания (на фото читается как «Амр-Санаа Н.А.»).",
+      "guess": "Амр-Санаа Н.А.",
+      "key": "S",
+      "title": "Обществознание"
+    },
+    {
+      "group": "Н 9-02",
+      "weekday": 3,
+      "lesson": 4,
+      "photos": [
+        1,
+        2
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя географии.",
+      "guess": "Ховалыгмаа М.А.",
+      "key": "G",
+      "title": "География"
+    },
+    {
+      "group": "Н 9-02",
+      "weekday": 4,
+      "lesson": 4,
+      "photos": [
+        1,
+        2
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя истории/обществознания (на фото читается как «Амр-Санаа Н.А.»).",
+      "guess": "Амр-Санаа Н.А.",
+      "key": "S",
+      "title": "Обществознание"
+    },
+    {
+      "group": "Н 9-02",
+      "weekday": 5,
+      "lesson": 2,
+      "photos": [
+        1,
+        2
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить фамилию преподавателя иностранного языка (читается как «Мижит-Доржу О.С.»).",
+      "guess": "Мижит-Доржу О.С.",
+      "key": "X",
+      "title": "Иностранный язык"
+    },
+    {
+      "group": "Н 9-02",
+      "weekday": 5,
+      "lesson": 3,
+      "photos": [
+        1,
+        2
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя истории/обществознания (на фото читается как «Амр-Санаа Н.А.»).",
+      "guess": "Амр-Санаа Н.А.",
+      "key": "S",
+      "title": "Обществознание"
+    },
+    {
+      "group": "Н 9-03",
+      "weekday": 2,
+      "lesson": 2,
+      "photos": [
+        3
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя истории/обществознания (на фото читается как «Амр-Санаа Н.А.»).",
+      "guess": "Амр-Санаа Н.А.",
+      "key": "S",
+      "title": "Обществознание"
+    },
+    {
+      "group": "Н 9-03",
+      "weekday": 2,
+      "lesson": 3,
+      "photos": [
+        3
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя географии.",
+      "guess": "Ховалыгмаа М.А.",
+      "key": "G",
+      "title": "География"
+    },
+    {
+      "group": "Н 9-03",
+      "weekday": 3,
+      "lesson": 4,
+      "photos": [
+        3
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя истории/обществознания (на фото читается как «Амр-Санаа Н.А.»).",
+      "guess": "Амр-Санаа Н.А.",
+      "key": "S",
+      "title": "Обществознание"
+    },
+    {
+      "group": "Н 9-03",
+      "weekday": 4,
+      "lesson": 1,
+      "photos": [
+        3
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя географии.",
+      "guess": "Ховалыгмаа М.А.",
+      "key": "G",
+      "title": "География"
+    },
+    {
+      "group": "Н 9-03",
+      "weekday": 6,
+      "lesson": 3,
+      "photos": [
+        3
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя истории/обществознания (на фото читается как «Амр-Санаа Н.А.»).",
+      "guess": "Амр-Санаа Н.А.",
+      "key": "S",
+      "title": "Обществознание"
+    },
+    {
+      "group": "Н 9-04",
+      "weekday": 1,
+      "lesson": 3,
+      "photos": [
+        3
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя истории/обществознания (на фото читается как «Амр-Санаа Н.А.»).",
+      "guess": "Амр-Санаа Н.А.",
+      "key": "S",
+      "title": "Обществознание"
+    },
+    {
+      "group": "Н 9-04",
+      "weekday": 2,
+      "lesson": 1,
+      "photos": [
+        3
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя истории/обществознания (на фото читается как «Амр-Санаа Н.А.»).",
+      "guess": "Амр-Санаа Н.А.",
+      "key": "S",
+      "title": "История"
+    },
+    {
+      "group": "Н 9-04",
+      "weekday": 3,
+      "lesson": 1,
+      "photos": [
+        3
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя географии.",
+      "guess": "Ховалыгмаа М.А.",
+      "key": "G",
+      "title": "География"
+    },
+    {
+      "group": "Н 9-04",
+      "weekday": 3,
+      "lesson": 2,
+      "photos": [
+        3
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя истории/обществознания (на фото читается как «Амр-Санаа Н.А.»).",
+      "guess": "Амр-Санаа Н.А.",
+      "key": "S",
+      "title": "История"
+    },
+    {
+      "group": "Н 9-04",
+      "weekday": 5,
+      "lesson": 1,
+      "photos": [
+        3
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя географии.",
+      "guess": "Ховалыгмаа М.А.",
+      "key": "G",
+      "title": "География"
+    },
+    {
+      "group": "Н 9-04",
+      "weekday": 5,
+      "lesson": 2,
+      "photos": [
+        3
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя истории/обществознания (на фото читается как «Амр-Санаа Н.А.»).",
+      "guess": "Амр-Санаа Н.А.",
+      "key": "S",
+      "title": "Обществознание"
+    },
+    {
+      "group": "Н 9-04",
+      "weekday": 6,
+      "lesson": 1,
+      "photos": [
+        3
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя истории/обществознания (на фото читается как «Амр-Санаа Н.А.»).",
+      "guess": "Амр-Санаа Н.А.",
+      "key": "S",
+      "title": "Обществознание"
+    },
+    {
+      "group": "Н 9-05",
+      "weekday": 1,
+      "lesson": 3,
+      "photos": [
+        4
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя географии.",
+      "guess": "Ховалыгмаа М.А.",
+      "key": "G",
+      "title": "География"
+    },
+    {
+      "group": "Н 9-05",
+      "weekday": 1,
+      "lesson": 4,
+      "photos": [
+        4
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя истории/обществознания (на фото читается как «Амр-Санаа Н.А.»).",
+      "guess": "Амр-Санаа Н.А.",
+      "key": "S",
+      "title": "История"
+    },
+    {
+      "group": "Н 9-05",
+      "weekday": 4,
+      "lesson": 2,
+      "photos": [
+        4
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя истории/обществознания (на фото читается как «Амр-Санаа Н.А.»).",
+      "guess": "Амр-Санаа Н.А.",
+      "key": "S",
+      "title": "Обществознание"
+    },
+    {
+      "group": "Н 9-05",
+      "weekday": 4,
+      "lesson": 3,
+      "photos": [
+        4
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя географии.",
+      "guess": "Ховалыгмаа М.А.",
+      "key": "G",
+      "title": "География"
+    },
+    {
+      "group": "Н 9-05",
+      "weekday": 5,
+      "lesson": 2,
+      "photos": [
+        4
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя истории/обществознания (на фото читается как «Амр-Санаа Н.А.»).",
+      "guess": "Амр-Санаа Н.А.",
+      "key": "S",
+      "title": "Обществознание"
+    },
+    {
+      "group": "Н 9-05",
+      "weekday": 5,
+      "lesson": 4,
+      "photos": [
+        4
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя истории/обществознания (на фото читается как «Амр-Санаа Н.А.»).",
+      "guess": "Амр-Санаа Н.А.",
+      "key": "S",
+      "title": "История"
+    },
+    {
+      "group": "Н 9-05",
+      "weekday": 6,
+      "lesson": 1,
+      "photos": [
+        4
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя истории/обществознания (на фото читается как «Амр-Санаа Н.А.»).",
+      "guess": "Амр-Санаа Н.А.",
+      "key": "S",
+      "title": "Обществознание"
+    },
+    {
+      "group": "Н 9-05",
+      "weekday": 6,
+      "lesson": 6,
+      "photos": [
+        4
+      ],
+      "field": "Вся ячейка",
+      "question": "Нижняя часть шестой пары обрезана на фото 4."
+    },
+    {
+      "group": "Н 9-06",
+      "weekday": 1,
+      "lesson": 1,
+      "photos": [
+        4
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя географии.",
+      "guess": "Ховалыгмаа М.А.",
+      "key": "G",
+      "title": "География"
+    },
+    {
+      "group": "Н 9-06",
+      "weekday": 3,
+      "lesson": 1,
+      "photos": [
+        4
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя истории/обществознания (на фото читается как «Амр-Санаа Н.А.»).",
+      "guess": "Амр-Санаа Н.А.",
+      "key": "S",
+      "title": "История"
+    },
+    {
+      "group": "Н 9-06",
+      "weekday": 4,
+      "lesson": 2,
+      "photos": [
+        4
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя географии.",
+      "guess": "Ховалыгмаа М.А.",
+      "key": "G",
+      "title": "География"
+    },
+    {
+      "group": "Н 9-06",
+      "weekday": 4,
+      "lesson": 3,
+      "photos": [
+        4
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя истории/обществознания (на фото читается как «Амр-Санаа Н.А.»).",
+      "guess": "Амр-Санаа Н.А.",
+      "key": "S",
+      "title": "История"
+    },
+    {
+      "group": "Н 9-06",
+      "weekday": 5,
+      "lesson": 1,
+      "photos": [
+        4
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя истории/обществознания (на фото читается как «Амр-Санаа Н.А.»).",
+      "guess": "Амр-Санаа Н.А.",
+      "key": "S",
+      "title": "Обществознание"
+    },
+    {
+      "group": "Н 9-06",
+      "weekday": 6,
+      "lesson": 2,
+      "photos": [
+        4
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя истории/обществознания (на фото читается как «Амр-Санаа Н.А.»).",
+      "guess": "Амр-Санаа Н.А.",
+      "key": "S",
+      "title": "Обществознание"
+    },
+    {
+      "group": "Н 9-06",
+      "weekday": 6,
+      "lesson": 6,
+      "photos": [
+        4
+      ],
+      "field": "Вся ячейка",
+      "question": "Нижняя часть шестой пары обрезана на фото 4."
+    },
+    {
+      "group": "Н 9-07",
+      "weekday": 1,
+      "lesson": 1,
+      "photos": [
+        5
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя истории/обществознания (на фото читается как «Амр-Санаа Н.А.»).",
+      "guess": "Амр-Санаа Н.А.",
+      "key": "S",
+      "title": "История"
+    },
+    {
+      "group": "Н 9-07",
+      "weekday": 1,
+      "lesson": 2,
+      "photos": [
+        5
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя географии.",
+      "guess": "Ховалыгмаа М.А.",
+      "key": "G",
+      "title": "География"
+    },
+    {
+      "group": "Н 9-07",
+      "weekday": 2,
+      "lesson": 4,
+      "photos": [
+        5
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя истории/обществознания (на фото читается как «Амр-Санаа Н.А.»).",
+      "guess": "Амр-Санаа Н.А.",
+      "key": "S",
+      "title": "История"
+    },
+    {
+      "group": "Н 9-07",
+      "weekday": 3,
+      "lesson": 3,
+      "photos": [
+        5
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя географии.",
+      "guess": "Ховалыгмаа М.А.",
+      "key": "G",
+      "title": "География"
+    },
+    {
+      "group": "Н 9-07",
+      "weekday": 5,
+      "lesson": 1,
+      "photos": [
+        5
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя истории/обществознания (на фото читается как «Амр-Санаа Н.А.»).",
+      "guess": "Амр-Санаа Н.А.",
+      "key": "S",
+      "title": "Обществознание"
+    },
+    {
+      "group": "Н 9-07",
+      "weekday": 6,
+      "lesson": 2,
+      "photos": [
+        5
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя истории/обществознания (на фото читается как «Амр-Санаа Н.А.»).",
+      "guess": "Амр-Санаа Н.А.",
+      "key": "S",
+      "title": "Обществознание"
+    },
+    {
+      "group": "Н 9-07",
+      "weekday": 6,
+      "lesson": 5,
+      "photos": [
+        5
+      ],
+      "field": "Вся ячейка",
+      "question": "Низ субботы обрезан на фото 5."
+    },
+    {
+      "group": "Н 9-07",
+      "weekday": 6,
+      "lesson": 6,
+      "photos": [
+        5
+      ],
+      "field": "Вся ячейка",
+      "question": "Низ субботы обрезан на фото 5."
+    },
+    {
+      "group": "Н 9-08",
+      "weekday": 1,
+      "lesson": 2,
+      "photos": [
+        5
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя истории/обществознания (на фото читается как «Амр-Санаа Н.А.»).",
+      "guess": "Амр-Санаа Н.А.",
+      "key": "S",
+      "title": "История"
+    },
+    {
+      "group": "Н 9-08",
+      "weekday": 2,
+      "lesson": 4,
+      "photos": [
+        5
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя географии.",
+      "guess": "Ховалыгмаа М.А.",
+      "key": "G",
+      "title": "География"
+    },
+    {
+      "group": "Н 9-08",
+      "weekday": 2,
+      "lesson": 4,
+      "photos": [
+        5
+      ],
+      "field": "Поле занятия",
+      "question": "Уточнить аудиторию: блик на фото 5, вторник, 4 пара.",
+      "title": "География"
+    },
+    {
+      "group": "Н 9-08",
+      "weekday": 5,
+      "lesson": 3,
+      "photos": [
+        5
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя географии.",
+      "guess": "Ховалыгмаа М.А.",
+      "key": "G",
+      "title": "География"
+    },
+    {
+      "group": "Н 9-08",
+      "weekday": 6,
+      "lesson": 4,
+      "photos": [
+        5
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя истории/обществознания (на фото читается как «Амр-Санаа Н.А.»).",
+      "guess": "Амр-Санаа Н.А.",
+      "key": "S",
+      "title": "История"
+    },
+    {
+      "group": "Н 9-08",
+      "weekday": 6,
+      "lesson": 5,
+      "photos": [
+        5
+      ],
+      "field": "Вся ячейка",
+      "question": "Низ субботы обрезан на фото 5."
+    },
+    {
+      "group": "Н 9-08",
+      "weekday": 6,
+      "lesson": 6,
+      "photos": [
+        5
+      ],
+      "field": "Вся ячейка",
+      "question": "Низ субботы обрезан на фото 5."
+    },
+    {
+      "group": "1261",
+      "weekday": 2,
+      "lesson": 6,
+      "photos": [
+        6
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить фамилию преподавателя иностранного языка (читается как «Мижит-Доржу О.С.»).",
+      "guess": "Мижит-Доржу О.С.",
+      "key": "X",
+      "title": "Иностранный язык в профессиональной деятельности"
+    },
+    {
+      "group": "1251",
+      "weekday": 2,
+      "lesson": 2,
+      "photos": [
+        6
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить фамилию преподавателя автоматизации/цифрового бухгалтерского учёта, инициалы О.П., фото 6.",
+      "guess": "О.П. (фамилия неразборчива)",
+      "key": "AUTO",
+      "title": "Автоматизация бухгалтерского учёта в «1С:Бухгалтерия»"
+    },
+    {
+      "group": "1251",
+      "weekday": 2,
+      "lesson": 3,
+      "photos": [
+        6
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить фамилию преподавателя автоматизации/цифрового бухгалтерского учёта, инициалы О.П., фото 6.",
+      "guess": "О.П. (фамилия неразборчива)",
+      "key": "AUTO",
+      "title": "Автоматизация бухгалтерского учёта в «1С:Бухгалтерия»"
+    },
+    {
+      "group": "1251",
+      "weekday": 3,
+      "lesson": 2,
+      "photos": [
+        6
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить фамилию преподавателя автоматизации/цифрового бухгалтерского учёта, инициалы О.П., фото 6.",
+      "guess": "О.П. (фамилия неразборчива)",
+      "key": "AUTO",
+      "title": "Автоматизация бухгалтерского учёта в «1С:Бухгалтерия»"
+    },
+    {
+      "group": "1251",
+      "weekday": 3,
+      "lesson": 3,
+      "photos": [
+        6
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить фамилию преподавателя автоматизации/цифрового бухгалтерского учёта, инициалы О.П., фото 6.",
+      "guess": "О.П. (фамилия неразборчива)",
+      "key": "AUTO",
+      "title": "Автоматизация бухгалтерского учёта в «1С:Бухгалтерия»"
+    },
+    {
+      "group": "1251",
+      "weekday": 4,
+      "lesson": 2,
+      "photos": [
+        6
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить фамилию преподавателя автоматизации/цифрового бухгалтерского учёта, инициалы О.П., фото 6.",
+      "guess": "О.П. (фамилия неразборчива)",
+      "key": "AUTO",
+      "title": "Автоматизация бухгалтерского учёта в «1С:Бухгалтерия»"
+    },
+    {
+      "group": "1251",
+      "weekday": 4,
+      "lesson": 3,
+      "photos": [
+        6
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить фамилию преподавателя автоматизации/цифрового бухгалтерского учёта, инициалы О.П., фото 6.",
+      "guess": "О.П. (фамилия неразборчива)",
+      "key": "AUTO",
+      "title": "Автоматизация бухгалтерского учёта в «1С:Бухгалтерия»"
+    },
+    {
+      "group": "1251",
+      "weekday": 5,
+      "lesson": 2,
+      "photos": [
+        6
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить фамилию преподавателя автоматизации/цифрового бухгалтерского учёта, инициалы О.П., фото 6.",
+      "guess": "О.П. (фамилия неразборчива)",
+      "key": "AUTO",
+      "title": "Бухгалтерский учёт с применением цифровых технологий"
+    },
+    {
+      "group": "1251",
+      "weekday": 5,
+      "lesson": 3,
+      "photos": [
+        6
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить фамилию преподавателя автоматизации/цифрового бухгалтерского учёта, инициалы О.П., фото 6.",
+      "guess": "О.П. (фамилия неразборчива)",
+      "key": "AUTO",
+      "title": "Бухгалтерский учёт с применением цифровых технологий"
+    },
+    {
+      "group": "6261",
+      "weekday": 4,
+      "lesson": 1,
+      "photos": [
+        7
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить фамилию преподавателя основ банковского дела, фото 7.",
+      "guess": "Шапаа А.А.",
+      "key": "BANK",
+      "title": "Основы банковского дела"
+    },
+    {
+      "group": "6261",
+      "weekday": 5,
+      "lesson": 2,
+      "photos": [
+        7
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить фамилию преподавателя основ банковского дела, фото 7.",
+      "guess": "Шапаа А.А.",
+      "key": "BANK",
+      "title": "Основы банковского дела"
+    },
+    {
+      "group": "6261",
+      "weekday": 6,
+      "lesson": 6,
+      "photos": [
+        7
+      ],
+      "field": "Вся ячейка",
+      "question": "Низ шестой пары обрезан на фото 7."
+    },
+    {
+      "group": "6251",
+      "weekday": 6,
+      "lesson": 6,
+      "photos": [
+        7
+      ],
+      "field": "Вся ячейка",
+      "question": "Низ шестой пары обрезан на фото 7."
+    },
+    {
+      "group": "3261",
+      "weekday": 1,
+      "lesson": 3,
+      "photos": [
+        8
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить фамилию преподавателя уголовного, уголовно-процессуального и гражданского права, инициалы Р.С., фото 8–10.",
+      "guess": "Панатова Р.С.",
+      "key": "RS",
+      "title": "Уголовное право"
+    },
+    {
+      "group": "3261",
+      "weekday": 2,
+      "lesson": 3,
+      "photos": [
+        8
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить фамилию преподавателя уголовного, уголовно-процессуального и гражданского права, инициалы Р.С., фото 8–10.",
+      "guess": "Панатова Р.С.",
+      "key": "RS",
+      "title": "Уголовное право"
+    },
+    {
+      "group": "3261",
+      "weekday": 2,
+      "lesson": 6,
+      "photos": [
+        8
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя истории/обществознания (на фото читается как «Амр-Санаа Н.А.»).",
+      "guess": "Амр-Санаа Н.А.",
+      "key": "S",
+      "title": "История России"
+    },
+    {
+      "group": "3261",
+      "weekday": 3,
+      "lesson": 2,
+      "photos": [
+        8
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить фамилию преподавателя уголовного, уголовно-процессуального и гражданского права, инициалы Р.С., фото 8–10.",
+      "guess": "Панатова Р.С.",
+      "key": "RS",
+      "title": "Уголовное право"
+    },
+    {
+      "group": "3261",
+      "weekday": 4,
+      "lesson": 5,
+      "photos": [
+        8
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя истории/обществознания (на фото читается как «Амр-Санаа Н.А.»).",
+      "guess": "Амр-Санаа Н.А.",
+      "key": "S",
+      "title": "История России"
+    },
+    {
+      "group": "3261",
+      "weekday": 5,
+      "lesson": 3,
+      "photos": [
+        8
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить фамилию преподавателя уголовного, уголовно-процессуального и гражданского права, инициалы Р.С., фото 8–10.",
+      "guess": "Панатова Р.С.",
+      "key": "RS",
+      "title": "Введение в специальность — общие компетенции профессионала"
+    },
+    {
+      "group": "3261",
+      "weekday": 6,
+      "lesson": 5,
+      "photos": [
+        8
+      ],
+      "field": "Вся ячейка",
+      "question": "Низ субботы обрезан на фото 8."
+    },
+    {
+      "group": "3261",
+      "weekday": 6,
+      "lesson": 6,
+      "photos": [
+        8
+      ],
+      "field": "Вся ячейка",
+      "question": "Низ субботы обрезан на фото 8."
+    },
+    {
+      "group": "3262",
+      "weekday": 1,
+      "lesson": 1,
+      "photos": [
+        8
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить фамилию преподавателя уголовного, уголовно-процессуального и гражданского права, инициалы Р.С., фото 8–10.",
+      "guess": "Панатова Р.С.",
+      "key": "RS",
+      "title": "Уголовное право"
+    },
+    {
+      "group": "3262",
+      "weekday": 2,
+      "lesson": 1,
+      "photos": [
+        8
+      ],
+      "field": "Вся ячейка",
+      "question": "Блик закрывает первую пару во вторник на фото 8."
+    },
+    {
+      "group": "3262",
+      "weekday": 2,
+      "lesson": 4,
+      "photos": [
+        8
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить фамилию преподавателя уголовного, уголовно-процессуального и гражданского права, инициалы Р.С., фото 8–10.",
+      "guess": "Панатова Р.С.",
+      "key": "RS",
+      "title": "Уголовное право"
+    },
+    {
+      "group": "3262",
+      "weekday": 2,
+      "lesson": 5,
+      "photos": [
+        8
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя истории/обществознания (на фото читается как «Амр-Санаа Н.А.»).",
+      "guess": "Амр-Санаа Н.А.",
+      "key": "S",
+      "title": "История России"
+    },
+    {
+      "group": "3262",
+      "weekday": 3,
+      "lesson": 5,
+      "photos": [
+        8
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить написание фамилии преподавателя истории/обществознания (на фото читается как «Амр-Санаа Н.А.»).",
+      "guess": "Амр-Санаа Н.А.",
+      "key": "S",
+      "title": "История России"
+    },
+    {
+      "group": "3262",
+      "weekday": 4,
+      "lesson": 3,
+      "photos": [
+        8
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить фамилию преподавателя уголовного, уголовно-процессуального и гражданского права, инициалы Р.С., фото 8–10.",
+      "guess": "Панатова Р.С.",
+      "key": "RS",
+      "title": "Введение в специальность — общие компетенции профессионала"
+    },
+    {
+      "group": "3262",
+      "weekday": 5,
+      "lesson": 2,
+      "photos": [
+        8
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить фамилию преподавателя уголовного, уголовно-процессуального и гражданского права, инициалы Р.С., фото 8–10.",
+      "guess": "Панатова Р.С.",
+      "key": "RS",
+      "title": "Уголовное право"
+    },
+    {
+      "group": "3262",
+      "weekday": 6,
+      "lesson": 5,
+      "photos": [
+        8
+      ],
+      "field": "Вся ячейка",
+      "question": "Низ субботы обрезан на фото 8."
+    },
+    {
+      "group": "3262",
+      "weekday": 6,
+      "lesson": 6,
+      "photos": [
+        8
+      ],
+      "field": "Вся ячейка",
+      "question": "Низ субботы обрезан на фото 8."
+    },
+    {
+      "group": "3251",
+      "field": "Курс",
+      "question": "На фото 9 напечатан 1 курс. Подтвердите актуальный курс группы 3251.",
+      "photos": [
+        9
+      ]
+    },
+    {
+      "group": "3251",
+      "weekday": 1,
+      "lesson": 6,
+      "photos": [
+        9
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить фамилию преподавателя уголовного, уголовно-процессуального и гражданского права, инициалы Р.С., фото 8–10.",
+      "guess": "Панатова Р.С.",
+      "key": "RS",
+      "title": "Уголовно-процессуальное право"
+    },
+    {
+      "group": "3251",
+      "weekday": 2,
+      "lesson": 5,
+      "photos": [
+        9
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить фамилию преподавателя уголовного, уголовно-процессуального и гражданского права, инициалы Р.С., фото 8–10.",
+      "guess": "Панатова Р.С.",
+      "key": "RS",
+      "title": "Уголовно-процессуальное право"
+    },
+    {
+      "group": "3251",
+      "weekday": 5,
+      "lesson": 6,
+      "photos": [
+        9
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить фамилию преподавателя уголовного, уголовно-процессуального и гражданского права, инициалы Р.С., фото 8–10.",
+      "guess": "Панатова Р.С.",
+      "key": "RS",
+      "title": "Гражданское право и гражданский процесс"
+    },
+    {
+      "group": "3252",
+      "field": "Курс",
+      "question": "На фото 9 напечатан 1 курс. Подтвердите актуальный курс группы 3252.",
+      "photos": [
+        9
+      ]
+    },
+    {
+      "group": "3252",
+      "weekday": 1,
+      "lesson": 5,
+      "photos": [
+        9
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить фамилию преподавателя уголовного, уголовно-процессуального и гражданского права, инициалы Р.С., фото 8–10.",
+      "guess": "Панатова Р.С.",
+      "key": "RS",
+      "title": "Уголовно-процессуальное право"
+    },
+    {
+      "group": "3252",
+      "weekday": 2,
+      "lesson": 1,
+      "photos": [
+        9
+      ],
+      "field": "Вся ячейка",
+      "question": "Блик закрывает первую пару во вторник на фото 9."
+    },
+    {
+      "group": "3252",
+      "weekday": 2,
+      "lesson": 2,
+      "photos": [
+        9
+      ],
+      "field": "Вся ячейка",
+      "question": "Блик закрывает вторую пару во вторник на фото 9."
+    },
+    {
+      "group": "3252",
+      "weekday": 2,
+      "lesson": 3,
+      "photos": [
+        9
+      ],
+      "field": "Вся ячейка",
+      "question": "Блик закрывает третью пару во вторник на фото 9."
+    },
+    {
+      "group": "3252",
+      "weekday": 3,
+      "lesson": 2,
+      "photos": [
+        9
+      ],
+      "field": "Поле занятия",
+      "question": "Уточнить аудиторию: блик на фото 9, среда, 2 пара.",
+      "title": "Тактико-специальная подготовка"
+    },
+    {
+      "group": "3252",
+      "weekday": 3,
+      "lesson": 3,
+      "photos": [
+        9
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить фамилию преподавателя уголовного, уголовно-процессуального и гражданского права, инициалы Р.С., фото 8–10.",
+      "guess": "Панатова Р.С.",
+      "key": "RS",
+      "title": "Уголовно-процессуальное право"
+    },
+    {
+      "group": "3252",
+      "weekday": 3,
+      "lesson": 3,
+      "photos": [
+        9
+      ],
+      "field": "Поле занятия",
+      "question": "Уточнить аудиторию: блик на фото 9, среда, 3 пара.",
+      "title": "Уголовно-процессуальное право"
+    },
+    {
+      "group": "3252",
+      "weekday": 5,
+      "lesson": 5,
+      "photos": [
+        9
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить фамилию преподавателя уголовного, уголовно-процессуального и гражданского права, инициалы Р.С., фото 8–10.",
+      "guess": "Панатова Р.С.",
+      "key": "RS",
+      "title": "Гражданское право и гражданский процесс"
+    },
+    {
+      "group": "3241",
+      "field": "Курс",
+      "question": "На фото 10 напечатан 2 курс. Подтвердите актуальный курс группы 3241.",
+      "photos": [
+        10
+      ]
+    },
+    {
+      "group": "3241",
+      "weekday": 1,
+      "lesson": 4,
+      "photos": [
+        10
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить фамилию преподавателя уголовного, уголовно-процессуального и гражданского права, инициалы Р.С., фото 8–10.",
+      "guess": "Панатова Р.С.",
+      "key": "RS",
+      "title": "Уголовно-процессуальное право"
+    },
+    {
+      "group": "3241",
+      "weekday": 4,
+      "lesson": 1,
+      "photos": [
+        10
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить фамилию преподавателя уголовного, уголовно-процессуального и гражданского права, инициалы Р.С., фото 8–10.",
+      "guess": "Панатова Р.С.",
+      "key": "RS",
+      "title": "Уголовно-процессуальное право"
+    },
+    {
+      "group": "3241",
+      "weekday": 5,
+      "lesson": 4,
+      "photos": [
+        10
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить фамилию преподавателя уголовного, уголовно-процессуального и гражданского права, инициалы Р.С., фото 8–10.",
+      "guess": "Панатова Р.С.",
+      "key": "RS",
+      "title": "Уголовно-процессуальное право"
+    },
+    {
+      "group": "3242",
+      "field": "Курс",
+      "question": "На фото 10 напечатан 2 курс. Подтвердите актуальный курс группы 3242.",
+      "photos": [
+        10
+      ]
+    },
+    {
+      "group": "3242",
+      "weekday": 1,
+      "lesson": 6,
+      "photos": [
+        10
+      ],
+      "field": "Поле занятия",
+      "question": "Уточнить преподавателя: блик на фото 10, понедельник, 6 пара.",
+      "title": "Безопасность жизнедеятельности"
+    },
+    {
+      "group": "3242",
+      "weekday": 2,
+      "lesson": 1,
+      "photos": [
+        10
+      ],
+      "field": "Вся ячейка",
+      "question": "Блик закрывает первую пару во вторник на фото 10."
+    },
+    {
+      "group": "3242",
+      "weekday": 2,
+      "lesson": 2,
+      "photos": [
+        10
+      ],
+      "field": "Вся ячейка",
+      "question": "Блик закрывает вторую пару во вторник на фото 10."
+    },
+    {
+      "group": "3242",
+      "weekday": 2,
+      "lesson": 3,
+      "photos": [
+        10
+      ],
+      "field": "Вся ячейка",
+      "question": "Блик закрывает третью пару во вторник на фото 10."
+    },
+    {
+      "group": "3242",
+      "weekday": 2,
+      "lesson": 5,
+      "photos": [
+        10
+      ],
+      "field": "Поле занятия",
+      "question": "Уточнить аудиторию: блик на фото 10, вторник, 5 пара.",
+      "title": "Безопасность жизнедеятельности"
+    },
+    {
+      "group": "3242",
+      "weekday": 2,
+      "lesson": 6,
+      "photos": [
+        10
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить фамилию преподавателя уголовного, уголовно-процессуального и гражданского права, инициалы Р.С., фото 8–10.",
+      "guess": "Панатова Р.С.",
+      "key": "RS",
+      "title": "Уголовно-процессуальное право"
+    },
+    {
+      "group": "3242",
+      "weekday": 3,
+      "lesson": 6,
+      "photos": [
+        10
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить фамилию преподавателя уголовного, уголовно-процессуального и гражданского права, инициалы Р.С., фото 8–10.",
+      "guess": "Панатова Р.С.",
+      "key": "RS",
+      "title": "Уголовно-процессуальное право"
+    },
+    {
+      "group": "3242",
+      "weekday": 6,
+      "lesson": 2,
+      "photos": [
+        10
+      ],
+      "field": "Преподаватель",
+      "question": "Уточнить фамилию преподавателя уголовного, уголовно-процессуального и гражданского права, инициалы Р.С., фото 8–10.",
+      "guess": "Панатова Р.С.",
+      "key": "RS",
+      "title": "Уголовно-процессуальное право"
+    }
+  ]
+}

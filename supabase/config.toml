@@ -4,5 +4,13 @@ project_id = "lms-platform"
 # The handler verifies Firebase ID tokens before reading or writing data.
 verify_jwt = false
 
+[functions.lms-public]
+# Strict read-only public projection; contains no account or assessment data.
+verify_jwt = false
+
+[functions.lms-push]
+# Scheduled requests require a separate secret checked by the handler.
+verify_jwt = false
+
 [storage]
 file_size_limit = "50MiB"

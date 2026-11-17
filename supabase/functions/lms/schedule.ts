@@ -8,7 +8,11 @@ function integer(value:unknown,min:number,max:number) {
 }
 export async function scheduleAction(db:SupabaseClient,actor:Actor,action:unknown,input:Input):Promise<{data:unknown}|null> {
   switch(action){
-    case 'listScheduleGroups':return {data:await dataOf(db.from('study_groups').select('id,name,course,program,lessons_per_day').order('name'))};
+    case 'listScheduleGroups':return {data:await dataOf(db.from('study_groups').select('id,name,course,program,lessons_per_day,revision').order('name'))};
+    case 'deleteScheduleGroup':{
+      requireAdmin(actor);
+      return {data:await dataOf(db.rpc('delete_schedule_group',{p_actor_id:actor.uid,p_group_id:id(input.groupId),p_revision:integer(input.revision,0,2147483646),p_name:text(input.name,100,'Группа')}))};
+    }
     case 'createScheduleGroup':{
       requireAdmin(actor);
       return {data:await dataOf(db.rpc('create_schedule_group',{p_actor_id:actor.uid,p_name:text(input.name,100,'Группа'),
@@ -16,7 +20,7 @@ export async function scheduleAction(db:SupabaseClient,actor:Actor,action:unknow
     }
     case 'getWeeklySchedule':{
       const groupId=id(input.groupId);
-      const group=await dataOf(db.from('study_groups').select('id,name,course,program,lessons_per_day').eq('id',groupId).maybeSingle());
+      const group=await dataOf(db.from('study_groups').select('id,name,course,program,lessons_per_day,revision').eq('id',groupId).maybeSingle());
       if(!group)missing('Группа не найдена.');
       // Exact server-side scope: other groups' lessons never leave the API.
       const cells=await dataOf(db.from('weekly_schedule_cells').select('id,weekday,lesson_number,status,title,subject_id,teacher_id,teacher_label,room,note,starts_at,ends_at,revision').eq('group_id',groupId).order('weekday').order('lesson_number'));

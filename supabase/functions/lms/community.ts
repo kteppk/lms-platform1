@@ -5,6 +5,8 @@ import { scheduleAction } from './schedule.ts';
 import { saveNames } from './names.ts';
 import { newsAction } from './news.ts';
 import { peopleAction } from './people.ts';
+import { chatAction } from './chat.ts';
+import { pushAction } from './push.ts';
 
 const profileBucket='lms-profiles';
 const imageTypes=['image/jpeg','image/png','image/webp'];
@@ -178,7 +180,7 @@ export async function communityAction(db:SupabaseClient,actor:Actor,action:unkno
     case 'listAccounts': requireAdmin(actor);data=await dataOf(db.rpc('list_accounts',{p_actor_id:actor.uid,p_search:text(input.search??'',120,'Поиск',true),p_offset:pageOffset(input.offset)}));break;
     case 'setAccountRole':
       requireAdmin(actor);
-      if(!['student','teacher','admin'].includes(String(input.role))||!['student','teacher','admin'].includes(String(input.expectedRole)))invalid('Выберите роль и обновите список аккаунтов.');
+      if(!['student','curator','teacher','admin'].includes(String(input.role))||!['student','curator','teacher','admin'].includes(String(input.expectedRole)))invalid('Выберите роль и обновите список аккаунтов.');
       data=await dataOf(db.rpc('set_account_role',{p_actor_id:actor.uid,p_user_id:id(input.userId),p_role:input.role,p_expected_role:input.expectedRole}));break;
     case 'listNotifications':data=await dataOf(db.rpc('notification_feed',{p_user_id:actor.uid,p_offset:pageOffset(input.offset)}));break;
     case 'listNotificationSubscriptions':data=await dataOf(db.rpc('list_notification_subscriptions',{p_user_id:actor.uid}));break;
@@ -198,7 +200,7 @@ export async function communityAction(db:SupabaseClient,actor:Actor,action:unkno
       requireAdmin(actor);
       data=await dataOf(db.from('notifications').insert({actor_id:actor.uid,category:'announcement',title:text(input.title,200,'Заголовок'),body:text(input.body,2000,'Текст'),destination:'notifications',severity:input.important===true?'danger':'info'}).select('id').single());break;
     }
-    default:return await peopleAction(db,actor,action,input) ?? await newsAction(db,actor,action,input) ?? await scheduleAction(db,actor,action,input);
+    default:return await chatAction(db,actor,action,input) ?? await pushAction(db,actor,action,input) ?? await peopleAction(db,actor,action,input) ?? await newsAction(db,actor,action,input) ?? await scheduleAction(db,actor,action,input);
   }
   return {data};
 }

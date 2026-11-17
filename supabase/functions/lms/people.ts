@@ -26,7 +26,7 @@ export async function peopleAction(db:SupabaseClient,actor:Actor,action:unknown,
     case 'searchPeople':{
       const offset=input.offset??0;
       if(typeof offset!=='number'||!Number.isSafeInteger(offset)||offset<0||offset>100000)invalid('Некорректная страница.');
-      const role=text(input.role??'',20,'Роль',true);if(!['','student','teacher','admin'].includes(role))invalid('Выберите роль.');
+      const role=text(input.role??'',20,'Роль',true);if(!['','student','curator','teacher','admin'].includes(role))invalid('Выберите роль.');
       const result=await dataOf(db.rpc('people_directory',{p_search:text(input.search??'',200,'Поиск',true),p_role:role,p_offset:offset}));
       const rows=result.rows.slice(0,30),links=await signed(db,rows.flatMap((p:Input)=>p.avatar_path?[String(p.avatar_path)]:[]));
       data={hasMore:result.hasMore,rows:rows.map((p:Input)=>({...p,avatarUrl:links.get(String(p.avatar_path))??null,avatar_path:undefined}))};break;

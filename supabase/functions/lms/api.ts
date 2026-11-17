@@ -56,7 +56,7 @@ function deadline(): never {
 }
 
 function requireRole(actor: Actor, teacher: boolean) {
-  if (teacher ? !actor.teacher : actor.role !== "student") throw new ApiError(403, "permission-denied", "Недостаточно прав.");
+  if (teacher ? !actor.teacher : !['student','curator'].includes(actor.role)) throw new ApiError(403, "permission-denied", "Недостаточно прав.");
 }
 
 function materialKind(value: unknown): Kind {

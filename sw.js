@@ -1,5 +1,8 @@
-/* Generated for release "0.8.0". Static files only; no API, tokens or uploads. */
-const VERSION="0.8.0";
+/* Generated for release "0.9.0". Static files only; no API, tokens or uploads. */
+const VERSION="0.9.0";
+// Push messages carry no auth tokens or chat content. Never navigate off-site.
+self.addEventListener('push',event=>{event.waitUntil((async()=>{let data={};try{data=event.data?.json()||{};}catch{}const route=data.destination==='schedule'?'schedule':'home';await self.registration.showNotification(String(data.title||'КТЭиП ПК').slice(0,150),{body:String(data.body||'На платформе новое уведомление.').slice(0,500),tag:String(data.id||'lms-update'),icon:new URL('app-icon-192.png',self.registration.scope).href,data:{route}});})());});
+self.addEventListener('notificationclick',event=>{event.notification.close();event.waitUntil((async()=>{const route=event.notification.data?.route==='schedule'?'schedule':'home';const url=new URL('index.html',self.registration.scope);url.searchParams.set('open',route);const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});const target=windows.find(w=>new URL(w.url).origin===self.location.origin&&w.url.startsWith(self.registration.scope));if(target){await target.navigate(url.href);await target.focus();}else await self.clients.openWindow(url.href);})());});
 importScripts('./sw-manifest.js?v='+VERSION);
 const PREFIX='lms-shell:'+self.registration.scope+':',CACHE=PREFIX+VERSION;
 const urls=new Set(OFFLINE_ASSETS.map(p=>new URL(p,self.registration.scope).href));

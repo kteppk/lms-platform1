@@ -1,0 +1,55 @@
+(()=>{
+ const $=id=>document.getElementById(id),e=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const api=new URL(document.documentElement.dataset.api,location.href),storeKey='lms-lite-public-v1',days=['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье'];
+ let saved={entries:{},group:''};try{const s=JSON.parse(localStorage.getItem(storeKey)||'null');if(s?.entries&&typeof s.entries==='object')saved=s;}catch{}
+ let group=new URL(location.href).searchParams.get('group')||saved.group||'',generation=0,offset=0,bootController=null,lastRefresh=0;
+ if(!/^[A-Za-z0-9_-]{1,128}$/.test(group))group='';
+ function write(){try{const keys=Object.keys(saved.entries).sort((a,b)=>saved.entries[a].at-saved.entries[b].at);while(keys.length&&(keys.length>16||JSON.stringify(saved).length>450000))delete saved.entries[keys.shift()];localStorage.setItem(storeKey,JSON.stringify(saved));}catch{}}
+ function remember(key,data,at=Date.now(),etag=null){const value={data,at,etag};saved.entries[key]=value;write();return value;}
+ function hint(id,item,stale){$(id).textContent=(stale?'Сохранённая копия. Актуальность не подтверждена. ':'Проверено: ')+(item?new Date(item.at).toLocaleString('ru-RU',{timeZone:'Asia/Krasnoyarsk'}):'');$(id).classList.toggle('stale',!!stale);}
+ const dateLabel=date=>new Date(date+'T12:00:00Z').toLocaleDateString('ru-RU',{timeZone:'UTC',day:'numeric',month:'long'});
+ const key=(view,extra={})=>JSON.stringify({view,...extra});
+ async function request(view,extra={},fresh=false,signal){
+  const id=key(view,extra),cached=saved.entries[id],url=new URL(api);url.searchParams.set('view',view);for(const [k,v] of Object.entries(extra))if(v!==''&&v!==null)url.searchParams.set(k,v);if(fresh)url.searchParams.set('fresh','1');
+  const controller=new AbortController(),cancel=()=>controller.abort();signal?.addEventListener('abort',cancel,{once:true});if(signal?.aborted)controller.abort();const timer=setTimeout(cancel,8000),headers={};if(api.origin===location.origin&&cached?.etag)headers['If-None-Match']=cached.etag;
+  try{const response=await fetch(url,{signal:controller.signal,credentials:'omit',cache:'no-cache',headers});
+   if(response.status===404){const error=new Error(view==='post'?'Новость больше не доступна.':'Группа больше не доступна.');error.code=404;throw error;}
+   if(!response.ok&&response.status!==304)throw new Error('Не удалось обновить данные. Повторите позже.');
+   const stale=response.headers.get('X-Lite-Stale')==='1',stamp=Number(response.headers.get('X-Lite-Checked-At'))||Date.now(),data=response.status===304?cached?.data:await response.json();if(!data)throw new Error('Нет сохранённого ответа.');
+   const item=remember(id,data,stamp,response.headers.get('ETag'));return {item,stale};
+  }finally{clearTimeout(timer);signal?.removeEventListener('abort',cancel);}
+ }
+ function renderGroups(groups){const select=$('group');select.innerHTML='<option value="">Выберите группу</option>'+groups.map(g=>`<option value="${e(g.id)}">${e(g.name)}${g.course?' · '+e(g.course)+' курс':''}</option>`).join('');select.value=group;select.disabled=false;}
+ function renderSchedule(data){
+  if(!data){$('timetable').innerHTML='<p>Выберите группу — будут показаны только её занятия.</p>';return;}
+  const {cells,group:g,week}=data,today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Krasnoyarsk'}).format(new Date());
+  $('timetable').innerHTML=`<p><strong>Группа ${e(g.name)}</strong> · неделя с ${e(dateLabel(week))}</p>`+days.slice(0,cells.some(c=>c.day===7)?7:6).map((day,d)=>{const date=new Date(Date.parse(week+'T12:00:00Z')+d*86400000).toISOString().slice(0,10);return `<section class="day ${date===today?'today':''}"><h3>${day} · ${e(dateLabel(date))}</h3><table><caption hidden>${day}, группа ${e(g.name)}</caption><tbody>${Array.from({length:g.lessonsPerDay},(_,i)=>{const c=cells.find(c=>c.day===d+1&&c.number===i+1);return `<tr><th scope="row">${i+1}</th><td>${!c?'<span class="free">Не заполнено</span>':c.state==='free'?'<span class="free">Нет пары</span>':`<strong>${e(c.title)}</strong>${c.room?`<span class="room">Каб. ${e(c.room)}</span>`:''}${c.teacher?`<p>${e(c.teacher)}</p>`:''}${c.start?`<p>${e(c.start.slice(0,5))}–${e(c.end.slice(0,5))}</p>`:''}${c.note?`<p>${e(c.note)}</p>`:''}`}</td></tr>`;}).join('')}</tbody></table></section>`;}).join('')+(data.dated?.length?'<h3>Дополнительные занятия</h3>'+data.dated.map(c=>`<article class="day"><h3>${e(c.title)}</h3><p>${e(dateLabel(c.date))} · ${e(c.start.slice(0,5))}–${e(c.end.slice(0,5))}${c.room?' · Каб. '+e(c.room):''}</p><p>${e(c.note)}</p></article>`).join(''):'');
+ }
+ function renderNews(news,append=false){
+  if(!append)$('feed').replaceChildren();const existing=new Set([...$('feed').querySelectorAll('[data-post]')].map(n=>n.dataset.post));
+  $('feed').insertAdjacentHTML('beforeend',news.rows.filter(n=>!existing.has(n.id)).map(n=>`<article class="news-card" data-post="${e(n.id)}"><span class="news-tag">${n.channel==='college'?'Новости техникума':'Новости сайта'}</span><time datetime="${e(n.publishedAt)}">${e(new Date(n.publishedAt).toLocaleString('ru-RU',{timeZone:'Asia/Krasnoyarsk',dateStyle:'short',timeStyle:'short'}))}</time><h3>${e(n.title)}</h3><p class="excerpt">${e(n.excerpt)}${n.hasFullText?'…':''}</p>${n.hasFullText?`<details data-full="${e(n.id)}"><summary>Читать полностью</summary><div class="full-body" role="status"></div></details>`:''}</article>`).join(''));
+  if(!news.rows.length&&!append)$('feed').innerHTML='<p>Публикаций пока нет.</p>';offset=news.offset+10;$('more').hidden=!news.hasMore;
+ }
+ function showCopy(){const common=saved.entries.base;if(common){renderGroups(common.data.groups);renderNews(common.data.news);hint('newsStatus',common,true);}const s=saved.entries[key('schedule',{group})];if(s){renderSchedule(s.data.schedule);hint('scheduleStatus',s,true);}else if(common?.data.schedule?.group.id===group){renderSchedule(common.data.schedule);hint('scheduleStatus',common,true);}}
+ function links(){const current=new URL(location.href);if(group)current.searchParams.set('group',group);else current.searchParams.delete('group');history.replaceState(null,'',current);if($('mirrorLink').hidden)return;const url=new URL($('mirrorLink').href);if(location.origin===url.origin)url.href=new URL('lite/',document.documentElement.dataset.main).href;if(group)url.searchParams.set('group',group);else url.searchParams.delete('group');$('mirrorLink').href=url.href;}
+ async function refresh(fresh=false){
+  const token=++generation;bootController?.abort();bootController=new AbortController();const selected=group;$('connection').textContent=navigator.onLine?'Обновляем данные…':'Нет интернета. Показаны сохранённые данные.';
+  try{const {item,stale}=await request('bootstrap',selected?{group:selected}:{},fresh,bootController.signal);if(token!==generation)return;
+   const data=item.data;if(!data.groups.some(g=>g.id===group)){group='';saved.group='';}renderGroups(data.groups);renderNews(data.news);renderSchedule(data.schedule);remember('base',data,item.at);
+   if(data.schedule)remember(key('schedule',{group:data.schedule.group.id}),{schedule:data.schedule},item.at);hint('newsStatus',item,stale);if(data.schedule)hint('scheduleStatus',item,stale);else $('scheduleStatus').textContent='';
+   $('connection').textContent=stale?'Сохранённая копия с зеркала. Обновляем её.':'Данные загружены.';$('connection').classList.toggle('stale',stale);lastRefresh=Date.now();links();if(stale&&!fresh)setTimeout(()=>{if(document.visibilityState==='visible'&&navigator.onLine)refresh(true);},2000);
+  }catch(error){if(token!==generation)return;if(error.code===404&&selected){group='';saved.group='';delete saved.entries[key('schedule',{group:selected})];write();renderSchedule(null);$('scheduleStatus').textContent='Выбранная группа удалена. Выберите другую.';await refresh(fresh);return;}$('connection').textContent=navigator.onLine?'Не удалось обновить данные. Сохранённая копия может быть устаревшей.':'Нет интернета. Показана сохранённая копия.';$('connection').classList.add('stale');}
+ }
+ $('group').addEventListener('change',async()=>{
+  group=$('group').value;saved.group=group;write();links();const token=++generation;bootController?.abort();bootController=new AbortController();const selected=group;if(!selected){renderSchedule(null);$('scheduleStatus').textContent='';return;}
+  const cached=saved.entries[key('schedule',{group:selected})];if(cached){renderSchedule(cached.data.schedule);hint('scheduleStatus',cached,true);}else $('timetable').innerHTML='<p role="status">Загрузка расписания…</p>';
+  try{const {item,stale}=await request('schedule',{group:selected},false,bootController.signal);if(token!==generation)return;renderSchedule(item.data.schedule);hint('scheduleStatus',item,stale);if(stale)setTimeout(()=>refresh(true),2000);}
+  catch(error){if(token!==generation)return;if(!cached)$('timetable').innerHTML='<p>На этом устройстве ещё нет копии расписания. Повторите обновление после восстановления связи.</p>';if(error.code===404){group='';saved.group='';delete saved.entries[key('schedule',{group:selected})];write();renderSchedule(null);await refresh(true);}$('scheduleStatus').textContent=error.message+(cached?' Сохранённая копия может быть устаревшей.':'');}
+ });
+ $('refresh').addEventListener('click',()=>refresh(true));
+ $('more').addEventListener('click',async event=>{const button=event.currentTarget,start=offset;button.disabled=true;try{const {item,stale}=await request('news',{offset:start});if(start!==offset)return;renderNews(item.data.news,true);hint('newsStatus',item,stale);}catch(error){$('newsStatus').textContent=error.message;}finally{button.disabled=false;}});
+ document.addEventListener('toggle',async event=>{const details=event.target;if(!details.matches?.('[data-full]')||!details.open||details.dataset.loaded)return;const root=details.querySelector('.full-body'),id=details.dataset.full,cached=saved.entries[key('post',{post:id})];if(cached){root.textContent=cached.data.post.body;details.dataset.loaded='true';return;}root.textContent='Загрузка текста…';try{const {item}=await request('post',{post:id});if(!details.isConnected)return;root.textContent=item.data.post.body;details.dataset.loaded='true';}catch(error){root.textContent=error.message+' Закройте и откройте новость, чтобы повторить.';}},true);
+ window.addEventListener('online',()=>refresh());window.addEventListener('offline',()=>{$('connection').textContent='Нет интернета. Показана сохранённая копия.';$('connection').classList.add('stale');});
+ document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&Date.now()-lastRefresh>60000)refresh();});setInterval(()=>{if(document.visibilityState==='visible'&&navigator.onLine&&Date.now()-lastRefresh>60000)refresh();},60000);
+ showCopy();links();refresh();window.addEventListener('load',()=>{if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(()=>{});});
+})();

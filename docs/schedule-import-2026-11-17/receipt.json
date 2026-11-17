@@ -1,0 +1,179 @@
+[
+  {
+    "receipt": {
+      "createdGroups": 18,
+      "details": [
+        {
+          "conflicts": 0,
+          "created": true,
+          "group_id": "ab7a5112-dcb0-4e2c-9290-ec2fd248816f",
+          "inserted": 36,
+          "matched": 0,
+          "name": "1251",
+          "unknown": 0
+        },
+        {
+          "conflicts": 0,
+          "created": true,
+          "group_id": "93b78831-66f7-4ee1-a28a-5e2358a4d97d",
+          "inserted": 36,
+          "matched": 0,
+          "name": "1261",
+          "unknown": 0
+        },
+        {
+          "conflicts": 0,
+          "created": true,
+          "group_id": "3f33683c-0440-47f4-984d-7eb1858302dd",
+          "inserted": 36,
+          "matched": 0,
+          "name": "3241",
+          "unknown": 0
+        },
+        {
+          "conflicts": 0,
+          "created": true,
+          "group_id": "8b834aec-ce5b-47a4-9d77-3a458d7adebd",
+          "inserted": 33,
+          "matched": 0,
+          "name": "3242",
+          "unknown": 3
+        },
+        {
+          "conflicts": 0,
+          "created": true,
+          "group_id": "dcb6ec7d-0d00-466c-84d6-2d4cebbc3abb",
+          "inserted": 36,
+          "matched": 0,
+          "name": "3251",
+          "unknown": 0
+        },
+        {
+          "conflicts": 0,
+          "created": true,
+          "group_id": "b3a7c793-4f18-43e3-b5d1-4881853ef909",
+          "inserted": 33,
+          "matched": 0,
+          "name": "3252",
+          "unknown": 3
+        },
+        {
+          "conflicts": 0,
+          "created": true,
+          "group_id": "b06d3382-8a1f-45bb-bcea-41d2ee40a0d8",
+          "inserted": 34,
+          "matched": 0,
+          "name": "3261",
+          "unknown": 2
+        },
+        {
+          "conflicts": 0,
+          "created": true,
+          "group_id": "46bf4e40-8606-4062-854c-0360ff59a678",
+          "inserted": 33,
+          "matched": 0,
+          "name": "3262",
+          "unknown": 3
+        },
+        {
+          "conflicts": 0,
+          "created": true,
+          "group_id": "202c7f60-a56d-4bf9-8405-dbe12aa80e21",
+          "inserted": 35,
+          "matched": 0,
+          "name": "6251",
+          "unknown": 1
+        },
+        {
+          "conflicts": 0,
+          "created": true,
+          "group_id": "b233f7d1-219a-470d-8301-76de7498c182",
+          "inserted": 35,
+          "matched": 0,
+          "name": "6261",
+          "unknown": 1
+        },
+        {
+          "conflicts": 0,
+          "created": true,
+          "group_id": "26689e80-8716-4121-b7e3-44c779b21490",
+          "inserted": 36,
+          "matched": 0,
+          "name": "Н 9-01",
+          "unknown": 0
+        },
+        {
+          "conflicts": 0,
+          "created": true,
+          "group_id": "bf94998e-a613-433c-81d8-2d6f6d5f3bef",
+          "inserted": 36,
+          "matched": 0,
+          "name": "Н 9-02",
+          "unknown": 0
+        },
+        {
+          "conflicts": 0,
+          "created": true,
+          "group_id": "b63db7dc-38c4-44c2-9fe9-4fe485e7c97b",
+          "inserted": 36,
+          "matched": 0,
+          "name": "Н 9-03",
+          "unknown": 0
+        },
+        {
+          "conflicts": 0,
+          "created": true,
+          "group_id": "0ff301e5-4900-4c9b-9b21-f2e3bd4fc2e5",
+          "inserted": 36,
+          "matched": 0,
+          "name": "Н 9-04",
+          "unknown": 0
+        },
+        {
+          "conflicts": 0,
+          "created": true,
+          "group_id": "2869e59a-8766-4070-8888-20622777b7ad",
+          "inserted": 35,
+          "matched": 0,
+          "name": "Н 9-05",
+          "unknown": 1
+        },
+        {
+          "conflicts": 0,
+          "created": true,
+          "group_id": "aa006616-bc87-49da-b81c-49654c377124",
+          "inserted": 35,
+          "matched": 0,
+          "name": "Н 9-06",
+          "unknown": 1
+        },
+        {
+          "conflicts": 0,
+          "created": true,
+          "group_id": "664dba9b-00e8-453e-92ab-a1f2578d9c27",
+          "inserted": 34,
+          "matched": 0,
+          "name": "Н 9-07",
+          "unknown": 2
+        },
+        {
+          "conflicts": 0,
+          "created": true,
+          "group_id": "3f409d0c-edfc-4d7e-98c2-a46fa75a4a8b",
+          "inserted": 34,
+          "matched": 0,
+          "name": "Н 9-08",
+          "unknown": 2
+        }
+      ],
+      "existingCellsUnchanged": true,
+      "existingGroupsUnchanged": true,
+      "groups": 18,
+      "insertedCells": 629,
+      "matchedCells": 0,
+      "otherPublicTablesUnchanged": true,
+      "preservedConflicts": 0,
+      "unreadCells": 19
+    }
+  }
+]

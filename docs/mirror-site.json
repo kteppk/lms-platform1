@@ -1,0 +1,8 @@
+{
+  "project_id": "appgprj_6afab4d9500881919acbf1e0f869e02b",
+  "url": "https://kteipp-lite.optimisticpopcorn2.chatgpt.site",
+  "audience": "public",
+  "status": "unpublished; Russian hosting selected instead",
+  "source": "lite/",
+  "build": "node scripts/build-lite.cjs"
+}

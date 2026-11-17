@@ -1,0 +1,36 @@
+{
+  "publishedURL": "https://kteppk.github.io/lms-platform1/",
+  "checkedAt": "2026-11-17T06:00:06.298Z",
+  "checks": [
+    {
+      "role": "student",
+      "groups": 18,
+      "lessons": 356,
+      "free": 273,
+      "unknown": 19,
+      "groupCount": 22,
+      "reload": true,
+      "mobileWidths": [
+        320,
+        390
+      ],
+      "writeDenied": true
+    },
+    {
+      "role": "teacher",
+      "groups": 18,
+      "lessons": 356,
+      "free": 273,
+      "unknown": 19,
+      "groupCount": 22,
+      "reload": true,
+      "mobileWidths": [
+        320,
+        390
+      ],
+      "writeDenied": true
+    }
+  ],
+  "temporaryAccountsRemoved": true,
+  "existingDataUnchanged": true
+}

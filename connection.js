@@ -48,7 +48,7 @@ const AppConnection=(()=>{
     if(!recoverable(error))return;
     document.getElementById('appLoading')?.remove();document.getElementById('connectionRecovery')?.remove();
     const section=document.createElement('section');section.id='connectionRecovery';section.className='connection-recovery';
-    section.innerHTML=`<h2>Не удалось подключиться</h2><p>Для входа и проверки прав нужен интернет. Можно повторить подключение${savedSchedules().length?' или прочитать сохранённое расписание':''}.</p><div class="actions"><button type="button" class="secondary" data-connection="retry">Повторить</button>${savedSchedules().length?'<a class="connection-link" href="offline.html">Сохранённое расписание</a>':''}<button type="button" class="secondary" data-connection="logout">Выйти</button></div>`;
+    section.innerHTML=`<h2>Не удалось подключиться</h2><p>Для входа и проверки прав нужен интернет. Можно повторить подключение${savedSchedules().length?' или прочитать сохранённое расписание':''}.</p><p><a class="connection-link" href="lite/">Новости и расписание без входа</a></p><div class="actions"><button type="button" class="secondary" data-connection="retry">Повторить</button>${savedSchedules().length?'<a class="connection-link" href="offline.html">Сохранённое расписание</a>':''}<button type="button" class="secondary" data-connection="logout">Выйти</button></div>`;
     (document.querySelector('.auth-container')||document.querySelector('main')?.parentElement||document.body).append(section);
   }
   function status(){const bar=document.getElementById('connectionStatus');if(!bar)return;bar.hidden=online();bar.textContent='Нет интернета. Доступны ранее сохранённые расписания и справочные данные. Отправка работ требует подключения.';}

@@ -2,7 +2,7 @@ const Portal = (() => {
   let profile, teachers=[], selectedTeacher=null, editingTeacher=null, accountRows=[], accountOffset=0, accountSearch='', pendingTeacher=null;
   let noticeRows=[], noticeOffset=0, seen=new Set(), polling=false, pendingSubscriptions=false;
   const noticeById=new Map();
-  const roles={student:'Студент',teacher:'Преподаватель',admin:'Администратор'};
+  const roles={student:'Студент',curator:'Куратор-студент',teacher:'Преподаватель',admin:'Администратор'};
   const categories={diploma:'Диплом',award:'Грамота',certificate:'Сертификат',other:'Другой документ'};
   const e=value=>escapeHtml(value);
   const field=(key,label,value='',type='text',extra='')=>`<div class="form-group"><label for="${key}">${label}</label><input id="${key}" type="${type}" value="${e(value)}" ${extra}></div>`;
@@ -53,6 +53,7 @@ const Portal = (() => {
     profile=person;
     AccountTools.init(profile,update=>{profile={...profile,...update};});
     Subscriptions.init(profile);
+    if(['curator','admin'].includes(profile.role)&&!document.querySelector('[data-tab="curator-chat"]')){const b=document.createElement('button');b.className='tab-btn';b.dataset.tab='curator-chat';b.textContent='Чат кураторов';b.onclick=()=>switchTab('curator-chat',b);document.querySelector('.tabs [data-tab="profile"]').before(b);}
     document.getElementById('userName').textContent=profile.name;
     nameNotice();
     if(!document.getElementById('toastRegion')){
@@ -130,6 +131,7 @@ const Portal = (() => {
     const tools=button('Мои подписки','subscriptions')+button('Прочитать эту страницу','notices-read-page',feed.rows.some(n=>!n.read)?'':'disabled');
     if(popup)document.querySelector('#notificationsDialog [data-portal="notices-read-page"]').disabled=!feed.rows.some(n=>!n.read);
     container.innerHTML=`${popup?'':`<div class="page-heading"><h2>Уведомления</h2>${ActionMenu.render(tools,'Действия с уведомлениями')}</div><p class="section-lead">Личные результаты, объявления и изменения расписаний по вашим подпискам.</p>`}${noticeCards(feed.rows)}${popup?'':`<div class="actions pagination-actions">${button('← Назад','notices-prev',noticeOffset?'':'disabled')}${button('Далее →','notices-next',feed.rows.length===50?'':'disabled')}</div>`}`;
+    if(!popup){const push=document.createElement('section');container.prepend(push);PushSettings.render(push);}
     document.getElementById('notificationCount').textContent=feed.unreadCount;
   }
   async function renderAccounts(container){
@@ -140,8 +142,10 @@ const Portal = (() => {
   }
   async function announcements(container){return News.manager(container);}
   async function render(tab,parent){
-    if(!['home','profile','teachers','schedule','notifications','accounts','announcements','people','help'].includes(tab))return false;
+    if(!['home','profile','teachers','schedule','notifications','accounts','announcements','people','help','curator-chat'].includes(tab))return false;
+    if(tab!=='curator-chat')CuratorChat.clear();
     parent.innerHTML='<section id="portalPage" aria-live="polite"></section>';const target=parent.firstElementChild;
+    if(tab==='curator-chat')await CuratorChat.render(target,profile);
     if(tab==='home')await home(target);
     if(tab==='profile')await myProfile(target);
     if(tab==='teachers'){const uid=pendingTeacher;pendingTeacher=null;if(uid)await viewTeacher(uid,target);else await renderTeachers(target);}

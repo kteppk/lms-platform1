@@ -40,8 +40,16 @@ export async function newsAction(db:SupabaseClient,actor:Actor,action:unknown,in
     case 'listNews':{
       if(!['all','site','college'].includes(String(input.channel)))invalid('Выберите категорию новостей.');
       const offset=input.offset??0;if(!Number.isInteger(offset)||Number(offset)<0||Number(offset)>100000)invalid('Некорректная страница.');
-      if(input.channel==='site'||input.channel==='all')await syncGitHubNews(db);
-      data=await dataOf(db.rpc('news_feed',{p_channel:input.channel,p_offset:offset}));break;
+      if(input.channel==='site'||input.channel==='all'){
+        const task=syncGitHubNews(db),runtime=globalThis as unknown as {EdgeRuntime?:{waitUntil(task:Promise<unknown>):void}};
+        if(runtime.EdgeRuntime)runtime.EdgeRuntime.waitUntil(task.catch(()=>{}));else await task;
+      }
+      if(!['newest','oldest'].includes(String(input.order??'newest')))invalid('Выберите порядок новостей.');
+      data=await dataOf(db.rpc('news_feed_v2',{p_user:actor.uid,p_channel:input.channel,p_order:input.order??'newest',p_offset:offset}));break;
+    }
+    case 'setNewsLike':{
+      if(typeof input.liked!=='boolean')invalid('Укажите состояние лайка.');
+      data=await dataOf(db.rpc('set_news_like',{p_user:actor.uid,p_post:id(input.id),p_liked:input.liked}));break;
     }
     case 'saveNewsPost':
       requireAdmin(actor);

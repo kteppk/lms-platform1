@@ -48,9 +48,9 @@ const MobileNavigation = (() => {
   function updateName() {
     const name = document.getElementById('userName').textContent.trim();
     const initials = name.split(/\s+/u).slice(0, 2).map(word => [...word][0]).join('').toUpperCase();
-    document.querySelector('.profile-link').setAttribute('aria-label', `Мой профиль: ${name}`);
-    document.querySelector('.profile-link').title = name;
-    document.querySelector('.mobile-initials').textContent = initials;
+    const link=document.querySelector('.profile-link');
+    if(link){link.setAttribute('aria-label', `Мой профиль: ${name}`);link.title = name;}
+    const icon=document.querySelector('.mobile-initials');if(icon)icon.textContent = initials;
     document.getElementById('mobileProfileName').textContent = name;
   }
 
@@ -61,8 +61,8 @@ const MobileNavigation = (() => {
     if (!tabs.length) return;
     const has = tab => tabs.some(button => button.dataset.tab === tab);
     const fourth = has('accounts') ? 'notifications' : has('journal') ? 'journal' : 'results';
-    primaryTabs = ['home', has('accounts') ? 'accounts' : 'subjects', 'schedule', fourth];
-    const labels = { home: 'Главная', subjects: 'Предметы', accounts: 'Аккаунты', schedule: 'Расписание', results: 'Результаты', journal: 'Результаты', notifications: 'События' };
+    primaryTabs = person.role==='guest'?['home','schedule']:['home', has('accounts') ? 'accounts' : 'subjects', 'schedule', fourth];
+    const labels = { home: 'Новости', subjects: 'Предметы', accounts: 'Аккаунты', schedule: 'Расписание', results: 'Результаты', journal: 'Результаты', notifications: 'События' };
 
     bar = document.createElement('nav');
     bar.id = 'mobileNavigation';
@@ -77,11 +77,12 @@ const MobileNavigation = (() => {
     menu.className = 'mobile-menu';
     menu.setAttribute('aria-labelledby', 'mobileMenuTitle');
     menu.innerHTML = `<div class="mobile-menu-handle" aria-hidden="true"></div>
-      <div class="mobile-menu-heading"><div><p class="eyebrow">${{ student: 'Кабинет студента', teacher: 'Кабинет преподавателя', admin: 'Кабинет администратора' }[person.role]}</p><h2 id="mobileMenuTitle">Все разделы</h2></div>${ActionMenu.icon('close','Закрыть меню','data-mobile-action="close"','ui-icon-button icon-close')}</div>
+      <div class="mobile-menu-heading"><div><p class="eyebrow">${{ guest:'Гостевой просмотр',curator:'Кабинет куратора-студента',student: 'Кабинет студента', teacher: 'Кабинет преподавателя', admin: 'Кабинет администратора' }[person.role]}</p><h2 id="mobileMenuTitle">Все разделы</h2></div>${ActionMenu.icon('close','Закрыть меню','data-mobile-action="close"','ui-icon-button icon-close')}</div>
       <p id="mobileProfileName" class="mobile-profile-name"></p>
       <nav class="mobile-menu-grid" aria-label="Все разделы кабинета">${tabs.map(button => `<button type="button" data-mobile-tab="${button.dataset.tab}">${svg(button.dataset.tab === 'students' ? 'accounts' : button.dataset.tab)}<span>${escapeHtml(button.textContent.trim())}</span></button>`).join('')}</nav>
       <p class="site-version" data-site-version>Версия ${escapeHtml(SiteRelease.version)}</p>
       <div class="mobile-menu-footer"><button type="button" data-mobile-action="logout">${svg('logout')}<span>Выйти из аккаунта</span></button></div>`;
+    if(person.role==='guest')menu.querySelector('.mobile-menu-footer').innerHTML='<a class="guest-login" href="index.html">Войти / зарегистрироваться</a>';
     document.body.append(menu);
     for (const link of document.querySelectorAll('header .user-info a[href]')) {
       if (new URL(link.href).pathname === location.pathname) continue;
@@ -94,16 +95,16 @@ const MobileNavigation = (() => {
     const initials = document.createElement('span');
     initials.className = 'mobile-initials';
     initials.setAttribute('aria-hidden', 'true');
-    profileButton.append(initials);
+    profileButton?.append(initials);
     const bell = document.getElementById('notificationButton');
-    bell.classList.add('mobile-header-bell');
+    if(bell){bell.classList.add('mobile-header-bell');
     // Keep the accessible full text and the unread count on the desktop as well.
     const label = document.createElement('span');
     label.className = 'notification-label';
     label.textContent = 'Уведомления';
     for (const node of [...bell.childNodes]) if (node.nodeType === Node.TEXT_NODE) node.remove();
     bell.prepend(label);
-    bell.insertAdjacentHTML('afterbegin', svg('notifications'));
+    bell.insertAdjacentHTML('afterbegin', svg('notifications'));}
     updateName();
     new MutationObserver(updateName).observe(document.getElementById('userName'), { childList: true, characterData: true, subtree: true });
     for (const tab of tabs) new MutationObserver(sync).observe(tab, { attributes: true, attributeFilter: ['class'] });
