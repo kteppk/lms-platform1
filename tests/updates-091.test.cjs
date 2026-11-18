@@ -45,7 +45,7 @@ test('schedule export is a scoped public snapshot without account or mutation fi
  assert.equal(output.timeLabel('08:00:00','09:35:00'),'08:00–08:45 · перерыв 5 мин · 08:50–09:35');
  delete global.ResultsExport;
 });
-test('lesson reminders require acknowledgement/device opt-in, deduplicate, and discard cancelled or expired classes',async()=>{
+test('lesson reminders require acknowledgement/device opt-in, deduplicate, and discard cancelled classes',async()=>{
  await assert.rejects(rpc('set_lesson_reminder',['student',g.id,true,false]),{code:'22023'});
  await assert.rejects(rpc('set_lesson_reminder',['student',g.id,true,true]),{code:'22023'});
  await rpc('save_push_device',['student','https://fcm.googleapis.com/fcm/send/test','key','auth',false,false,true]);await rpc('set_lesson_reminder',['student',g.id,true,true]);
@@ -56,4 +56,15 @@ test('lesson reminders require acknowledgement/device opt-in, deduplicate, and d
  const current=(await db.query('select * from weekly_schedule_cells where id=$1',[c.id])).rows[0];await rpc('save_schedule_cell',['admin',g.id,1,1,c.id,current.revision,{status:'free'}]);assert.equal((await rpc('claim_browser_push')).length,0);
  assert.equal((await db.query("select state from push_deliveries j join notifications n on n.id=j.notification_id where n.category='lesson'")).rows[0].state,'dead');
  await rpc('set_lesson_reminder',['student',g.id,false,false]);assert.equal(await rpc('enqueue_lesson_reminders',['2028-01-10T00:55:00Z']),0);
+});
+test('expired and unsubscribed reminders are neither delivered nor returned as unread notifications',async()=>{
+ await rpc('set_lesson_reminder',['student',g.id,true,true]);
+ const current=(await db.query('select * from weekly_schedule_cells where group_id=$1 and lesson_number=1',[g.id])).rows[0];
+ await rpc('save_schedule_cell',['admin',g.id,1,1,current.id,current.revision,{status:'lesson',title:'Право',startsAt:'08:00',endsAt:'09:35'}]);
+ await rpc('enqueue_lesson_reminders',['2028-01-10T00:55:00Z']);
+ const expired=(await db.query("select id from notifications where category='lesson' order by created_at desc,id desc limit 1")).rows[0].id;
+ await db.query("update notifications set context=jsonb_set(context,'{expiresAt}',to_jsonb((now()-interval '1 second')::text)) where id=$1",[expired]);
+ assert.equal((await rpc('claim_browser_push')).length,0);assert.equal((await rpc('notification_feed',['student',0])).rows.some(n=>n.id===expired),false);
+ await rpc('enqueue_lesson_reminders',['2028-01-17T00:55:00Z']);await rpc('set_lesson_reminder',['student',g.id,false,false]);
+ assert.equal((await rpc('claim_browser_push')).length,0);assert.equal((await rpc('notification_feed',['student',0])).rows.some(n=>n.category==='lesson'),false);
 });
