@@ -1,4 +1,5 @@
 node_modules/
+server/runtime/
 *-debug.log
 .firebase/
 supabase/.temp/

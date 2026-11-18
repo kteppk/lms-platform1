@@ -1,0 +1,8 @@
+[Unit]
+Description=Private learning platform backup
+After=postgresql.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/lms/server/deploy/backup.sh
+UMask=0077

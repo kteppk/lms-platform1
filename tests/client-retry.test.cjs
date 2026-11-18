@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const vm = require('node:vm');
 const fs = require('node:fs');
 function client(fetch) {
-  const sandbox = { fetch, URL, location: { hostname: 'localhost' },
+  const sandbox = { fetch, URL, location: { hostname: 'localhost', origin:'http://localhost' },
     firebase: { initializeApp() {}, auth() { return {}; } }, setTimeout: fn => fn() };
   const context = vm.createContext(sandbox);
   vm.runInContext(fs.readFileSync('firebase-config.js','utf8'),context);

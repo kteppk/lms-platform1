@@ -1,18 +1,9 @@
 // firebase-config.js
 
-// Твоя реальная конфигурация проекта students-70392
-const firebaseConfig = {
-  apiKey: "AIzaSyD5a1543rVIbV7e9RFFuvk3QUHp4ATDsMA",
-  authDomain: "students-70392.firebaseapp.com",
-  projectId: "students-70392",
-  messagingSenderId: "117845681705",
-  appId: "1:117845681705:web:ee3d82e0a696394210de38",
-  measurementId: "G-7JT7TEDNB5"
-};
-
-const isLocal = ['localhost', '127.0.0.1'].includes(location.hostname);
-const supabaseProjectUrl = 'https://qqhkuuktgzcyrkfdnjjq.supabase.co';
-const lmsBaseUrl = isLocal ? 'http://127.0.0.1:54321' : supabaseProjectUrl;
+// Local VPS authentication; no account data is sent to Firebase.
+const firebaseConfig={projectId:'lms-local',authDomain:location.hostname};
+const isLocal=['localhost','127.0.0.1'].includes(location.hostname);
+const lmsBaseUrl=location.origin;
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 let nameFieldsPromise;
@@ -34,13 +25,13 @@ async function callFunction(action,data,account=auth.currentUser,options={}) {
   return typeof AppConnection==='undefined'?send():AppConnection.request(action,data,account,send,options);
 }
 async function sendFunction(action, data, account = auth.currentUser) {
-  if (!lmsBaseUrl) throw new Error('Адрес проекта Supabase ещё не настроен.');
+  if (!lmsBaseUrl) throw new Error('Адрес сервера ещё не настроен.');
   if (!account) throw new Error('Войдите в аккаунт.');
   if(typeof navigator!=='undefined'&&navigator.onLine===false){const error=new Error('Нет интернета. Запрос не отправлен.');error.code='unavailable';throw error;}
   const token = await account.getIdToken();
   const retryable = new Set(['profile','listSubjects','listSubjectTeachers','getSubjectContent','listMaterials',
     'listStudentTests','listTeacherTests','listStudents','getStudentAttempt','listActiveAttempts','listResults',
-    'getResult','listResultTests','getTestResults','exportTestResults','saveStudentDraft','submitStudentTest','listTeachers','getTeacherProfile','listSchedule','listScheduleGroups','getWeeklySchedule','listNotifications','listNotificationSubscriptions','listRoleChanges','listNews','registrationStatistics','listCuratorMessages','getPushSettings','getMyEducation','getGroupLessonTimes','getLessonReminder','exportSchedule','searchPeople','getPerson','getPortalSettings','listAccounts','readNotifications']).has(action);
+    'getResult','listResultTests','getTestResults','exportTestResults','saveStudentDraft','submitStudentTest','listTeachers','getTeacherProfile','listSchedule','listScheduleGroups','getWeeklySchedule','listNotifications','listNotificationSubscriptions','listRoleChanges','listNews','registrationStatistics','listCuratorMessages','getPushSettings','listRecoveryRequests','getMyEducation','getGroupLessonTimes','getLessonReminder','exportSchedule','searchPeople','getPerson','getPortalSettings','listAccounts','readNotifications']).has(action);
   for (let attempt = 0; ; attempt++) {
     let response, result;
     const controller=typeof AbortController!=='undefined'?new AbortController():null;

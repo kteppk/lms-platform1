@@ -1,0 +1,5 @@
+{
+  "name":"lms-vps-server","private":true,"type":"module","version":"0.10.0",
+  "scripts":{"start":"node main.mjs","test":"node --experimental-transform-types --test ../tests/vps-server.test.mjs"},
+  "dependencies":{"jose":"6.1.3","pg":"8.16.3"}
+}

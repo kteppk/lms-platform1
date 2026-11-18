@@ -2,7 +2,7 @@ const escapeHtml=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 const guestPerson={uid:'guest',name:'Гость',role:'guest'};
 async function callFunction(action,data={},_account,options={}){
  if(!['listNews','listScheduleGroups','getWeeklySchedule','listSchedule','exportSchedule'].includes(action))throw new Error('Войдите или зарегистрируйтесь.');
- const url=new URL('https://qqhkuuktgzcyrkfdnjjq.supabase.co/functions/v1/lms-public');url.searchParams.set('action',action);url.searchParams.set('data',JSON.stringify(data));
+ const url=new URL('/functions/v1/lms-public',location.origin);url.searchParams.set('action',action);url.searchParams.set('data',JSON.stringify(data));
  const key='lms-public:'+action+':'+JSON.stringify(data);let cached;try{cached=JSON.parse(localStorage.getItem(key));}catch{}
  try{const res=await fetch(url,{signal:AbortSignal.timeout(12000),cache:options.fresh?'reload':'default'}),json=await res.json();if(!res.ok)throw Error(json.error);try{const keys=Object.keys(localStorage).filter(k=>k.startsWith('lms-public:'));while(keys.length>=30)localStorage.removeItem(keys.shift());localStorage.setItem(key,JSON.stringify({savedAt:Date.now(),value:json.data}));}catch{}return json.data;}
  catch(error){if(cached&&Date.now()-cached.savedAt<7*86400000){const v=cached.value;Object.defineProperty(v,'_offline',{value:{stale:true,savedAt:cached.savedAt},enumerable:false});return v;}throw error;}

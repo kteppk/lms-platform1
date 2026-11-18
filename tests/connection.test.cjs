@@ -42,9 +42,9 @@ test('offline writes are rejected without queueing; simultaneous reads share one
  await c.connection.request('saveSubject',{},a,async()=>({id:'new'}));assert.equal(c.connection.peek('listSubjects',{}).refresh,true);
  c.navigator.onLine=false;await assert.rejects(c.connection.request('submitStudentTest',{},a,async()=>{calls++;}),e=>e.code==='unavailable');assert.equal(calls,1);
 });
-test('generated offline manifest is valid, contains local SDK and no external/API/storage endpoints',()=>{
+test('generated offline manifest is valid, contains local authentication and no external/API/storage endpoints',()=>{
  const context=vm.createContext({});vm.runInContext(fs.readFileSync('sw-manifest.js','utf8')+';this.assets=OFFLINE_ASSETS;',context);
- assert.ok(context.assets.some(p=>p.startsWith('vendor/firebase/')));assert.ok(context.assets.includes('offline.html'));
+ assert.ok(context.assets.some(p=>p.startsWith('local-auth.js')));assert.ok(context.assets.includes('offline.html'));
  for(const file of context.assets){assert.ok(!/^https?:/.test(file));assert.ok(!file.includes('/functions/v1/')&&!file.includes('/storage/v1/'));assert.ok(fs.existsSync(file.split('?')[0]),file);}
  new vm.Script(fs.readFileSync('sw.js','utf8'));
 });

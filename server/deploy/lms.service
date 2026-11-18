@@ -1,0 +1,26 @@
+[Unit]
+Description=KTEIP learning platform
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=lms
+Group=lms
+WorkingDirectory=/opt/lms/server
+EnvironmentFile=/etc/lms/runtime.env
+ExecStart=/usr/bin/node --max-old-space-size=512 /opt/lms/server/main.mjs
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/lms
+MemoryMax=1G
+TasksMax=64
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target
