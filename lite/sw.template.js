@@ -1,5 +1,8 @@
+if(self.location.hostname==='kteppk.github.io'){importScripts('../moved-sw.js');}else{
 const VERSION='__VERSION__',PREFIX='lms-lite-shell:',CACHE=PREFIX+VERSION;
 const ASSETS=['index.html','lite.css?v='+VERSION,'app.js?v='+VERSION].map(p=>new URL(p,self.registration.scope).href);
 self.addEventListener('install',event=>event.waitUntil((async()=>{const cache=await caches.open(CACHE);await cache.addAll(ASSETS);await self.skipWaiting();})()));
 self.addEventListener('activate',event=>event.waitUntil((async()=>{for(const key of await caches.keys())if(key.startsWith(PREFIX)&&key!==CACHE)await caches.delete(key);await self.clients.claim();})()));
 self.addEventListener('fetch',event=>{const request=event.request;if(request.method!=='GET'||new URL(request.url).origin!==self.location.origin)return;const url=new URL(request.url);const scope=new URL(self.registration.scope);if(url.pathname===scope.pathname||url.pathname===scope.pathname+'index.html'){event.respondWith(caches.open(CACHE).then(c=>c.match(ASSETS[0])).then(r=>r||fetch(request)));return;}if(ASSETS.includes(url.href))event.respondWith(caches.open(CACHE).then(c=>c.match(request)).then(r=>r||fetch(request)));});
+
+}
