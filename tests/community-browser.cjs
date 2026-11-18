@@ -1,41 +1,119 @@
-const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),assert=require('node:assert/strict');
-const {chromium}=require('playwright-core');const base='http://127.0.0.1:54321/',root=path.resolve(__dirname,'..');
-const server=http.createServer((req,res)=>{const u=new URL(req.url,base),file=path.resolve(root,'.'+decodeURIComponent(u.pathname==='/'?'/index.html':u.pathname));if(!file.startsWith(root+path.sep)||!fs.existsSync(file)||!fs.statSync(file).isFile())return res.writeHead(404).end();res.writeHead(200,{'Content-Type':file.endsWith('.css')?'text/css':/\.(?:js|mjs)$/.test(file)?'text/javascript':file.endsWith('.png')?'image/png':'text/html'}).end(fs.readFileSync(file));});
-function fixture(role){let liked=false,messages=[];const person={uid:role,name:'Проверочный Иван',role,email:role+'@example.test',canTeach:role==='teacher',nameConfirmed:true,noPatronymic:true,firstNameRaw:'Иван',lastNameRaw:'Проверочный'};
- return (action,data={})=>{switch(action){
- case 'profile':return person;
- case 'listNews':return {rows:[{id:'post',title:'Новость для проверки',body:'Текст публикации',channel:data.channel==='college'?'college':'site',kind:'news',published_at:'2026-11-16T09:00:00Z',liked,like_count:liked?1:0}],hasMore:false};
- case 'setNewsLike':liked=data.liked;return {id:'post',liked,like_count:liked?1:0};
- case 'listNotifications':return {rows:[],unreadCount:0};
- case 'getPushSettings':return {publicKey:'B'+'a'.repeat(86),device:null};
- case 'listScheduleGroups':return [{id:'g',name:'9241',course:'4',lessons_per_day:6,revision:1}];
- case 'getWeeklySchedule':return {group:{id:'g',name:'9241',course:'4',lessons_per_day:6,revision:1},cells:[{weekday:1,lesson_number:1,status:'lesson',title:'Математика',teacher_label:'Преподаватель И.И.',room:'20'}]};
- case 'listSchedule':return {rows:[],hasMore:false};
- case 'listNotificationSubscriptions':return [];
- case 'listActiveAttempts':return [];
- case 'listCuratorMessages':return {rows:messages.filter(m=>!data.after||BigInt(m.id)>BigInt(data.after))};
- case 'sendCuratorMessage':messages.push({id:String(messages.length+1),body:data.body,author_id:role,author_name:person.name,created_at:new Date().toISOString()});return {id:String(messages.length)};
- default:throw Error('Unexpected fixture action '+action);
- }};
-}
-(async()=>{
- fs.mkdirSync(path.join(root,'.qa-output'),{recursive:true});await new Promise(r=>server.listen(54321,'127.0.0.1',r));const browser=await chromium.launch({channel:'chrome',headless:true});
- try{for(const role of ['guest','student','teacher','curator','admin']){
-  const context=await browser.newContext({serviceWorkers:'block',viewport:{width:1280,height:900}}),page=await context.newPage(),errors=[],api=fixture(role);page.setDefaultTimeout(15000);page.on('pageerror',e=>errors.push(e.message));
-  if(role!=='guest'){
-   await page.addInitScript(({role})=>{const user={uid:role,email:role+'@example.test',getIdToken:async()=>'fixture'};window.firebase={initializeApp(){},auth:()=>({currentUser:user,onAuthStateChanged:cb=>{queueMicrotask(()=>cb(user));return ()=>{};}})};},{role});
-   await page.route('**/vendor/firebase/**/*.js*',r=>r.fulfill({contentType:'text/javascript',body:''}));
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+
+// The caller supplies isolated fixtures and is responsible for deleting them.
+module.exports=async function verifyCommunity({teacher,student,other,admin,roleStudent,stamp,screenshotDir,protectLastAdmin=false}){
+  const rpc=(page,action,data)=>page.evaluate(([action,data])=>callFunction(action,data).then(data=>({data}),error=>({code:error.code,message:error.message})),[action,data]);
+  const nav=(page,tab)=>page.evaluate(tab=>document.querySelector('.tabs [data-tab="'+tab+'"]').click(),tab);
+  const uid=await teacher.evaluate(()=>auth.currentUser.uid);
+  const otherUid=await other.evaluate(()=>auth.currentUser.uid);
+  const email=await roleStudent.evaluate(()=>auth.currentUser.email);
+  const roleUid=await roleStudent.evaluate(()=>auth.currentUser.uid);
+  assert.equal((await rpc(student,'setAccountRole',{userId:roleUid,role:'admin',expectedRole:'student'})).code,'permission-denied');
+  assert.equal((await rpc(teacher,'listAccounts')).code,'permission-denied');
+  assert.equal((await rpc(student,'saveSchedule',{})).code,'permission-denied');
+  assert.equal((await rpc(teacher,'saveTeacherProfile',{teacherId:otherUid})).code,'permission-denied');
+  assert.equal((await rpc(student,'createProfileUpload',{teacherId:uid,mime:'image/png',size:68})).code,'permission-denied');
+  await nav(admin,'accounts');
+  await admin.getByLabel('Поиск по ФИО или email').fill(email);
+  await admin.getByRole('button',{name:'Найти',exact:true}).click();
+  await admin.getByRole('combobox',{name:'Роль '+email,exact:true}).selectOption('teacher');
+  await admin.locator('[data-portal="role-save"][data-id="'+roleUid+'"]').click();
+  await admin.locator('[data-role-id="'+roleUid+'"]').filter({has:admin.locator('option[value="teacher"][selected]')}).waitFor();
+  await roleStudent.goto(new URL('index.html',roleStudent.url()).href);
+  await roleStudent.waitForURL('**/teacher.html');
+  await roleStudent.getByRole('heading',{name:'Главная',exact:true}).waitFor();
+  assert.equal((await rpc(roleStudent,'profile')).data.role,'teacher');
+  await nav(admin,'accounts');
+  await admin.getByRole('combobox',{name:'Роль '+email,exact:true}).selectOption('student');
+  await admin.locator('[data-portal="role-save"][data-id="'+roleUid+'"]').click();
+  await admin.locator('[data-role-id="'+roleUid+'"]').filter({has:admin.locator('option[value="student"][selected]')}).waitFor();
+  assert.equal((await rpc(roleStudent,'createTest',{title:'Denied',timer:0,questions:[]})).code,'permission-denied');
+  const adminUid=await admin.evaluate(()=>auth.currentUser.uid);
+  if(protectLastAdmin)assert.equal((await rpc(admin,'setAccountRole',{userId:adminUid,role:'student',expectedRole:'admin'})).code,'invalid-argument');
+  console.log('PASS administrator UI changes roles; stale teacher session loses write rights; final administrator and other users protected');
+
+  await nav(teacher,'profile');
+  await teacher.getByRole('button',{name:'Заполнить профиль преподавателя',exact:true}).click();
+  await teacher.getByLabel('Должность',{exact:true}).fill('Преподаватель экономики');
+  await teacher.getByLabel('Педагогический стаж, лет').fill('12');
+  await teacher.getByLabel('О себе',{exact:true}).fill('Учебный профиль проверки '+stamp);
+  await teacher.getByLabel('Образование: учебное заведение, специальность, год').fill('Тестовый университет · Экономика · 2010');
+  await teacher.getByLabel('Квалификация и повышение квалификации').fill('Повышение квалификации, 2026');
+  const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=','base64');
+  await teacher.getByLabel('Фотография (JPG, PNG, WebP, до 5 МБ)').setInputFiles({name:'teacher.png',mimeType:'image/png',buffer:png});
+  await teacher.getByRole('button',{name:'Сохранить профиль',exact:true}).click();
+  await teacher.getByText('Преподаватель экономики',{exact:true}).waitFor();
+  await teacher.getByRole('button',{name:'Редактировать профиль',exact:true}).click();
+  await teacher.getByLabel('Название документа',{exact:true}).fill('Диплом проверки '+stamp);
+  await teacher.getByLabel('Вид документа').selectOption('diploma');
+  await teacher.getByLabel('Год выдачи').fill('2010');
+  await teacher.getByLabel('Файл (PDF или изображение, до 10 МБ)').setInputFiles({name:'diploma.pdf',mimeType:'application/pdf',buffer:Buffer.from('%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\n%%EOF')});
+  await teacher.getByRole('button',{name:'Добавить документ',exact:true}).click();
+  await teacher.getByRole('heading',{name:'Диплом проверки '+stamp,exact:true}).waitFor();
+  const p=(await rpc(teacher,'getTeacherProfile',{teacherId:uid})).data;
+  assert.equal(p.documents.length,1);assert.equal(p.experience_years,12);assert.ok(p.avatarUrl);
+  assert.equal((await rpc(other,'deleteTeacherDocument',{teacherId:uid,id:p.documents[0].id})).code,'permission-denied');
+  await nav(student,'teachers');
+  await student.locator('.teacher-card').filter({has:student.getByRole('heading',{name:p.name,exact:true})}).getByRole('button',{name:'Открыть профиль',exact:true}).click();
+  await student.getByText('Учебный профиль проверки '+stamp,{exact:true}).waitFor();
+  await student.getByText('Тестовый университет · Экономика · 2010',{exact:true}).waitFor();
+  const url=await student.getByRole('link',{name:'Открыть PDF / скачать',exact:true}).getAttribute('href');
+  const file=await fetch(url);assert.equal(file.status,200);assert.match(await file.text(),/^%PDF-1.4/);
+  assert.equal(await student.getByRole('button',{name:'Редактировать профиль',exact:true}).count(),0);
+  assert.equal(await student.locator('.profile-heading img.avatar').evaluate(async img=>{if(!img.complete)await new Promise(r=>{img.onload=r;img.onerror=r});return img.naturalWidth>0;}),true);
+  console.log('PASS teacher profile, avatar, education/experience, diploma upload/download, student view and document ownership');
+
+  await require('./schedule-browser.cjs')({admin,teacher,student,stamp,screenshotDir});
+
+  assert.equal(await student.locator('#nameNotice').isVisible(),true);
+  await nav(student,'profile');
+  await student.getByLabel('Имя',{exact:true}).fill('Иван');
+  await student.getByLabel('Фамилия',{exact:true}).fill('Иванов');
+  await student.locator('#profilePatronymic').fill('Иванович');
+  await student.getByRole('button',{name:'Сохранить ФИО',exact:true}).click();
+  await student.locator('#nameNotice').waitFor({state:'hidden'});
+  await student.reload();
+  await student.locator('#userName').filter({hasText:'Иванов Иван Иванович'}).waitFor();
+  assert.equal(await student.locator('#nameNotice').isVisible(),false);
+  assert.equal((await rpc(student,'listNotifications')).data.rows.some(n=>n.title==='Укажите полное ФИО'),false);
+  await nav(admin,'announcements');
+  const announcement='Объявление проверки '+stamp;
+  await admin.getByLabel('Заголовок',{exact:true}).fill(announcement);
+  await admin.getByLabel('Текст',{exact:true}).fill('Проверка центра уведомлений.');
+  await admin.locator('#newsNotify').check();await admin.locator('#newsImportant').check();
+  await admin.getByRole('button',{name:'Опубликовать',exact:true}).click();
+  await admin.waitForFunction(()=>document.getElementById('newsTitle')?.value==='');
+  await student.locator('#toastRegion').getByText(announcement,{exact:true}).waitFor({timeout:40000});
+  for(const page of [student,teacher]){
+    await page.locator('#notificationButton').click();
+    const dialog=page.locator('#notificationsDialog');
+    const card=dialog.locator('.notice-card').filter({has:page.getByRole('heading',{name:announcement,exact:true})});
+    await card.waitFor();assert.match(await card.getAttribute('class'),/danger/);
+    await card.locator('[data-action-menu-toggle]').click();await card.getByRole('button',{name:'Прочитано',exact:true}).click();
+    await dialog.locator('.notice-card:not(.unread)').filter({has:page.getByRole('heading',{name:announcement,exact:true})}).waitFor();
+    await dialog.getByRole('button',{name:'Закрыть уведомления',exact:true}).click();
   }
-  await page.route('**/functions/v1/lms*',async route=>{const r=route.request(),headers={'access-control-allow-origin':'*','access-control-allow-headers':'authorization,content-type','access-control-allow-methods':'GET,POST,OPTIONS'};if(r.method()==='OPTIONS')return route.fulfill({status:204,headers,body:''});const u=new URL(r.url()),body=r.method()==='GET'?{action:u.searchParams.get('action'),data:JSON.parse(u.searchParams.get('data')||'{}')}:r.postDataJSON();try{await route.fulfill({headers,json:{data:api(body.action,body.data)}});}catch(e){errors.push(e.message);await route.fulfill({status:500,headers,json:{error:e.message}});}});
-  await page.goto(base+(role==='curator'?'student':role)+'.html');await page.locator('.news-article').waitFor();
-  assert.equal(await page.locator('.tabs [data-tab="home"]').textContent(),'Новости');
-  await page.locator('#newsTag').selectOption('college');await page.locator('.news-tag[data-news-channel="college"]').waitFor();await page.locator('#newsOrder').selectOption('oldest');
-  if(role!=='guest'){await page.locator('.news-like').click();await page.locator('.news-like[aria-pressed="true"]').waitFor();await page.locator('.news-like').click();await page.locator('.news-like[aria-pressed="false"]').waitFor();}
-  assert.equal(await page.locator('.tabs [data-tab="curator-chat"]').count(),['admin','curator'].includes(role)?1:0);
-  if(['admin','curator'].includes(role)){await page.locator('.tabs [data-tab="curator-chat"]').click();await page.locator('#chatBody').fill('<script>проверка</script>');await page.locator('[data-chat-form] button').click();await page.locator('.curator-message p').waitFor();assert.equal(await page.locator('.curator-message p').textContent(),'<script>проверка</script>');assert.equal(await page.locator('.curator-message script').count(),0);}
-  if(role!=='guest'){await page.locator('.tabs [data-tab="notifications"]').click();await page.locator('.push-settings summary').click();await page.locator('[data-push-save]').waitFor();assert.equal(await page.locator('[data-push-schedule]').isChecked(),true);assert.equal(await page.locator('[data-push-announcements]').isChecked(),false);}
-  await page.locator('.tabs [data-tab="home"]').click();await page.locator('.news-article').waitFor();await page.screenshot({path:path.join(root,'.qa-output',role+'-desktop.png'),fullPage:true});
-  for(const width of [320,390]){await page.setViewportSize({width,height:844});await page.locator('#mobileNavigation [data-mobile-tab="schedule"]').click();await page.locator('#scheduleGroupSelect').selectOption('g');await page.locator('.schedule-week-grid').waitFor();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,role+' schedule '+width);await page.locator('#mobileNavigation [data-mobile-tab="home"]').click();await page.locator('.news-article').waitFor();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,role+' news '+width);}
-  await page.screenshot({path:path.join(root,'.qa-output',role+'-mobile.png'),fullPage:true});assert.deepEqual(errors,[]);await context.close();console.log('PASS '+role+': news, filters, hearts, chat visibility, push settings, 320/390px');
- }}finally{await browser.close();await new Promise(r=>server.close(r));}
-})().catch(e=>{console.error(e);process.exitCode=1;server.close();});
+  console.log('PASS red FIO warning resolves persistently; important announcements reach both cabinets; popup and per-user read status work');
+  if(screenshotDir){
+    fs.mkdirSync(screenshotDir,{recursive:true});
+    await nav(teacher,'home');await teacher.getByRole('heading',{name:'Главная',exact:true}).waitFor();
+    await teacher.setViewportSize({width:1440,height:1000});
+    await teacher.screenshot({path:path.join(screenshotDir,'teacher-desktop.png'),fullPage:true});
+    await student.setViewportSize({width:390,height:844});await nav(student,'schedule');
+    await student.locator('.schedule-week-grid').waitFor();
+    assert.equal(await student.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+    await student.screenshot({path:path.join(screenshotDir,'student-mobile.png'),fullPage:true});
+    await student.setViewportSize({width:1280,height:900});
+    await admin.setViewportSize({width:1440,height:1000});await nav(admin,'accounts');
+    await admin.getByRole('heading',{name:'Аккаунты и роли',exact:true}).waitFor();
+    await admin.screenshot({path:path.join(screenshotDir,'admin-desktop.png'),fullPage:true});
+  }
+  teacher.once('dialog',d=>d.accept());
+  await nav(teacher,'profile');await teacher.getByRole('button',{name:'Заполнить профиль преподавателя',exact:true}).click();
+  await teacher.getByRole('button',{name:'Действия с документом',exact:true}).click();await teacher.getByRole('button',{name:'Удалить',exact:true}).click();
+  await teacher.getByRole('heading',{name:'Диплом проверки '+stamp,exact:true}).waitFor({state:'detached'});
+  assert.equal((await rpc(teacher,'getTeacherProfile',{teacherId:uid})).data.documents.length,0);
+  console.log('PASS profile document deletion, schedule cancellation, desktop/mobile navigation and no horizontal page overflow');
+};
