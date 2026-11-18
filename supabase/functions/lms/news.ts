@@ -20,7 +20,8 @@ export async function syncGitHubNews(db:SupabaseClient,fetcher:typeof fetch=fetc
         if(typeof c.sha!=='string'||! /^[a-f0-9]{40}$/.test(c.sha))throw new Error('Invalid commit');
         latest||=c.sha;
         if(c.sha.startsWith(stop)||c.sha.startsWith(release.githubBaseCommit)){found=true;break;}
-        const message=String(c.commit?.message??'Обновление сайта'),date=c.commit?.committer?.date;
+        const translated:Record<string,string>={a35e2b5:'Версия 0.9.0: новости, гостевой доступ, чат кураторов и уведомления\n\nДобавлены гостевой просмотр новостей и расписания, фильтры публикаций и лайки. Закрытый чат доступен кураторам-студентам и администрации. Браузерные уведомления включаются отдельно на каждом устройстве.',b6b3677:'Проверены кабинеты, права кураторов и доставка уведомлений\n\nНа рабочем сайте проверены кабинеты, лайки, закрытый чат и настоящая доставка push-уведомлений. Временные проверочные данные удалены.'};
+        const message=translated[c.sha.slice(0,7)]??String(c.commit?.message??'Обновление сайта'),date=c.commit?.committer?.date;
         if(!date||!Number.isFinite(Date.parse(date)))throw new Error('Invalid commit date');
         rows.push({channel:'site',kind:'update',title:message.split('\n')[0].slice(0,200)||'Обновление сайта',
           body:message.slice(0,20000)||'Изменения опубликованы в репозитории.',source_key:'github:'+c.sha,commit_sha:c.sha,published_at:date});
@@ -52,13 +53,12 @@ export async function newsAction(db:SupabaseClient,actor:Actor,action:unknown,in
       data=await dataOf(db.rpc('set_news_like',{p_user:actor.uid,p_post:id(input.id),p_liked:input.liked}));break;
     }
     case 'saveNewsPost':
-      requireAdmin(actor);
       if(!['site','college'].includes(String(input.channel))||!['news','announcement','update'].includes(String(input.kind)))invalid('Выберите ленту и тип публикации.');
       if(input.id&&(!Number.isInteger(input.revision)||Number(input.revision)<0))invalid('Обновите новость.');
       data=await dataOf(db.rpc('save_news_post',{p_actor:actor.uid,p_id:input.id?id(input.id):null,p_revision:input.id?input.revision:0,
         p_channel:input.channel,p_kind:input.kind,p_title:text(input.title,200,'Заголовок'),p_body:text(input.body,20000,'Текст'),p_notify:input.notify===true,p_important:input.important===true}));break;
     case 'deleteNewsPost':
-      requireAdmin(actor);if(!Number.isInteger(input.revision)||Number(input.revision)<0)invalid('Обновите новость.');
+      if(!Number.isInteger(input.revision)||Number(input.revision)<0)invalid('Обновите новость.');
       data=await dataOf(db.rpc('delete_news_post',{p_actor:actor.uid,p_id:id(input.id),p_revision:input.revision}));break;
     case 'registrationStatistics':requireAdmin(actor);data=await dataOf(db.rpc('registration_statistics',{p_actor:actor.uid}));break;
     default:return null;

@@ -43,7 +43,7 @@ async function teacherCatalog(db:SupabaseClient) {
       subjectIds:(instructors??[]).filter(i=>i.teacher_id===p.id).map(i=>i.subject_id)};
   });
 }
-async function teacherProfile(db:SupabaseClient,actor:Actor,input:Input) {
+export async function teacherProfile(db:SupabaseClient,actor:Actor,input:Input) {
   const uid=id(input.teacherId??actor.uid);
   const role=await dataOf(db.from('account_roles').select('role').eq('user_id',uid).maybeSingle());
   const instructor=await dataOf(db.from('teachers').select('user_id').eq('user_id',uid).maybeSingle());

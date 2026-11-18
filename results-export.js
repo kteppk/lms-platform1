@@ -66,6 +66,6 @@ const ResultsExport = (() => {
     frame.srcdoc=printHtml(data,filters);document.body.append(frame);await ready;
     await frame.contentDocument.fonts.ready;frame.contentWindow.focus();frame.contentWindow.print();
   }
-  return {workbook,printHtml,download,print,date,scaleLabel};
+  return {workbook,printHtml,download,print,date,scaleLabel,pack:zip,xml};
 })();
 if(typeof module!=='undefined'&&module.exports)module.exports=ResultsExport;

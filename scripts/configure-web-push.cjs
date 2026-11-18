@@ -28,6 +28,7 @@ do $$ begin
  else perform vault.create_secret('${dispatch}','lms_push_dispatch_secret'); end if;
 end; $$;
 select cron.schedule('lms-web-push','* * * * *',$job$
+ select public.enqueue_lesson_reminders();
  select net.http_post(url:='https://${ref}.supabase.co/functions/v1/lms-push',
  headers:=jsonb_build_object('Content-Type','application/json','Authorization','Bearer '||(select decrypted_secret from vault.decrypted_secrets where name='lms_push_dispatch_secret')),
  body:='{}'::jsonb,timeout_milliseconds:=55000)

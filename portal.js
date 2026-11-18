@@ -16,6 +16,7 @@ const Portal = (() => {
       `<span class="avatar" aria-hidden="true">${e(person.name?.split(/\s+/).slice(0,2).map(p=>p[0]).join(''))}</span>`;
   }
   function navigate(tab){
+    if(tab==='announcements')tab='home';
     ActionMenu.closeAll();
     if(typeof MobileNavigation!=='undefined')MobileNavigation.closeMenu();
     document.getElementById('notificationsDialog')?.close();
@@ -73,7 +74,7 @@ const Portal = (() => {
       // Current server roles, including demotion, are checked when the user returns.
       window.addEventListener('focus',()=>getProfile(auth.currentUser).then(p=>{if(p.role!==profile.role)location.replace(cabinetPage(p.role));}).catch(()=>{}));
     }
-    if(typeof MobileNavigation!=='undefined')MobileNavigation.init(profile,navigate);
+    DesktopNavigation.init();if(typeof MobileNavigation!=='undefined')MobileNavigation.init(profile,navigate);
     poll(true);
   }
   async function home(container){return News.home(container,profile);}
@@ -85,23 +86,26 @@ const Portal = (() => {
       ${!profile.nameConfirmed?`<p class="legacy-name">Ранее указано: <strong>${e(profile.name)}</strong>. Распределите данные по полям — мы не будем угадывать их порядок.</p>`:''}
       <form data-portal-form="name">${names.fields('profile',profile)}<button class="primary" type="submit">Сохранить ФИО</button></form>
       <div class="account-details"><span>${e(profile.email)}</span><span class="badge">${roles[profile.role]}</span></div>
+      ${['student','curator'].includes(profile.role)?'<section class="profile-block" id="myEducation"></section>':''}
       ${AccountTools.profileSections(profile)}
       ${profile.canTeach?`<section class="profile-block"><h2>Профессиональный профиль</h2><p>Образование, стаж, квалификация, дипломы и грамоты доступны пользователям платформы.</p><div class="actions">${button('Заполнить профиль преподавателя','edit-own-profile','','primary')}${ActionMenu.render(button('Посмотреть свой профиль','view-teacher',`data-id="${e(profile.uid)}"`),'Действия с профилем')}</div></section>`:''}`;
+    if(container.querySelector('#myEducation'))await EducationProfile.render(container.querySelector('#myEducation'));
   }
   async function renderTeachers(container){
     container.innerHTML='<h2>Преподаватели</h2><p>Загрузка профилей…</p>';
     teachers=await callFunction('listTeachers');if(!container.isConnected)return;
     container.innerHTML=`<h2>Преподаватели</h2><p class="section-lead">Образование, опыт и достижения преподавателей техникума.</p><div class="teacher-grid">${teachers.map(t=>`<article class="item teacher-card">${avatar(t)}<h3>${e(t.name)}</h3><p class="meta">${e(t.position||'Преподаватель')}</p><span class="badge mint">Предметов: ${t.subjectIds.length}</span><div class="actions">${button('Открыть профиль','view-teacher',`data-id="${e(t.id)}"`,'primary')}</div></article>`).join('')||empty('Профили преподавателей пока не добавлены.')}</div>`;
   }
+  function teacherDetails(p){return `      ${[['О преподавателе',p.bio],['Образование',p.education],['Квалификация и повышение квалификации',p.qualification]].map(([title,body])=>`<section class="profile-block"><h3>${title}</h3><p>${e(body||'Информация пока не заполнена.')}</p></section>`).join('')}
+      <section class="profile-block"><h3>Дипломы, грамоты и сертификаты</h3><p class="hint">Документы, которые преподаватель добавил в свой профиль.</p><div class="document-list">${p.documents.map(d=>{
+        const url=safeMaterialUrl(d.url);return `<article class="item"><span class="badge">${categories[d.category]}</span><h4>${e(d.title)}</h4><p class="meta">${e(d.issued_year||'')}</p>${url&&d.mime.startsWith('image/')?`<a href="${e(url)}" target="_blank" rel="noopener noreferrer"><img class="document-preview" src="${e(url)}" alt="${e(d.title)}" loading="lazy"></a>`:''}${url?materialLink(url,d.mime==='application/pdf'?'Открыть PDF / скачать':'Открыть документ'):''}</article>`;
+      }).join('')||empty('Документов пока нет. Преподаватель может добавить их в своём профиле.')}</div></section>`; }
   async function viewTeacher(uid,container=document.getElementById('portalPage')){
     selectedTeacher=await callFunction('getTeacherProfile',{teacherId:uid});if(!container?.isConnected)return;
     const p=selectedTeacher;
     container.innerHTML=`${button('← Все преподаватели','teacher-list')}<div class="profile-heading">${avatar(p)}<div><h2>${e(p.name)}</h2><p>${e(p.position||'Преподаватель')}</p>${p.experience_years!==null&&p.experience_years!==undefined?`<span class="badge mint">Стаж: ${p.experience_years} лет</span>`:''}</div></div>
       ${p.canEdit?button('Редактировать профиль','edit-teacher',`data-id="${e(p.id)}"`,'primary'):''}
-      ${[['О преподавателе',p.bio],['Образование',p.education],['Квалификация и повышение квалификации',p.qualification]].map(([title,body])=>`<section class="profile-block"><h3>${title}</h3><p>${e(body||'Информация пока не заполнена.')}</p></section>`).join('')}
-      <section class="profile-block"><h3>Дипломы, грамоты и сертификаты</h3><p class="hint">Документы, которые преподаватель добавил в свой профиль.</p><div class="document-list">${p.documents.map(d=>{
-        const url=safeMaterialUrl(d.url);return `<article class="item"><span class="badge">${categories[d.category]}</span><h4>${e(d.title)}</h4><p class="meta">${e(d.issued_year||'')}</p>${url&&d.mime.startsWith('image/')?`<a href="${e(url)}" target="_blank" rel="noopener noreferrer"><img class="document-preview" src="${e(url)}" alt="${e(d.title)}" loading="lazy"></a>`:''}${url?materialLink(url,d.mime==='application/pdf'?'Открыть PDF / скачать':'Открыть документ'):''}</article>`;
-      }).join('')||empty('Документов пока нет. Преподаватель может добавить их в своём профиле.')}</div></section>`;
+      ${teacherDetails(p)}`;
   }
   async function editTeacher(uid){
     const container=document.getElementById('portalPage');
@@ -140,7 +144,7 @@ const Portal = (() => {
     container.innerHTML=`<h2>Аккаунты и роли</h2><p class="section-lead">Новые пользователи — студенты. Изменение роли сохраняет материалы и результаты. Последний администратор защищён от понижения.</p><section id="registrationStats" class="registration-statistics"></section><form class="account-search" data-portal-form="accounts-search"><input id="accountSearch" aria-label="Поиск по ФИО или email" placeholder="Найти по ФИО или email" value="${e(accountSearch)}" maxlength="120"><button class="primary" type="submit">Найти</button></form><div class="table-wrap"><table><thead><tr><th>Пользователь</th><th>Роль</th><th>Действие</th></tr></thead><tbody>${rows.map(p=>`<tr><td class="account-name"><strong>${e(p.name)}</strong><small>${e(p.email)}</small>${p.needs_name?'<span class="badge">Заполнить поля ФИО</span>':''}${p.id===profile.uid?'<span class="badge">Это вы</span>':''}</td><td><select aria-label="Роль ${e(p.email)}" data-role-id="${e(p.id)}">${Object.entries(roles).map(([role,label])=>`<option value="${role}" ${role===p.role?'selected':''}>${label}</option>`).join('')}</select></td><td>${button('Сохранить роль','role-save',`data-id="${e(p.id)}"`)}</td></tr>`).join('')}</tbody></table></div>${!rows.length?empty('Аккаунты не найдены.'):''}<details class="role-log"><summary>История назначения ролей</summary><p>Последние 50 назначений. Доступны только администрации. Уведомление получает только владелец изменённого аккаунта.</p>${button('Загрузить историю','role-log')}<div id="roleChangeLog"></div></details><div class="actions">${button('← Назад','accounts-prev',accountOffset?'':'disabled')}${button('Далее →','accounts-next',rows.length===50?'':'disabled')}</div>`;
     await News.statistics(container.querySelector('#registrationStats'));
   }
-  async function announcements(container){return News.manager(container);}
+  async function announcements(container){return News.home(container,profile);}
   async function render(tab,parent){
     if(!['home','profile','teachers','schedule','notifications','accounts','announcements','people','help','curator-chat'].includes(tab))return false;
     if(tab!=='curator-chat')CuratorChat.clear();
@@ -231,5 +235,5 @@ const Portal = (() => {
   });
   function openTeacher(uid){pendingTeacher=uid;navigate('teachers');}
   function openSubscriptions(){pendingSubscriptions=true;navigate('notifications');}
-  return {init,render,navigate,toast,openTeacher,openSubscriptions};
+  return {teacherDetails,init,render,navigate,toast,openTeacher,openSubscriptions};
 })();

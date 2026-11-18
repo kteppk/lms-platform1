@@ -23,8 +23,24 @@ export async function scheduleAction(db:SupabaseClient,actor:Actor,action:unknow
       const group=await dataOf(db.from('study_groups').select('id,name,course,program,lessons_per_day,revision').eq('id',groupId).maybeSingle());
       if(!group)missing('Группа не найдена.');
       // Exact server-side scope: other groups' lessons never leave the API.
-      const cells=await dataOf(db.from('weekly_schedule_cells').select('id,weekday,lesson_number,status,title,subject_id,teacher_id,teacher_label,room,note,starts_at,ends_at,revision').eq('group_id',groupId).order('weekday').order('lesson_number'));
+      const cells=await dataOf(db.from('effective_weekly_schedule').select('id,weekday,lesson_number,status,title,subject_id,teacher_id,teacher_label,room,note,starts_at,ends_at,custom_starts_at,custom_ends_at,revision').eq('group_id',groupId).order('weekday').order('lesson_number'));
       return {data:{group,cells:cells??[]}};
+    }
+    case 'exportSchedule':return {data:await dataOf(db.rpc('schedule_export_snapshot',{p_group:input.groupId?id(input.groupId):null,p_week:input.week?text(input.week,10,'Неделя'):null}))};
+    case 'getGroupLessonTimes':{
+      requireAdmin(actor);return {data:await dataOf(db.from('group_lesson_times').select('lesson_number,starts_at,ends_at').eq('group_id',id(input.groupId)).order('lesson_number'))};
+    }
+    case 'saveGroupLessonTimes':{
+      requireAdmin(actor);if(!Array.isArray(input.times)||input.times.length>12)invalid('Проверьте время пар.');
+      return {data:await dataOf(db.rpc('save_group_lesson_times',{p_actor:actor.uid,p_group:id(input.groupId),p_revision:integer(input.revision,0,2147483646),p_times:input.times}))};
+    }
+    case 'getLessonReminder':{
+      const groupId=id(input.groupId),[preference,cells]=await Promise.all([dataOf(db.from('lesson_reminder_subscriptions').select('group_id').eq('user_id',actor.uid).eq('group_id',groupId).maybeSingle()),dataOf(db.from('effective_weekly_schedule').select('id,starts_at').eq('group_id',groupId).eq('status','lesson'))]);
+      return {data:{enabled:!!preference,timedLessons:(cells??[]).filter(c=>c.starts_at).length,totalLessons:cells?.length??0}};
+    }
+    case 'setLessonReminder':{
+      if(typeof input.enabled!=='boolean')invalid('Выберите состояние напоминаний.');
+      return {data:await dataOf(db.rpc('set_lesson_reminder',{p_user:actor.uid,p_group:id(input.groupId),p_enabled:input.enabled,p_acknowledged:input.acknowledged===true}))};
     }
     case 'saveScheduleCell':{
       requireAdmin(actor);

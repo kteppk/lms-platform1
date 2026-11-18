@@ -20,5 +20,13 @@ const PushSettings=(()=>{
   }catch{if(root.isConnected)body.innerHTML='<p>Не удалось загрузить настройки. Откройте раздел заново при работающем интернете.</p>';}
  }
  async function detach(){if(!supported())return;const {sub}=await subscription();if(sub){await sub.unsubscribe();await callFunction('removePushDevice',{endpoint:sub.endpoint});}}
- return {render,detach};
+ async function load(){if(!supported())return null;const {sub}=await subscription();return await callFunction('getPushSettings',{endpoint:sub?.endpoint||''});}
+ async function enableLessons(settings){
+  if(!supported())throw Error('Этот браузер не поддерживает push. На iPhone откройте сайт с экрана «Домой».');
+  const permission=Notification.permission==='granted'?'granted':await Notification.requestPermission();if(permission!=='granted')throw Error('Разрешите уведомления сайта в браузере. В режиме инкогнито push может быть недоступен.');
+  if(!settings?.publicKey)throw Error('Не удалось загрузить настройки уведомлений. Откройте окно ещё раз.');
+  const registration=await navigator.serviceWorker.ready;let sub=await registration.pushManager.getSubscription();sub??=await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:unbase(settings.publicKey)});
+  const json=sub.toJSON();await callFunction('savePushDevice',{endpoint:sub.endpoint,p256dh:json.keys.p256dh,auth:json.keys.auth,schedule:settings.device?.schedule??false,announcements:settings.device?.announcements??false,lessons:true});
+ }
+ return {render,detach,load,enableLessons};
 })();

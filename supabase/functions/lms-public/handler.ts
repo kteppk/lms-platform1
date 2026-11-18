@@ -12,9 +12,9 @@ export function createPublicHandler(db:SupabaseClient,options:{now?:()=>Date;bac
   if(!['GET','HEAD'].includes(request.method))return error('Доступно только чтение.',405);
   const url=new URL(request.url),view=url.searchParams.get('view')||'bootstrap',group=url.searchParams.get('group'),post=url.searchParams.get('post'),week=url.searchParams.get('week')||monday(now()),offset=Number(url.searchParams.get('offset')||0);
   if(url.searchParams.has('action')){
-   const action=url.searchParams.get('action');if(!['listNews','listScheduleGroups','getWeeklySchedule','listSchedule'].includes(action??''))return error('Гостю доступны только новости и расписание.',403);
+   const action=url.searchParams.get('action');if(!['listNews','listScheduleGroups','getWeeklySchedule','listSchedule','exportSchedule'].includes(action??''))return error('Гостю доступны только новости и расписание.',403);
    let input:Record<string,unknown>;try{const raw=url.searchParams.get('data')||'{}';if(raw.length>3000)throw Error();input=JSON.parse(raw);if(!input||typeof input!=='object'||Array.isArray(input))throw Error();}catch{return error('Некорректный запрос.',400);}
-   const {data,error:failure}=await db.rpc('guest_read',{p_action:action,p_input:input});if(failure)return error('Не удалось загрузить данные.',failure.code==='P0002'?404:['22023','22P02','22007','22008'].includes(failure.code)?400:503);
+   const {data,error:failure}=action==='exportSchedule'?await db.rpc('schedule_export_snapshot',{p_group:input.groupId??null,p_week:input.week??null}):await db.rpc('guest_read',{p_action:action,p_input:input});if(failure)return error('Не удалось загрузить данные.',failure.code==='P0002'?404:['22023','22P02','22007','22008'].includes(failure.code)?400:503);
    if(options.background&&action==='listNews'&&now().getTime()-syncAt>120000){syncAt=now().getTime();options.background((options.sync??(()=>syncGitHubNews(db)))().catch(()=>{}));}
    return new Response(request.method==='HEAD'?null:JSON.stringify({data}),{headers:{...cors,'Content-Type':'application/json; charset=utf-8','Cache-Control':'public, max-age=10, stale-if-error=300'}});
   }

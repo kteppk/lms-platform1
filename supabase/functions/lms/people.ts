@@ -1,6 +1,7 @@
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2.89.0';
 import { dataOf, id, invalid, missing, requireAdmin, text } from './shared.ts';
 import type { Actor, Input } from './shared.ts';
+import {teacherProfile} from './community.ts';
 const bucket='lms-profiles',imageTypes=['image/jpeg','image/png','image/webp'];
 function revision(v:unknown){if(typeof v!=='number'||!Number.isSafeInteger(v)||v<0)invalid('Обновите профиль перед сохранением.');return v;}
 function owned(actor:Actor,path:unknown):string{if(typeof path!=='string'||!path.startsWith(actor.uid+'/')||!/^[A-Za-z0-9_-]+$/.test(path.slice(actor.uid.length+1)))invalid('Можно использовать только свой файл фотографии.');return path;}
@@ -37,7 +38,16 @@ export async function peopleAction(db:SupabaseClient,actor:Actor,action:unknown,
       const [role,teacher,photo]=await Promise.all([
         dataOf(db.from('account_roles').select('role').eq('user_id',uid).maybeSingle()),
         dataOf(db.from('teacher_directory').select('id').eq('id',uid).maybeSingle()),ownAvatar(db,uid)]);
-      data={...p,role:role?.role??'student',avatarUrl:photo.avatarUrl,hasTeacherProfile:!!teacher};break;
+      const [education,professional]=await Promise.all([dataOf(db.rpc('read_education_profile',{p_actor:actor.uid,p_user:uid})),teacher?teacherProfile(db,actor,{teacherId:uid}):null]);
+      data={...p,role:role?.role??'student',avatarUrl:photo.avatarUrl,hasTeacherProfile:!!teacher,education,professional};break;
+    }
+    case 'getMyEducation':{
+      const [profile,groups]=await Promise.all([dataOf(db.rpc('read_education_profile',{p_actor:actor.uid,p_user:actor.uid})),dataOf(db.from('study_groups').select('id,name,course,program').order('name'))]);data={profile,groups:groups??[]};break;
+    }
+    case 'saveMyEducation':{
+      const date=(v:unknown)=>{if(v==null||v==='')return null;if(typeof v!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(v)||!Number.isFinite(Date.parse(v))||new Date(v).toISOString().slice(0,10)!==v)invalid('Проверьте дату.');return v;};
+      if(input.course!==null&&(typeof input.course!=='number'||!Number.isInteger(input.course)||input.course<1||input.course>6))invalid('Курс — от 1 до 6.');
+      data=await dataOf(db.rpc('save_education_profile',{p_actor:actor.uid,p_revision:revision(input.revision),p_specialty:text(input.specialty??'',200,'Специальность',true),p_course:input.course,p_group:input.groupId?id(input.groupId):null,p_enrolled:date(input.enrolledOn),p_birth:date(input.birthDate)}));break;
     }
     case 'createAvatarUpload':{
       if(!imageTypes.includes(String(input.mime)))invalid('Выберите JPG, PNG или WebP.');
