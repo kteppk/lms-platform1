@@ -1,5 +1,5 @@
 const fs=require('node:fs'),path=require('node:path');
-const output=path.resolve(process.argv[2]||'.qa-output/pages-redirect'),base='https://vm756327.vps.masterhost.tech/';
+const output=path.resolve(process.argv[2]||'.qa-output/pages-redirect'),base='https://kteppk.ru/';
 fs.mkdirSync(output,{recursive:true});
 for(const route of ['index.html','student.html','teacher.html','admin.html','guest.html','offline.html','404.html','lite/index.html']){
  const dest=route==='404.html'?'index.html':route,href=base+dest;

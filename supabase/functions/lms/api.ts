@@ -142,11 +142,13 @@ async function listSubjects(db: SupabaseClient, actor: Actor) {
   const rows = (await dataOf(db.from("subjects").select("id,title,description,created_by,subject_teachers(teacher_id)")
     .is("archived_at", null).order("title"))) ?? [];
   const instructors = (await dataOf(db.from("subject_instructors").select("subject_id,teacher_id"))) ?? [];
+  const requests=actor.teacher?(await dataOf(db.from('subject_join_requests').select('subject_id,status').eq('teacher_id',actor.uid).eq('status','pending')))??[]:[];
   return rows.map(({ id, title, description, created_by, subject_teachers }) => ({
     id, title, description, teacherCount: instructors.filter(i => i.subject_id === id).length,
     ...(actor.teacher ? {
       canEdit: created_by === actor.uid,
       joined: subject_teachers.some(({ teacher_id }) => teacher_id === actor.uid),
+      joinRequested: requests.some(r=>r.subject_id===id),
     } : {}),
   }));
 }
@@ -176,9 +178,7 @@ async function changeSubjectMembership(db: SupabaseClient, actor: Actor, input: 
   requireRole(actor, true);
   const subjectId = id(input.subjectId);
   if (join) {
-    await dataOf(db.from("subject_teachers").upsert({
-      subject_id: subjectId, teacher_id: actor.uid,
-    }, { onConflict: "subject_id,teacher_id", ignoreDuplicates: true }));
+    throw new ApiError(403,'approval-required','Присоединение возможно после одобрения заявки администратором. Обновите страницу.');
   } else {
     await dataOf(db.from("subject_teachers").delete().eq("subject_id", subjectId).eq("teacher_id", actor.uid));
   }
@@ -573,6 +573,12 @@ export function createHandler(db: SupabaseClient, verify = verifyFirebase) {
           result = await updateOwnSubject(db, actor, id(input.subjectId), { archived_at: new Date().toISOString() });
           break;
         case "joinSubject": result = await changeSubjectMembership(db, actor, input, true); break;
+        case "requestSubjectJoin": requireRole(actor,true); result=await dataOf(db.rpc('request_subject_join',{p_teacher:actor.uid,p_subject:id(input.subjectId)}));break;
+        case "listSubjectJoinRequests": result=await dataOf(db.rpc('list_subject_join_requests',{p_actor:actor.uid}));break;
+        case "reviewSubjectJoinRequest":
+          if(actor.role!=='admin')throw new ApiError(403,'permission-denied','Заявки одобряет только администратор.');
+          if(typeof input.approve!=='boolean')invalid('Выберите решение.');
+          result=await dataOf(db.rpc('review_subject_join_request',{p_admin:actor.uid,p_request:id(input.requestId),p_approve:input.approve}));break;
         case "leaveSubject": result = await changeSubjectMembership(db, actor, input, false); break;
         case "listSubjectTeachers": result = await listSubjectTeachers(db, actor, input); break;
         case "getSubjectContent": result = await getSubjectContent(db, actor, input); break;

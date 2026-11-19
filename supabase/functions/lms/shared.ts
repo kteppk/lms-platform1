@@ -24,7 +24,7 @@ export function text(value: unknown, limit: number, field: string, optional = fa
 }
 export async function dataOf<T>(query: PromiseLike<{data:T;error:{message:string;code?:string}|null}>): Promise<T> {
   const {data,error}=await query;
-  if(error?.code==='23505' && error.message.includes('subjects_active_title')) throw new ApiError(409,'already-exists','Предмет с таким названием уже есть. Присоединитесь к нему в каталоге.');
+  if(error?.code==='23505' && error.message.includes('subjects_active_title')) throw new ApiError(409,'already-exists','Предмет с таким названием уже есть. Подайте заявку на присоединение в каталоге.');
   if(error?.code==='42501') throw new ApiError(403,'permission-denied',error.message);
   if(error?.code==='P0002') missing(error.message);
   if(error?.code==='P0001') throw new ApiError(409,'deadline-exceeded','Время на прохождение теста истекло.');

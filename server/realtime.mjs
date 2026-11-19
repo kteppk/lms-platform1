@@ -1,10 +1,11 @@
 // PostgreSQL NOTIFY -> scoped SSE invalidations. Data still comes from the API.
-const kinds=new Set(['news','chat','chat-unread','groups','schedule','notices','subscriptions','results','content','settings','accounts','people','profile','permissions','session','resync']);
+const kinds=new Set(['news','chat','chat-unread','groups','schedule','notices','subscriptions','results','content','settings','accounts','people','profile','permissions','session','resync','presence']);
 export function permittedTopics(event,client){
  const k=event.kind,uid=client.uid,role=client.role;
  if(k==='news'||k==='groups')return [k];
  if(k==='schedule')return event.groupId&&event.groupId===client.groupId?['schedule']:[];
  if(!uid)return [];
+ if(k==='presence')return role==='admin'?['presence']:[];
  if(k==='chat'||k==='chat-unread')return ['curator','admin'].includes(role)&&(!event.userId||event.userId===uid)?[k]:[];
  if(k==='notices')return !event.userId||event.userId===uid?['notices']:[];
  if(['subscriptions','profile'].includes(k))return event.userId===uid?[k]:[];
@@ -21,7 +22,7 @@ export function createRealtime({pool,authenticate,createListener,publicURL,onCha
   if(client.res.writableLength>16384){client.res.destroy();return false;}
   client.res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);return true;
  };
- function close(client){clients.delete(client);client.res.end();}
+ function close(client){if(clients.delete(client))publish({kind:'presence'});client.res.end();}
  async function validate(){
   const hashes=[...new Set([...clients].filter(c=>c.uid).map(c=>c.sessionHash))];if(!hashes.length)return;
   const {rows}=await pool.query(`select s.token_hash,u.id,coalesce(r.role,'student') role from app_auth.sessions s join app_auth.users u on u.id=s.user_id
@@ -75,7 +76,12 @@ export function createRealtime({pool,authenticate,createListener,publicURL,onCha
   const client={res,uid:identity?.uid??null,sessionHash:identity?.sessionHash,role:'guest',groupId,ip};
   if(identity){const {rows}=await pool.query('select role from public.account_roles where user_id=$1',[identity.uid]);client.role=rows[0]?.role??'student';}
   if(res.destroyed)return;res.writeHead(200,{'Content-Type':'text/event-stream; charset=utf-8','Cache-Control':'no-store, no-transform','X-Accel-Buffering':'no','X-Content-Type-Options':'nosniff'});res.setTimeout?.(0);
-  clients.add(client);res.on('close',()=>clients.delete(client));res.write('retry: 3000\n\n');frame(client,'ready',{});
+  clients.add(client);res.on('close',()=>{if(clients.delete(client))publish({kind:'presence'});});res.write('retry: 3000\n\n');frame(client,'ready',{});publish({kind:'presence'});
  }
- return {handle,publish,start:connect,async close(){stopped=true;available=false;clearTimeout(retryTimer);clearTimeout(flushTimer);clearInterval(ping);for(const c of clients)close(c);await listener?.end().catch(()=>{});}};
+ function presence(){const accounts=new Map(),roles={student:0,teacher:0,curator:0,admin:0};let guestConnections=0;
+  for(const c of clients)if(!c.res.destroyed){if(c.uid)accounts.set(c.uid,c.role);else guestConnections++;}
+  for(const role of accounts.values())if(role in roles)roles[role]++;
+  return {accounts:accounts.size,roles,guestConnections,updatedAt:new Date().toISOString(),available};
+ }
+ return {handle,publish,presence,start:connect,async close(){stopped=true;available=false;clearTimeout(retryTimer);clearTimeout(flushTimer);clearInterval(ping);for(const c of clients)close(c);await listener?.end().catch(()=>{});}};
 }

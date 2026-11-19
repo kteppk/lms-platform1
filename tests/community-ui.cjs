@@ -8,6 +8,11 @@ function fixture(role){let liked=false,messages=[],title='Новость для 
  case 'saveNewsPost':title=data.title;return {id:'post'};
  case 'setNewsLike':liked=data.liked;return {id:'post',liked,like_count:liked?1:0};
  case 'listNotifications':return {rows:[],unreadCount:0};
+ case 'listAccounts':return [{id:role,name:person.name,email:person.email,role}];
+ case 'registrationStatistics':return {total:10,students:6,teachers:2,admins:1,last7:3,last30:5,months:[]};
+ case 'getOnlineStats':return {accounts:2,roles:{student:1,teacher:0,curator:0,admin:1},guestConnections:3,available:true};
+ case 'listSubjectJoinRequests':return [];
+ case 'listRecoveryRequests':return [];
  case 'getPushSettings':return {publicKey:'B'+'a'.repeat(86),device:null};
  case 'listScheduleGroups':return [{id:'g',name:'9241',course:'4',lessons_per_day:6,revision:1}];
  case 'getWeeklySchedule':return {group:{id:'g',name:'9241',course:'4',lessons_per_day:6,revision:1},cells:[{weekday:1,lesson_number:1,status:'lesson',title:'Математика',teacher_label:'Преподаватель И.И.',room:'20'}]};
@@ -28,6 +33,20 @@ function fixture(role){let liked=false,messages=[],title='Новость для 
  default:throw Error('Unexpected fixture action '+action);
  }};
 }
+async function checkChat(page,role,width){
+ if(!['curator','admin'].includes(role))return;
+ const open=async()=>{await page.locator('#mobileMore').click();await page.locator('.mobile-menu-grid [data-mobile-tab="curator-chat"]').click();await page.locator('.chat-composer').waitFor();};
+ await open();await page.locator('#chatBody').fill('Черновик '+width);
+ await page.locator('[data-chat-back]').click();assert.equal(await page.locator('body.chat-open').count(),0);
+ await open();assert.equal(await page.locator('#chatBody').inputValue(),'Черновик '+width);
+ await page.setViewportSize({width,height:460});
+ await page.waitForFunction(()=>{const r=document.querySelector('.chat-composer')?.getBoundingClientRect();return r&&r.bottom<=innerHeight+1&&r.top>0;});
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,role+' chat overflow '+width);
+ assert.ok((await page.locator('#chatBody').boundingBox()).width>=width-90,role+' chat input has full mobile width');
+ await page.locator('[data-chat-form] button').click();await page.getByText('Черновик '+width,{exact:true}).waitFor();
+ await page.screenshot({path:path.join(root,'.qa-output/release100',role+'-chat-'+width+'.png'),fullPage:false});
+ await page.locator('[data-chat-back]').click();await page.setViewportSize({width,height:844});
+}
 (async()=>{
  fs.mkdirSync(path.join(root,'.qa-output'),{recursive:true});await new Promise(r=>server.listen(54321,'127.0.0.1',r));const browser=await chromium.launch({channel:'chrome',headless:true});
  try{for(const role of ['guest','student','teacher','curator','admin']){
@@ -47,12 +66,13 @@ function fixture(role){let liked=false,messages=[],title='Новость для 
   if(role!=='guest'){await page.locator('.news-like').click();await page.locator('.news-like[aria-pressed="true"]').waitFor();await page.locator('.news-like').click();await page.locator('.news-like[aria-pressed="false"]').waitFor();}
   assert.equal(await page.locator('.tabs [data-tab="curator-chat"]').count(),['admin','curator'].includes(role)?1:0);
   if(['admin','curator'].includes(role)){await page.locator('.tabs [data-tab="curator-chat"]').click();await page.locator('#chatBody').fill('<script>проверка</script>');await page.locator('[data-chat-form] button').click();await page.locator('.curator-message p').waitFor();assert.equal(await page.locator('.curator-message p').textContent(),'<script>проверка</script>');assert.equal(await page.locator('.curator-message script').count(),0);}
+  if(role==='admin'){await page.locator('.tabs [data-tab="accounts"]').click();await page.locator('.online-stat-grid').waitFor();assert.equal(await page.locator('.online-total strong').textContent(),'2');await page.getByText('Новых заявок нет.',{exact:true}).waitFor();}
   if(['admin','curator'].includes(role)){await page.locator('.tabs [data-tab="home"]').click();await page.locator('[data-news-action="compose"]').click();await page.locator('#newsTitle').fill('Новая публикация');await page.locator('#newsBody').fill('Текст новости');assert.equal(await page.locator('#newsNotify').count(),role==='admin'?1:0);await page.locator('[data-news-form] [type="submit"]').click();await page.getByRole('heading',{name:'Новая публикация',exact:true}).waitFor();}
   if(['student','curator'].includes(role)){await page.locator('.tabs [data-tab="profile"]').click();await page.locator('#educationBirth').waitFor();await page.locator('#educationSpecialty').fill('Информационные системы');await page.getByRole('button',{name:'Сохранить учебные данные',exact:true}).click();await page.getByText('Учебные данные сохранены.',{exact:true}).waitFor();assert.match(await page.locator('[data-own-age]').textContent(),/18 лет/);}
   if(role!=='guest'){await page.locator('.tabs [data-tab="people"]').click();await page.getByRole('button',{name:'Открыть профиль',exact:true}).click();await page.getByText('Высшее образование',{exact:true}).waitFor();assert.equal(await page.getByRole('button',{name:'Профиль преподавателя',exact:true}).count(),0);}
   if(role!=='guest'){await page.locator('.tabs [data-tab="notifications"]').click();await page.locator('.push-settings summary').click();await page.locator('[data-push-save]').waitFor();assert.equal(await page.locator('[data-push-schedule]').isChecked(),true);assert.equal(await page.locator('[data-push-announcements]').isChecked(),false);}
   await page.locator('.tabs [data-tab="home"]').click();await page.locator('.news-article').waitFor();await page.screenshot({path:path.join(root,'.qa-output',role+'-desktop.png'),fullPage:true});
-  for(const width of [320,390]){await page.setViewportSize({width,height:844});await page.locator('#mobileNavigation [data-mobile-tab="schedule"]').click();await page.locator('#scheduleGroupSelect').selectOption('g');await page.locator('.schedule-week-grid').waitFor();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,role+' schedule '+width);if(role!=='guest'){await page.locator('[data-reminder-toggle]').click();await page.locator('#lessonReminderDialog').waitFor();assert.equal(await page.locator('#lessonReminderDialog [type="submit"]').isDisabled(),true);await page.locator('[data-reminder-consent]').check();assert.equal(await page.locator('#lessonReminderDialog [type="submit"]').isEnabled(),true);await page.locator('[data-reminder-close]').click();}await page.locator('#mobileNavigation [data-mobile-tab="home"]').click();await page.locator('.news-article').waitFor();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,role+' news '+width);}
+  for(const width of [320,390]){await page.setViewportSize({width,height:844});await page.locator('#mobileNavigation [data-mobile-tab="schedule"]').click();await page.locator('#scheduleGroupSelect').selectOption('g');await page.locator('.schedule-week-grid').waitFor();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,role+' schedule '+width);if(role!=='guest'){await page.locator('[data-reminder-toggle]').click();await page.locator('#lessonReminderDialog').waitFor();assert.equal(await page.locator('#lessonReminderDialog [type="submit"]').isDisabled(),true);await page.locator('[data-reminder-consent]').check();assert.equal(await page.locator('#lessonReminderDialog [type="submit"]').isEnabled(),true);await page.locator('[data-reminder-close]').click();}await page.locator('#mobileNavigation [data-mobile-tab="home"]').click();await page.locator('.news-article').waitFor();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,role+' news '+width);await checkChat(page,role,width);}
   await page.screenshot({path:path.join(root,'.qa-output',role+'-mobile.png'),fullPage:true});assert.deepEqual(errors,[]);await context.close();console.log('PASS '+role+': news, filters, hearts, chat visibility, push settings, 320/390px');
  }}finally{await browser.close();await new Promise(r=>server.close(r));}
 })().catch(e=>{console.error(e);process.exitCode=1;server.close();});

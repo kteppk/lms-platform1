@@ -7,11 +7,12 @@
     "release": "node scripts/release.cjs",
     "test:community-ui": "node tests/community-ui.cjs",
     "build:vps": "node scripts/build-vps.cjs",
-    "test:vps": "node --experimental-transform-types --test tests/vps-server.test.mjs"
+    "test:vps": "node --experimental-transform-types --test tests/vps-server.test.mjs",
+    "test:release100": "node --experimental-transform-types --test tests/subject-requests.test.cjs tests/realtime.test.mjs tests/vps-server.test.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.16",
     "playwright-core": "1.65.0"
   },
-  "version": "0.10.2"
+  "version": "1.0.0"
 }

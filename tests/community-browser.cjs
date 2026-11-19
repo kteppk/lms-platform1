@@ -38,7 +38,6 @@ module.exports=async function verifyCommunity({teacher,student,other,admin,roleS
   await teacher.getByRole('button',{name:'Заполнить профиль преподавателя',exact:true}).click();
   await teacher.getByLabel('Должность',{exact:true}).fill('Преподаватель экономики');
   await teacher.getByLabel('Педагогический стаж, лет').fill('12');
-  await teacher.getByLabel('О себе',{exact:true}).fill('Учебный профиль проверки '+stamp);
   await teacher.getByLabel('Образование: учебное заведение, специальность, год').fill('Тестовый университет · Экономика · 2010');
   await teacher.getByLabel('Квалификация и повышение квалификации').fill('Повышение квалификации, 2026');
   const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=','base64');

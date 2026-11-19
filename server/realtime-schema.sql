@@ -33,6 +33,8 @@ begin
   from (select distinct student_id,teacher_id from public.test_results where test_id=d->>'test_id') r;
   return null;
  elsif tg_table_name in ('subjects','subject_teachers','materials','tests') then topic:='content';
+ elsif tg_table_name='subject_join_requests' then
+  perform pg_catalog.pg_notify('lms_changes','{"kind":"accounts"}');topic:='content';
  elsif tg_table_name='portal_settings' then topic:='settings';
  elsif tg_table_name='role_changes' then topic:='accounts';
  elsif tg_table_name='account_roles' then
@@ -55,7 +57,7 @@ grant execute on function public.lms_realtime_signal() to lms_backend;
 do $$ declare t text;begin
  foreach t in array array['news_posts','news_likes','curator_messages','curator_chat_reads','study_groups','weekly_schedule_cells','group_lesson_times','schedule_entries',
  'notifications','notification_reads','notification_subscriptions','lesson_reminder_subscriptions','push_devices','test_results','test_result_reviews','test_grading_scales',
- 'subjects','subject_teachers','materials','tests','profiles','account_roles','teacher_profiles','teacher_documents','account_avatars','education_profiles','portal_settings','role_changes','teachers'] loop
+ 'subjects','subject_teachers','subject_join_requests','materials','tests','profiles','account_roles','teacher_profiles','teacher_documents','account_avatars','education_profiles','portal_settings','role_changes','teachers'] loop
   execute format('drop trigger if exists lms_realtime on public.%I',t);
   execute format('create trigger lms_realtime after insert or update or delete on public.%I for each row execute function public.lms_realtime_signal()',t);
  end loop;

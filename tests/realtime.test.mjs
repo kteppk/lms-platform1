@@ -38,3 +38,12 @@ test('only the selected group reaches a guest; a lost database listener closes s
  const h=harness();await h.hub.start();try{await delay(5);const g=await h.open(null,'?public=1&group=g');g.output='';h.hub.publish({kind:'schedule',groupId:'other'});await delay(10);assert.equal(g.output,'');h.hub.publish({kind:'schedule',groupId:'g'});await delay(10);assert.match(g.output,/"schedule"/);h.listener.emit('error',new Error('offline'));assert.equal(g.destroyed,true);
  }finally{await h.hub.close();}
 });
+test('online statistics deduplicate accounts, count anonymous connections separately and publish only to admins',async()=>{
+ const h=harness();await h.hub.start();try{
+  await delay(5);const first=await h.open('student'),second=await h.open('student'),guest=await h.open(null,'?public=1'),admin=await h.open('admin');await delay(10);
+  const count=h.hub.presence();assert.equal(count.accounts,2);assert.equal(count.roles.student,1);assert.equal(count.roles.admin,1);assert.equal(count.guestConnections,1);
+  assert.deepEqual(permittedTopics({kind:'presence'},{uid:'s',role:'student'}),[]);assert.deepEqual(permittedTopics({kind:'presence'},{uid:'a',role:'admin'}),['presence']);
+  first.emit('close');assert.equal(h.hub.presence().roles.student,1);second.emit('close');assert.equal(h.hub.presence().roles.student,0);guest.emit('close');assert.equal(h.hub.presence().guestConnections,0);
+  assert.equal(JSON.stringify(h.hub.presence()).includes('sessionHash'),false);admin.emit('close');assert.equal(h.hub.presence().accounts,0);
+ }finally{await h.hub.close();}
+});

@@ -59,3 +59,17 @@ test('chat summary and read API use the current identity and reject ordinary acc
  await pg.query("update account_roles set role='student' where user_id=$1",[member.body.user.uid]);
  assert.equal((await rpc(member,'getCuratorChatSummary')).status,403);
 });
+test('legacy direct subject join is denied, admin approval grants membership and full teacher profile is preserved',async()=>{
+ const t=await call('signup',{email:'subject-owner@example.test',password:'TeacherPassword123'});await rpc(t,'profile',{name:'Преподаватель'});await pg.query('insert into teachers(user_id) values($1)',[t.body.user.uid]);
+ const other=await call('signup',{email:'subject-requester@example.test',password:'TeacherPassword123'});await rpc(other,'profile',{name:'Другой преподаватель'});await pg.query('insert into teachers(user_id) values($1)',[other.body.user.uid]);
+ const subject=await rpc(t,'saveSubject',{title:'Предмет по заявке',description:'Полное описание'});assert.equal(subject.status,200);
+ assert.equal((await rpc(other,'joinSubject',{subjectId:subject.body.data.id})).status,403);
+ const req=await rpc(other,'requestSubjectJoin',{subjectId:subject.body.data.id});assert.equal(req.status,200);
+ assert.equal((await rpc(t,'reviewSubjectJoinRequest',{requestId:req.body.data.id,approve:true})).status,403);
+ assert.equal((await rpc(admin,'reviewSubjectJoinRequest',{requestId:req.body.data.id,approve:true})).status,200);
+ const joined=(await rpc(other,'listSubjects')).body.data.find(s=>s.id===subject.body.data.id);assert.equal(joined.joined,true);
+ await pg.query("insert into teacher_profiles(user_id,bio) values($1,'Ранее опубликованная информация') on conflict(user_id) do update set bio=excluded.bio",[t.body.user.uid]);
+ const profile=(await rpc(t,'getTeacherProfile')).body.data;const saved=await rpc(t,'saveTeacherProfile',{position:'Преподаватель',education:'Высшее\nобразование',qualification:'Высшая категория',experienceYears:12,revision:profile.revision});assert.equal(saved.status,200);
+ const student=await call('login',{email:'student@example.test',password:'RecoveredPassword123'});
+ const person=(await rpc(student,'getPerson',{userId:t.body.user.uid})).body.data;assert.equal(person.professional.bio,'Ранее опубликованная информация');assert.equal(person.professional.education,'Высшее\nобразование');assert.equal(person.professional.subjects[0].title,'Предмет по заявке');
+});

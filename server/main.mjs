@@ -27,7 +27,12 @@ const server=http.createServer(async(req,res)=>{
   else if(u.pathname==='/functions/v1/lms-public')response=await publicAPI(request);
   else if(u.pathname==='/functions/v1/lms'){
    const copy=request.clone();let body=null;try{body=await copy.json();}catch{}
-   if(['listRecoveryRequests','createAccountRecovery'].includes(body?.action)){
+   if(body?.action==='getOnlineStats'){
+    try{const identity=await auth.verify(request.headers.get('Authorization')?.replace(/^Bearer /,''));const role=(await pool.query('select role from public.account_roles where user_id=$1',[identity.uid])).rows[0]?.role;
+     if(role!=='admin')throw Object.assign(Error('Статистика онлайна доступна только администрации.'),{status:403,code:'permission-denied'});
+     response=Response.json({data:realtime.presence()},{headers:{'Cache-Control':'no-store'}});
+    }catch(e){response=Response.json({code:e.code||'internal',error:e.status?e.message:'Не удалось загрузить статистику.'},{status:e.status||500,headers:{'Cache-Control':'no-store'}});}
+   }else if(['listRecoveryRequests','createAccountRecovery'].includes(body?.action)){
     try{const identity=await auth.verify(request.headers.get('Authorization')?.replace(/^Bearer /,''));response=Response.json(await auth.adminAction(identity,body.action,body.data??{}),{headers:{'Cache-Control':'no-store'}});}catch(e){response=Response.json({code:e.code||'internal',error:e.status?e.message:'Не удалось выполнить запрос.'},{status:e.status||500});}
    }else response=await api(request);
   }else response=new Response(null,{status:404});

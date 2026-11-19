@@ -58,8 +58,10 @@ export async function teacherProfile(db:SupabaseClient,actor:Actor,input:Input) 
   const paths=[...(documents??[]).map(d=>d.path),...(photo?.path?[photo.path]:[])];
   const signed=paths.length?await dataOf(db.storage.from(profileBucket).createSignedUrls(paths,3600)):[];
   const links=new Map((signed??[]).filter(f=>f.path&&!f.error).map(f=>[f.path,f.signedUrl]));
+  const catalog=await dataOf(db.from('subjects').select('id,title,description').is('archived_at',null).order('title'));
   return {...person,...profile,revision:profile?.revision??0,avatarUrl:links.get(photo?.path)??null,
     canEdit:actor.role==='admin'||(actor.role==='teacher'&&actor.uid===uid),subjectIds:(subjects??[]).map(s=>s.subject_id),
+    subjects:(catalog??[]).filter(s=>(subjects??[]).some(i=>i.subject_id===s.id)),
     documents:(documents??[]).map(d=>({...d,url:links.get(d.path)??null})),avatar_path:undefined};
 }
 async function profileUpload(db:SupabaseClient,actor:Actor,input:Input) {
@@ -84,7 +86,7 @@ async function saveTeacherProfile(db:SupabaseClient,actor:Actor,input:Input) {
   const previous=await dataOf(db.from('account_avatars').select('path').eq('user_id',uid).maybeSingle());
   const years=input.experienceYears;
   if(years!==null&&(typeof years!=='number'||!Number.isInteger(years)||years<0||years>80))invalid('Укажите стаж от 0 до 80 лет или оставьте поле пустым.');
-  const fields:Input={position:text(input.position??'',200,'Должность',true),bio:text(input.bio??'',5000,'Описание',true),
+  const fields:Input={position:text(input.position??'',200,'Должность',true),
     education:text(input.education??'',5000,'Образование',true),qualification:text(input.qualification??'',3000,'Квалификация',true),
     experience_years:years,revision:revision(input.revision)+1,updated_at:new Date().toISOString()};
   if(input.avatarPath!==undefined)fields.avatar_path=input.avatarPath===null?null:(await checkFile(db,uid,input.avatarPath,true)).path;

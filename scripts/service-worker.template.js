@@ -1,5 +1,5 @@
 /* Generated for release __VERSION__. Static files only; no API, tokens or uploads. */
-if(self.location.hostname==='kteppk.github.io'){importScripts('./moved-sw.js');}else{
+if(['kteppk.github.io','vm756327.vps.masterhost.tech'].includes(self.location.hostname)){importScripts('./moved-sw.js');}else{
 const VERSION=__VERSION__;
 // Push messages carry no auth tokens or chat content. Never navigate off-site.
 self.addEventListener('push',event=>{event.waitUntil((async()=>{let data={};try{data=event.data?.json()||{};}catch{}if(data.category==='lesson'&&data.expiresAt&&Date.parse(data.expiresAt)<=Date.now())return;const route=data.destination==='schedule'?'schedule':'home';await self.registration.showNotification(String(data.title||'КТЭиП ПК').slice(0,150),{body:String(data.body||'На платформе новое уведомление.').slice(0,500),tag:String(data.id||'lms-update'),icon:new URL('app-icon-192.png',self.registration.scope).href,data:{route,groupId:/^[A-Za-z0-9_-]{1,128}$/.test(data.groupId||'')?data.groupId:null}});})());});

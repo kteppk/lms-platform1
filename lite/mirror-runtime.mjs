@@ -1,4 +1,4 @@
-const ORIGIN='https://vm756327.vps.masterhost.tech/functions/v1/lms-public';
+const ORIGIN='https://kteppk.ru/functions/v1/lms-public';
 export function createMirrorHandler(assets,options={}){
  const fetcher=options.fetcher||fetch,now=options.now||Date.now,tasks=new Map(),version=options.version||'1';
  const common={'X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'};
