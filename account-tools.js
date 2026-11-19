@@ -30,12 +30,14 @@ const AccountTools=(()=>{
    <section class="profile-block"><details class="account-password"><summary>Изменить пароль</summary><p class="hint">Нужен текущий пароль. Новый — от 8 до 128 символов.</p><form data-account-form="password">${[['oldPassword','Старый пароль','current-password'],['newPassword','Новый пароль','new-password'],['repeatPassword','Повторите новый пароль','new-password']].map(([id,label,complete])=>`<label for="${id}">${label}</label><div class="password-control"><input id="${id}" type="password" autocomplete="${complete}" required ${id!=='oldPassword'?'minlength="8" maxlength="128"':''}><button type="button" class="secondary" data-account="show-password" data-input="${id}" aria-label="Показать: ${label.toLowerCase()}" aria-pressed="false">Показать</button></div>`).join('')}<p data-password-status role="status"></p><button type="submit" class="primary">Изменить пароль</button></form></details></section>`;
  }
  async function people(root){
+  delete root.dataset.personId;
   const generation=++searchGeneration;
   root.innerHTML=`<h2>Люди</h2><p class="section-lead">Найдите студента, преподавателя или администратора по ФИО.</p><form data-account-form="people" class="people-search"><label for="peopleSearch">ФИО<input id="peopleSearch" type="search" maxlength="200" value="${e(search)}" placeholder="Фамилия или имя" autocomplete="off"></label><label for="peopleRole">Роль<select id="peopleRole"><option value="">Все роли</option>${Object.entries(roles).map(([id,name])=>`<option value="${id}" ${id===role?'selected':''}>${name}</option>`).join('')}</select></label><button type="submit" class="primary">Найти</button></form><div id="peopleResults" aria-live="polite"><p role="status">Загрузка людей…</p></div>`;
   const data=await callFunction('searchPeople',{search,role,offset});if(!root.isConnected||generation!==searchGeneration)return;
   root.querySelector('#peopleResults').innerHTML=`<div class="people-grid">${data.rows.map(p=>`<article class="person-card">${avatar(p)}<div><h3>${e(p.name)}</h3><p class="meta">${e(roles[p.role])}${p.position?' · '+e(p.position):''}</p><button type="button" class="secondary" data-account="person" data-id="${e(p.id)}">Открыть профиль</button></div></article>`).join('')||'<p class="empty-state">Никого не найдено. Проверьте ФИО или измените роль.</p>'}</div><div class="actions pagination-actions"><button type="button" data-account="people-prev" class="secondary" ${offset?'':'disabled'}>← Назад</button><span>Страница ${offset/30+1}</span><button type="button" data-account="people-next" class="secondary" ${data.hasMore?'':'disabled'}>Далее →</button></div>`;
  }
  async function person(root,uid){
+  root.dataset.personId=uid;
   const generation=++searchGeneration;root.innerHTML='<p role="status">Загрузка профиля…</p>';
   const p=await callFunction('getPerson',{userId:uid});if(!root.isConnected||generation!==searchGeneration)return;
   root.innerHTML=`<button type="button" class="secondary" data-account="people">← К поиску людей</button><div class="profile-heading">${avatar(p)}<div><h2>${e(p.name)}</h2><span class="badge">${e(roles[p.role])}</span></div></div>${['student','curator'].includes(p.role)?EducationProfile.details(p.education):p.education.age!=null?'<p>Возраст: '+e(EducationProfile.ageLabel(p.education.age))+'</p>':''}${p.professional?'<section class="inline-teacher-profile"><p>'+e(p.professional.position||'Преподаватель')+(p.professional.experience_years!=null?' · стаж '+e(p.professional.experience_years)+' лет':'')+'</p>'+Portal.teacherDetails(p.professional)+'</section>':''}<div class="actions">${p.id===actor.uid?'<button type="button" class="secondary" data-portal="navigate" data-tab="profile">Изменить свой профиль</button>':''}</div>`;
@@ -99,5 +101,5 @@ const AccountTools=(()=>{
   }catch(error){if(status)status.textContent=error.message;else Portal.toast('Не удалось загрузить данные',error.message,'danger');}
   finally{delete form.dataset.busy;submit.disabled=false;}
  });
- return {init,profileSections,syncHeader,render:(tab,root)=>tab==='people'?people(root):help(root)};
+ return {init,profileSections,syncHeader,render:(tab,root)=>tab==='people'?(root.dataset.personId?person(root,root.dataset.personId):people(root)):help(root)};
 })();

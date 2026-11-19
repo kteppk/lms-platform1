@@ -446,3 +446,12 @@ async function returnToTests() {
 }
 
 watchCabinet('student', initializeStudent);
+document.addEventListener('lms-live-update',event=>{
+  const changed=event.detail.topics;if(!changed.some(t=>['resync','content','results','people'].includes(t)))return;
+  if(currentTab===attemptTab&&attempt){
+    if(attempt.result&&changed.some(t=>['resync','results'].includes(t))){const active=attempt;
+      callFunction('getStudentAttempt',{attemptId:active.attemptId}).then(data=>{if(attempt===active&&currentTab===attemptTab&&data.result){active.result=data.result;renderResult(data.result);}}).catch(()=>{});
+    }return;
+  }
+  const tab=currentTab;if(['subjects','lectures','tests'].includes(tab))Realtime.update('student-learning',content,()=>currentTab===tab&&!(currentTab===attemptTab&&attempt)?render():undefined);
+});

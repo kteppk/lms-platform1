@@ -34,6 +34,7 @@ const Schedule = (() => {
     if(!root.isConnected||token!==generation)return;
     const requested=pendingGroup??(selected===undefined?readGroup(actor):selected);pendingGroup=null;
     const groupId=groups.some(g=>g.id===requested)?requested:'';
+    if(typeof Realtime!=='undefined')Realtime.watchGroup(groupId);
     const dates=week();
     const ctx={root,actor,groups,groupId,dates,cells:[],staff:[],subjects:[]};current=ctx;
     root.innerHTML=`<div class="schedule-heading"><div><h2>Расписание</h2><p class="section-lead">Выберите свою группу.</p></div>${ActionMenu.render(button('Скачать расписание группы · Excel','export-one',groupId?'':'disabled')+button('Скачать все группы · Excel','export-all')+(actor.role==='admin'?button('+ Добавить группу','add-group')+(groupId?button('Время пар группы','clocks','disabled')+button('Удалить группу','delete-group','disabled','danger-button'):''):''),'Действия с расписанием')}</div><div class="schedule-toolbar"><label for="scheduleGroupSelect">Группа<select id="scheduleGroupSelect"><option value="">Выберите группу</option>${groups.map(g=>`<option value="${e(g.id)}" ${g.id===groupId?'selected':''}>${e(g.name)}${g.course?' · '+e(g.course)+' курс':''}</option>`).join('')}</select></label><p>Неделя: <strong>${dateLabel(dates[0])} — ${dateLabel(dates[5])}</strong></p>${ActionMenu.icon('refresh','Обновить расписание','data-schedule="refresh"')}</div><p class="lite-links">Слабый интернет? <a href="lite/${groupId?'?group='+encodeURIComponent(groupId):''}" target="_blank" rel="noopener">Лёгкая версия ↗</a></p><div id="scheduleWeekBody" aria-live="polite">${groupId?'<p role="status">Загрузка расписания…</p>':'<p class="empty-state">Выберите группу, чтобы увидеть только её занятия.'+(groups.length?'':' Администратор может добавить первую группу.')+'</p>'}</div>`;
@@ -143,5 +144,8 @@ const Schedule = (() => {
     }finally{fields.disabled=false;close.disabled=false;delete modal.dataset.busy;}
   });
   document.addEventListener('lms-reference-updated',event=>{const ctx=current;if(ctx?.root.isConnected&&ctx.readOnly&&!ctx.root.querySelector('dialog[open]')&&event.detail.action==='getWeeklySchedule'&&event.detail.data?.groupId===ctx.groupId)render(ctx.root,ctx.actor,ctx.groupId).catch(()=>{});});
+  document.addEventListener('lms-live-update',event=>{const ctx=current;if(!ctx?.root.isConnected||!ctx.root.querySelector('#scheduleGroupSelect'))return;
+    if(event.detail.topics.some(t=>['resync','groups','schedule','subscriptions','people','content'].includes(t)))Realtime.update('schedule',ctx.root,()=>render(ctx.root,ctx.actor,ctx.groupId,true));
+  });
   return {render,selectGroup:id=>{pendingGroup=id;}};
 })();

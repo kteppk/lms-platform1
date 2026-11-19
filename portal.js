@@ -52,6 +52,7 @@ const Portal = (() => {
   }
   async function init(person){
     profile=person;
+    if(typeof Realtime!=='undefined')Realtime.start(person);
     AccountTools.init(profile,update=>{profile={...profile,...update};});
     Subscriptions.init(profile);
     if(['curator','admin'].includes(profile.role)&&!document.querySelector('[data-tab="curator-chat"]')){const b=document.createElement('button');b.className='tab-btn';b.dataset.tab='curator-chat';b.textContent='Чат кураторов';b.onclick=()=>switchTab('curator-chat',b);document.querySelector('.tabs [data-tab="profile"]').before(b);}
@@ -92,6 +93,7 @@ const Portal = (() => {
     if(container.querySelector('#myEducation'))await EducationProfile.render(container.querySelector('#myEducation'));
   }
   async function renderTeachers(container){
+    delete container.dataset.teacherId;
     container.innerHTML='<h2>Преподаватели</h2><p>Загрузка профилей…</p>';
     teachers=await callFunction('listTeachers');if(!container.isConnected)return;
     container.innerHTML=`<h2>Преподаватели</h2><p class="section-lead">Образование, опыт и достижения преподавателей техникума.</p><div class="teacher-grid">${teachers.map(t=>`<article class="item teacher-card">${avatar(t)}<h3>${e(t.name)}</h3><p class="meta">${e(t.position||'Преподаватель')}</p><span class="badge mint">Предметов: ${t.subjectIds.length}</span><div class="actions">${button('Открыть профиль','view-teacher',`data-id="${e(t.id)}"`,'primary')}</div></article>`).join('')||empty('Профили преподавателей пока не добавлены.')}</div>`;
@@ -101,6 +103,7 @@ const Portal = (() => {
         const url=safeMaterialUrl(d.url);return `<article class="item"><span class="badge">${categories[d.category]}</span><h4>${e(d.title)}</h4><p class="meta">${e(d.issued_year||'')}</p>${url&&d.mime.startsWith('image/')?`<a href="${e(url)}" target="_blank" rel="noopener noreferrer"><img class="document-preview" src="${e(url)}" alt="${e(d.title)}" loading="lazy"></a>`:''}${url?materialLink(url,d.mime==='application/pdf'?'Открыть PDF / скачать':'Открыть документ'):''}</article>`;
       }).join('')||empty('Документов пока нет. Преподаватель может добавить их в своём профиле.')}</div></section>`; }
   async function viewTeacher(uid,container=document.getElementById('portalPage')){
+    container.dataset.teacherId=uid;
     selectedTeacher=await callFunction('getTeacherProfile',{teacherId:uid});if(!container?.isConnected)return;
     const p=selectedTeacher;
     container.innerHTML=`${button('← Все преподаватели','teacher-list')}<div class="profile-heading">${avatar(p)}<div><h2>${e(p.name)}</h2><p>${e(p.position||'Преподаватель')}</p>${p.experience_years!==null&&p.experience_years!==undefined?`<span class="badge mint">Стаж: ${p.experience_years} лет</span>`:''}</div></div>
@@ -134,7 +137,7 @@ const Portal = (() => {
     const feed=await callFunction('listNotifications',{offset:popup?0:noticeOffset});if(!container?.isConnected)return;noticeRows=feed.rows;feed.rows.forEach(n=>noticeById.set(n.id,n));
     const tools=button('Мои подписки','subscriptions')+button('Прочитать эту страницу','notices-read-page',feed.rows.some(n=>!n.read)?'':'disabled');
     if(popup)document.querySelector('#notificationsDialog [data-portal="notices-read-page"]').disabled=!feed.rows.some(n=>!n.read);
-    container.innerHTML=`${popup?'':`<div class="page-heading"><h2>Уведомления</h2>${ActionMenu.render(tools,'Действия с уведомлениями')}</div><p class="section-lead">Личные результаты, объявления и изменения расписаний по вашим подпискам.</p>`}${noticeCards(feed.rows)}${popup?'':`<div class="actions pagination-actions">${button('← Назад','notices-prev',noticeOffset?'':'disabled')}${button('Далее →','notices-next',feed.rows.length===50?'':'disabled')}</div>`}`;
+    container.innerHTML=`${popup?'':`<div class="page-heading"><h2>Уведомления</h2>${ActionMenu.render(tools,'Действия с уведомлениями')}</div><p class="section-lead">Личные результаты, объявления и изменения расписаний по вашим подпискам.</p>`}<div data-notice-list>${noticeCards(feed.rows)}</div>${popup?'':`<div class="actions pagination-actions">${button('← Назад','notices-prev',noticeOffset?'':'disabled')}${button('Далее →','notices-next',feed.rows.length===50?'':'disabled')}</div>`}`;
     if(!popup){const push=document.createElement('section');container.prepend(push);PushSettings.render(push);}
     document.getElementById('notificationCount').textContent=feed.unreadCount;
   }
@@ -149,6 +152,7 @@ const Portal = (() => {
   async function render(tab,parent){
     if(!['home','profile','teachers','schedule','notifications','accounts','announcements','people','help','curator-chat'].includes(tab))return false;
     if(tab!=='curator-chat')CuratorChat.clear();
+    if(tab!=='schedule'&&typeof Realtime!=='undefined')Realtime.watchGroup(null);
     parent.innerHTML='<section id="portalPage" aria-live="polite"></section>';const target=parent.firstElementChild;
     if(tab==='curator-chat')await CuratorChat.render(target,profile);
     if(tab==='home')await home(target);
@@ -236,5 +240,20 @@ const Portal = (() => {
   });
   function openTeacher(uid){pendingTeacher=uid;navigate('teachers');}
   function openSubscriptions(){pendingSubscriptions=true;navigate('notifications');}
+  document.addEventListener('lms-live-update',async event=>{
+    if(!profile)return;const changed=event.detail.topics,all=changed.includes('resync'),root=document.getElementById('portalPage');
+    if(all||changed.includes('profile')){const current=await getProfile(auth.currentUser).catch(()=>null);if(current){profile={...profile,...current};document.getElementById('userName').textContent=profile.name;AccountTools.syncHeader(profile.avatarUrl);}}
+    if(all||changed.some(t=>['notices','subscriptions'].includes(t))){
+      await poll();
+      const popup=document.getElementById('notificationsDialog');
+      if(popup?.open){const target=popup.querySelector('#popupNotices');const feed=await callFunction('listNotifications').catch(()=>null);if(feed&&target?.isConnected){const list=target.querySelector('[data-notice-list]');if(list){list.innerHTML=noticeCards(feed.rows);feed.rows.forEach(n=>noticeById.set(n.id,n));}}}
+      const list=root?.querySelector('[data-notice-list]');if(list)Realtime.update('notices',list,async()=>{const feed=await callFunction('listNotifications',{offset:noticeOffset});if(!list.isConnected)return;list.innerHTML=noticeCards(feed.rows);feed.rows.forEach(n=>noticeById.set(n.id,n));document.getElementById('notificationCount').textContent=feed.unreadCount;const next=root.querySelector('[data-portal="notices-next"]');if(next)next.disabled=feed.rows.length<50;});
+      if(root?.querySelector('[data-sub-form]'))Realtime.update('subscriptions',root,()=>Subscriptions.render(root));
+    }
+    if(!root?.isConnected)return;
+    const tab=document.querySelector('.tabs [data-tab].active')?.dataset.tab;
+    const relevant=tab==='accounts'&&(all||changed.includes('accounts'))||tab==='profile'&&(all||changed.includes('profile'))||['teachers','people'].includes(tab)&&(all||changed.includes('people'))||tab==='help'&&(all||changed.includes('settings'));
+    if(relevant&&!root.querySelector('[data-portal-form="teacher-profile"]'))Realtime.update('portal-view',root,()=>tab==='accounts'?renderAccounts(root):tab==='profile'?myProfile(root):tab==='teachers'?(root.dataset.teacherId?viewTeacher(root.dataset.teacherId,root):renderTeachers(root)):AccountTools.render(tab,root));
+  });
   return {teacherDetails,init,render,navigate,toast,openTeacher,openSubscriptions};
 })();

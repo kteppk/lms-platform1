@@ -26,7 +26,7 @@ const AppConnection=(()=>{
   function clone(item,stale){const value=JSON.parse(JSON.stringify(item.value));if(value&&typeof value==='object')Object.defineProperty(value,'_offline',{value:{savedAt:item.savedAt,stale},enumerable:false});return value;}
   function networkError(){const error=new Error('Нет связи с сервером. Изменения не отправлены. Попробуйте после восстановления интернета.');error.code='unavailable';return error;}
   function recoverable(error){return !error?.code||['unavailable','auth/network-request-failed'].includes(error.code);}
-  function invalidate(){if(!owner)return;const all=entries(owner);Object.values(all).forEach(v=>v.refresh=true);write(prefix+owner,JSON.stringify(all));}
+  function invalidate(){if(!owner)return;epoch++;pending.clear();const all=entries(owner);Object.values(all).forEach(v=>v.refresh=true);write(prefix+owner,JSON.stringify(all));}
   async function request(action,data,account,send,options={}){
     begin(account.uid);const uid=account.uid,generation=epoch,cached=peek(action,data,uid);
     if(!online()){if(cached)return clone(cached,true);throw networkError();}

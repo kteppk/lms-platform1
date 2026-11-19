@@ -117,5 +117,9 @@ const Gradebook = (() => {
     }catch(error){showError(error);}finally{node.disabled=false;}
   });
   function openTest(id){pendingTest=id;document.querySelector('.tabs [data-tab="journal"]')?.click();}
+  document.addEventListener('lms-live-update',event=>{const current=state;if(!current||!alive(current)||!event.detail.topics.some(t=>['resync','results','content'].includes(t)))return;
+    const root=current.root.querySelector('#gradeRows');if(!root){if(current.result&&current.root.querySelector('#reviewForm'))Realtime.update('result-detail',current.root,()=>open({dataset:{id:current.result.id},disabled:false}));return;}
+    Realtime.update('results',root,async()=>{current.catalog=await callFunction('listResultTests');if(!alive(current))return;const select=current.root.querySelector('#resultTestSelect');if(select){const pending=select.value;select.innerHTML='<option value="">Выберите тест</option>'+current.catalog.map(t=>`<option value="${e(t.id)}">${e(t.title)} · попыток: ${t.attempts}</option>`).join('');select.value=pending;}await load(current);});
+  });
   return {render,openTest};
 })();

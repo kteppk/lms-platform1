@@ -9,7 +9,7 @@ const auth = firebase.auth();
 let nameFieldsPromise;
 const nameFieldsReady={then(resolve,reject){nameFieldsPromise??=import('./name-fields.mjs?v=identity1');return nameFieldsPromise.then(resolve,reject);}};
 let cacheAccount=null;
-auth.onAuthStateChanged?.(account=>{if(typeof AppConnection==='undefined')return;if(account){if(cacheAccount&&cacheAccount!==account.uid)AppConnection.clearUser(cacheAccount);AppConnection.begin(account.uid);cacheAccount=account.uid;}else if(cacheAccount){AppConnection.clearUser(cacheAccount);cacheAccount=null;}});
+auth.onAuthStateChanged?.(account=>{if(typeof AppConnection==='undefined')return;if(account){if(cacheAccount&&cacheAccount!==account.uid)AppConnection.clearUser(cacheAccount);AppConnection.begin(account.uid);cacheAccount=account.uid;}else if(cacheAccount){AppConnection.clearUser(cacheAccount);cacheAccount=null;if(typeof Realtime!=='undefined')Realtime.logout();}});
 // This script runs in the head, before deferred cabinet modules are ready.
 const cabinetScriptsReady = typeof document === 'undefined' || document.readyState === 'complete'
   ? Promise.resolve()

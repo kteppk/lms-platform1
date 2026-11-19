@@ -4,9 +4,9 @@ const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GE
 type Entry={body:string;etag:string;saved:number};
 function monday(now:Date){const parts=Object.fromEntries(new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Krasnoyarsk',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now).map(p=>[p.type,p.value]));const d=new Date(`${parts.year}-${parts.month}-${parts.day}T12:00:00Z`);d.setUTCDate(d.getUTCDate()-(d.getUTCDay()+6)%7);return d.toISOString().slice(0,10);}
 export function createPublicHandler(db:SupabaseClient,options:{now?:()=>Date;background?:(task:Promise<unknown>)=>void;sync?:()=>Promise<unknown>}={}){
- const cache=new Map<string,Entry>(),pending=new Map<string,Promise<Entry>>();let syncAt=0;
+ const cache=new Map<string,Entry>(),pending=new Map<string,Promise<Entry>>();let syncAt=0,revision=0;
  const now=options.now??(()=>new Date());
- return async(request:Request)=>{
+ const handler=async(request:Request)=>{
   if(request.method==='OPTIONS')return new Response(null,{status:204,headers:cors});
   const error=(message:string,status:number)=>Response.json({error:message},{status,headers:{...cors,'Cache-Control':'no-store'}});
   if(!['GET','HEAD'].includes(request.method))return error('Доступно только чтение.',405);
@@ -26,9 +26,9 @@ export function createPublicHandler(db:SupabaseClient,options:{now?:()=>Date;bac
    let entry=cache.get(key);
    if(!entry||time-entry.saved>=5000||url.searchParams.get('fresh')==='1'){
     let task=pending.get(key);
-    if(!task){if(pending.size>=64)return error('Сервер занят. Повторите позже.',503);task=(async()=>{const {data,error}=await db.rpc('lite_public_snapshot',{p_view:view,p_group_id:group,p_week:week,p_offset:offset,p_post_id:post});if(error)throw error;
+    if(!task){if(pending.size>=64)return error('Сервер занят. Повторите позже.',503);const version=revision;task=(async()=>{const {data,error}=await db.rpc('lite_public_snapshot',{p_view:view,p_group_id:group,p_week:week,p_offset:offset,p_post_id:post});if(error)throw error;
      const body=JSON.stringify(data),bytes=new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(body))),etag='"'+Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('')+'"';
-     const result={body,etag,saved:time};cache.set(key,result);while(cache.size>64)cache.delete(cache.keys().next().value!);return result;})();pending.set(key,task);task.finally(()=>pending.delete(key)).catch(()=>{});}
+     const result={body,etag,saved:time};if(version===revision)cache.set(key,result);while(cache.size>64)cache.delete(cache.keys().next().value!);return result;})();pending.set(key,task);task.finally(()=>{if(pending.get(key)===task)pending.delete(key);}).catch(()=>{});}
     entry=await task;
    }
    if(options.background&&(view==='news'||view==='bootstrap')&&time-syncAt>120000){syncAt=time;options.background((options.sync??(()=>syncGitHubNews(db)))().catch(()=>{}));}
@@ -37,4 +37,5 @@ export function createPublicHandler(db:SupabaseClient,options:{now?:()=>Date;bac
    return new Response(request.method==='HEAD'?null:entry.body,{headers});
   }catch(e){const code=(e as {code?:string})?.code;if(code==='P0002')return error(view==='post'?'Новость не найдена.':'Группа не найдена.',404);if(code==='22023')return error('Некорректный запрос.',400);return error('Не удалось обновить данные. Попробуйте позже.',503);}
  };
+ return Object.assign(handler,{invalidate:()=>{revision++;cache.clear();pending.clear();}});
 }

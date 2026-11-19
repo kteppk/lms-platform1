@@ -64,5 +64,6 @@ export function createAuth({pool,secret,publicURL,firebaseHashConfig}){
   await pool.query('insert into app_auth.reset_tokens(token_hash,user_id,created_by,request_id,expires_at) values($1,$2,$3,$4,now()+interval \'30 minutes\')',[digest(token),u.id,identity.uid,request?.id??null]);
   if(request)await pool.query("update app_auth.recovery_requests set state='issued' where id=$1",[request.id]);return {data:{url:publicURL+'/index.html?reset='+token,expiresInMinutes:30}};
  }
- return {handle,verify,adminAction};
+ const streamIdentity=async request=>{const u=await session(request);return u?{uid:u.id,sessionHash:u.token_hash}:null;};
+ return {handle,verify,adminAction,streamIdentity};
 }

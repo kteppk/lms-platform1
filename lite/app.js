@@ -3,6 +3,17 @@
  const api=new URL(document.documentElement.dataset.api,location.href),storeKey='lms-lite-public-v1',days=['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье'];
  let saved={entries:{},group:''};try{const s=JSON.parse(localStorage.getItem(storeKey)||'null');if(s?.entries&&typeof s.entries==='object')saved=s;}catch{}
  let group=new URL(location.href).searchParams.get('group')||saved.group||'',generation=0,offset=0,bootController=null,lastRefresh=0;
+ let stream=null,streamGroup=null,liveTimer,retryTimer,retry=0;
+ function closeStream(){stream?.close();stream=null;clearTimeout(retryTimer);}
+ function live(){
+  if(api.origin!==location.origin||typeof EventSource==='undefined'||document.hidden||!navigator.onLine)return;
+  if(stream&&streamGroup===group)return;closeStream();streamGroup=group;
+  const url=new URL('/events',location.origin);url.searchParams.set('public','1');if(group)url.searchParams.set('group',group);
+  const source=new EventSource(url);stream=source;
+  const update=()=>{clearTimeout(liveTimer);liveTimer=setTimeout(()=>refresh(true,true),200);};
+  source.addEventListener('ready',()=>{retry=0;update();});source.addEventListener('refresh',event=>{try{const topics=JSON.parse(event.data).topics;if(topics.some(t=>['resync','news','groups','schedule'].includes(t))){for(const key of Object.keys(saved.entries))if(key.includes('"view":"post"'))delete saved.entries[key];update();}}catch{}});
+  source.onerror=()=>{if(stream!==source)return;source.close();stream=null;retryTimer=setTimeout(live,Math.min(30000,1000*2**Math.min(retry++,5)));};
+ }
  if(!/^[A-Za-z0-9_-]{1,128}$/.test(group))group='';
  function write(){try{const keys=Object.keys(saved.entries).sort((a,b)=>saved.entries[a].at-saved.entries[b].at);while(keys.length&&(keys.length>16||JSON.stringify(saved).length>450000))delete saved.entries[keys.shift()];localStorage.setItem(storeKey,JSON.stringify(saved));}catch{}}
  function remember(key,data,at=Date.now(),etag=null){const value={data,at,etag};saved.entries[key]=value;write();return value;}
@@ -32,16 +43,18 @@
  }
  function showCopy(){const common=saved.entries.base;if(common){renderGroups(common.data.groups);renderNews(common.data.news);hint('newsStatus',common,true);}const s=saved.entries[key('schedule',{group})];if(s){renderSchedule(s.data.schedule);hint('scheduleStatus',s,true);}else if(common?.data.schedule?.group.id===group){renderSchedule(common.data.schedule);hint('scheduleStatus',common,true);}}
  function links(){const current=new URL(location.href);if(group)current.searchParams.set('group',group);else current.searchParams.delete('group');history.replaceState(null,'',current);if($('mirrorLink').hidden)return;const url=new URL($('mirrorLink').href);if(location.origin===url.origin)url.href=new URL('lite/',document.documentElement.dataset.main).href;if(group)url.searchParams.set('group',group);else url.searchParams.delete('group');$('mirrorLink').href=url.href;}
- async function refresh(fresh=false){
+ async function refresh(fresh=false,automatic=false){
+  const loaded=offset,opened=automatic?[...$('feed').querySelectorAll('[data-full][open]')].map(n=>n.dataset.full):[],anchor=automatic?[...$('feed').querySelectorAll('[data-post]')].find(n=>n.getBoundingClientRect().bottom>0):null,position=anchor?.getBoundingClientRect().top;
   const token=++generation;bootController?.abort();bootController=new AbortController();const selected=group;$('connection').textContent=navigator.onLine?'Обновляем данные…':'Нет интернета. Показаны сохранённые данные.';
   try{const {item,stale}=await request('bootstrap',selected?{group:selected}:{},fresh,bootController.signal);if(token!==generation)return;
    const data=item.data;if(!data.groups.some(g=>g.id===group)){group='';saved.group='';}renderGroups(data.groups);renderNews(data.news);renderSchedule(data.schedule);remember('base',data,item.at);
+   if(automatic){while(offset<loaded&&!$('more').hidden){const start=offset,{item:page}=await request('news',{offset:start},true,bootController.signal);if(token!==generation)return;renderNews(page.data.news,true);if(offset===start)break;}for(const node of $('feed').querySelectorAll('[data-full]'))if(opened.includes(node.dataset.full))node.open=true;const replacement=[...$('feed').querySelectorAll('[data-post]')].find(n=>n.dataset.post===anchor?.dataset.post);if(replacement&&position!==undefined)window.scrollBy(0,replacement.getBoundingClientRect().top-position);}
    if(data.schedule)remember(key('schedule',{group:data.schedule.group.id}),{schedule:data.schedule},item.at);hint('newsStatus',item,stale);if(data.schedule)hint('scheduleStatus',item,stale);else $('scheduleStatus').textContent='';
-   $('connection').textContent=stale?'Сохранённая копия с зеркала. Обновляем её.':'Данные загружены.';$('connection').classList.toggle('stale',stale);lastRefresh=Date.now();links();if(stale&&!fresh)setTimeout(()=>{if(document.visibilityState==='visible'&&navigator.onLine)refresh(true);},2000);
+   $('connection').textContent=stale?'Сохранённая копия с зеркала. Обновляем её.':'Данные загружены.';$('connection').classList.toggle('stale',stale);lastRefresh=Date.now();links();live();if(stale&&!fresh)setTimeout(()=>{if(document.visibilityState==='visible'&&navigator.onLine)refresh(true);},2000);
   }catch(error){if(token!==generation)return;if(error.code===404&&selected){group='';saved.group='';delete saved.entries[key('schedule',{group:selected})];write();renderSchedule(null);$('scheduleStatus').textContent='Выбранная группа удалена. Выберите другую.';await refresh(fresh);return;}$('connection').textContent=navigator.onLine?'Не удалось обновить данные. Сохранённая копия может быть устаревшей.':'Нет интернета. Показана сохранённая копия.';$('connection').classList.add('stale');}
  }
  $('group').addEventListener('change',async()=>{
-  group=$('group').value;saved.group=group;write();links();const token=++generation;bootController?.abort();bootController=new AbortController();const selected=group;if(!selected){renderSchedule(null);$('scheduleStatus').textContent='';return;}
+  group=$('group').value;saved.group=group;write();links();live();const token=++generation;bootController?.abort();bootController=new AbortController();const selected=group;if(!selected){renderSchedule(null);$('scheduleStatus').textContent='';return;}
   const cached=saved.entries[key('schedule',{group:selected})];if(cached){renderSchedule(cached.data.schedule);hint('scheduleStatus',cached,true);}else $('timetable').innerHTML='<p role="status">Загрузка расписания…</p>';
   try{const {item,stale}=await request('schedule',{group:selected},false,bootController.signal);if(token!==generation)return;renderSchedule(item.data.schedule);hint('scheduleStatus',item,stale);if(stale)setTimeout(()=>refresh(true),2000);}
   catch(error){if(token!==generation)return;if(!cached)$('timetable').innerHTML='<p>На этом устройстве ещё нет копии расписания. Повторите обновление после восстановления связи.</p>';if(error.code===404){group='';saved.group='';delete saved.entries[key('schedule',{group:selected})];write();renderSchedule(null);await refresh(true);}$('scheduleStatus').textContent=error.message+(cached?' Сохранённая копия может быть устаревшей.':'');}
@@ -50,6 +63,7 @@
  $('more').addEventListener('click',async event=>{const button=event.currentTarget,start=offset;button.disabled=true;try{const {item,stale}=await request('news',{offset:start});if(start!==offset)return;renderNews(item.data.news,true);hint('newsStatus',item,stale);}catch(error){$('newsStatus').textContent=error.message;}finally{button.disabled=false;}});
  document.addEventListener('toggle',async event=>{const details=event.target;if(!details.matches?.('[data-full]')||!details.open||details.dataset.loaded)return;const root=details.querySelector('.full-body'),id=details.dataset.full,cached=saved.entries[key('post',{post:id})];if(cached){root.textContent=cached.data.post.body;details.dataset.loaded='true';return;}root.textContent='Загрузка текста…';try{const {item}=await request('post',{post:id});if(!details.isConnected)return;root.textContent=item.data.post.body;details.dataset.loaded='true';}catch(error){root.textContent=error.message+' Закройте и откройте новость, чтобы повторить.';}},true);
  window.addEventListener('online',()=>refresh());window.addEventListener('offline',()=>{$('connection').textContent='Нет интернета. Показана сохранённая копия.';$('connection').classList.add('stale');});
+ window.addEventListener('offline',closeStream);window.addEventListener('pagehide',closeStream);window.addEventListener('pageshow',event=>{if(event.persisted)live();});document.addEventListener('visibilitychange',()=>document.hidden?closeStream():live());
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&Date.now()-lastRefresh>60000)refresh();});setInterval(()=>{if(document.visibilityState==='visible'&&navigator.onLine&&Date.now()-lastRefresh>60000)refresh();},60000);
  showCopy();links();refresh();window.addEventListener('load',()=>{if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(()=>{});});
 })();

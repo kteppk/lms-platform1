@@ -1,6 +1,22 @@
 const News = (()=>{
   const e=v=>escapeHtml(v),names={site:'Новости сайта',college:'Новости техникума'},kinds={news:'Новость',announcement:'Объявление',update:'Журнал обновлений'};
   const records=new Map(),states=new WeakMap();let currentPerson=null;
+  async function refresh(list){
+    const state=states.get(list);if(!state||!list.isConnected)return;
+    if(state.loading){state.refreshAfter=true;return;}
+    const target=Math.max(state.offset,1),rows=[];let offset=0,hasMore=false;
+    do{const data=await callFunction('listNews',{channel:state.channel,offset,order:list.dataset.order||'newest'},undefined,{fresh:true});
+      if(states.get(list)!==state||!list.isConnected||data._offline?.stale)return;rows.push(...data.rows);hasMore=data.hasMore;offset+=data.rows.length;
+      if(!data.rows.length)break;
+    }while(hasMore&&offset<target&&offset<500);
+    const items=list.querySelector('.news-items');if(!items)return;
+    const opened=new Set([...items.querySelectorAll('.news-article')].filter(n=>n.querySelector('details[open]')).map(n=>n.dataset.newsId));
+    const anchor=[...items.children].find(n=>n.getBoundingClientRect().bottom>0),position=anchor?.getBoundingClientRect().top,id=anchor?.dataset.newsId;
+    items.innerHTML=rows.map(n=>article(n,state.manage)).join('')||'<p class="empty-state">Публикаций пока нет.</p>';state.offset=offset;
+    for(const n of items.querySelectorAll('.news-article'))if(opened.has(n.dataset.newsId))n.querySelector('details')?.setAttribute('open','');
+    list.querySelector('[data-news-action="more"]')?.remove();if(hasMore)list.insertAdjacentHTML('beforeend','<button type="button" class="secondary news-more" data-news-action="more">Показать более ранние</button>');
+    const replacement=[...items.children].find(n=>n.dataset.newsId===id);if(replacement&&position!==undefined)window.scrollBy(0,replacement.getBoundingClientRect().top-position);
+  }
   const heart=n=>`<svg viewBox="0 0 24 24" width="22" height="22" fill="${n.liked?'currentColor':'none'}" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/></svg>`;
   const like=n=>`<button type="button" class="news-like${n.liked?' is-liked':''}" data-news-action="like" data-id="${e(n.id)}" aria-pressed="${!!n.liked}" aria-label="${n.liked?'Убрать лайк':'Нравится'}" title="${currentPerson?.role==='guest'?'Войдите, чтобы поставить лайк':'Нравится'}">${heart(n)}<span>${Number(n.like_count)||0}</span></button>`;
   function article(n,manage=false){
@@ -10,13 +26,14 @@ const News = (()=>{
   }
   async function feed(root,channel,more=false,manage=false,fresh=false){
     let state=states.get(root);if(!more||!state){state={channel,offset:0,manage};states.set(root,state);root.innerHTML='<p role="status">Загрузка новостей…</p>';}
-    try{
+    state.loading=true;try{
       const data=await callFunction('listNews',{channel,offset:state.offset,order:root.dataset.order||'newest'},undefined,{fresh:fresh||manage});if(!root.isConnected||states.get(root)!==state)return;
       if(!more)root.innerHTML=AppConnection.note(data)+'<div class="news-items"></div>';
       root.querySelector('.news-items').insertAdjacentHTML('beforeend',data.rows.filter(n=>![...root.querySelectorAll('[data-news-id]')].some(node=>node.dataset.newsId===n.id)).map(n=>article(n,manage)).join('')||(!more?'<p class="empty-state">Публикаций пока нет.</p>':''));
       state.offset+=data.rows.length;root.querySelector('[data-news-action="more"]')?.remove();
       if(data.hasMore)root.insertAdjacentHTML('beforeend','<button type="button" class="secondary news-more" data-news-action="more">Показать более ранние</button>');
     }catch(error){if(root.isConnected&&states.get(root)===state){if(!more)root.innerHTML='<p role="status">Не удалось загрузить новости.</p><button type="button" class="secondary" data-news-action="retry">Повторить</button>';else Portal.toast('Не удалось загрузить новости',error.message,'danger');}}
+    finally{state.loading=false;if(state.refreshAfter&&states.get(root)===state&&root.isConnected){state.refreshAfter=false;Realtime.update('news',root,()=>refresh(root),{scroll:false});}}
   }
   async function home(root,person){
     currentPerson=person;
@@ -68,5 +85,6 @@ const News = (()=>{
       root._editingNews=null;root.querySelector('#newsEditor').hidden=true;root.querySelector('#newsEditor').replaceChildren();root.querySelector('#newsTag').value='all';const list=root.querySelector('[data-news-feed]');list.dataset.newsFeed='all';await feed(list,'all',false,true);Portal.toast('Публикация сохранена','','success');
     }catch(error){Portal.toast('Публикация не сохранена',error.message,'danger');}finally{button.disabled=false;}
   });
+  document.addEventListener('lms-live-update',event=>{if(event.detail.topics.some(t=>['resync','news'].includes(t)))for(const root of document.querySelectorAll('[data-news-feed]'))Realtime.update('news',root,()=>refresh(root),{scroll:false});});
   return {home,manager,statistics};
 })();

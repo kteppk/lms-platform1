@@ -62,3 +62,9 @@ test('light shell stays below 30 KB with no Firebase SDK, external fonts or imag
  const files=['lite/index.html','lite/lite.css','lite/app.js'];assert.ok(files.reduce((n,f)=>n+fs.statSync(f).size,0)<30000);
  const html=fs.readFileSync(files[0],'utf8');assert.equal(html.includes('firebase'),false);assert.equal(/<img|fonts\.google|gstatic|auth-compat/.test(html),false);
 });
+test('an invalidated public cache cannot reuse or reinsert a pre-commit response',async()=>{
+ let finish,calls=0;const fake={rpc:async()=>{calls++;if(calls===1)return await new Promise(resolve=>finish=()=>resolve({data:{version:1},error:null}));return {data:{version:2},error:null};}};
+ const handler=createPublicHandler(fake,{now:()=>new Date('2026-11-19T00:00:00Z')}),request=()=>new Request('https://lms.test/?view=bootstrap');
+ const old=handler(request());while(!finish)await new Promise(r=>setTimeout(r,0));handler.invalidate();assert.equal((await(await handler(request())).json()).version,2);finish();await old;
+ assert.equal((await(await handler(request())).json()).version,2);assert.equal(calls,2);
+});

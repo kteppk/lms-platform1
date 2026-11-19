@@ -4,31 +4,32 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Кабинет преподавателя</title>
-  <script src="connection.js?v=0.10.0"></script>
-  <script src="local-auth.js?v=0.10.0"></script>
-  <script src="firebase-config.js?v=0.10.0"></script>
-  <script src="results-export.js?v=0.10.0"></script>
-  <script src="gradebook.js?v=0.10.0"></script>
-  <script src="release.js?v=0.10.0"></script>
-  <script src="action-menu.js?v=0.10.0" defer></script>
-  <script src="news.js?v=0.10.0" defer></script>
-  <script src="subject-search.js?v=0.10.0" defer></script>
-  <script src="mobile-nav.js?v=0.10.0" defer></script>
-  <script src="schedule.js?v=0.10.0" defer></script>
-  <script src="subscriptions.js?v=0.10.0" defer></script>
-  <script src="account-tools.js?v=0.10.0" defer></script>
-  <script src="curator-chat.js?v=0.10.0" defer></script>
-  <script src="push-settings.js?v=0.10.0" defer></script>
-  <script src="education.js?v=0.10.0" defer></script><script src="lesson-reminders.js?v=0.10.0" defer></script><script src="portal.js?v=0.10.0" defer></script>
-  <link rel="stylesheet" href="assessment.css?v=0.10.0">
-  <link rel="stylesheet" href="subjects.css?v=0.10.0">
-  <link rel="stylesheet" href="portal.css?v=0.10.0">
-  <link rel="stylesheet" href="mobile-nav.css?v=0.10.0">
-  <link rel="stylesheet" href="schedule.css?v=0.10.0">
-  <link rel="stylesheet" href="theme.css?v=0.10.0">
+  <script src="connection.js?v=0.10.1"></script>
+<script src="realtime.js?v=0.10.1" defer></script>
+  <script src="local-auth.js?v=0.10.1"></script>
+  <script src="firebase-config.js?v=0.10.1"></script>
+  <script src="results-export.js?v=0.10.1"></script>
+  <script src="gradebook.js?v=0.10.1"></script>
+  <script src="release.js?v=0.10.1"></script>
+  <script src="action-menu.js?v=0.10.1" defer></script>
+  <script src="news.js?v=0.10.1" defer></script>
+  <script src="subject-search.js?v=0.10.1" defer></script>
+  <script src="mobile-nav.js?v=0.10.1" defer></script>
+  <script src="schedule.js?v=0.10.1" defer></script>
+  <script src="subscriptions.js?v=0.10.1" defer></script>
+  <script src="account-tools.js?v=0.10.1" defer></script>
+  <script src="curator-chat.js?v=0.10.1" defer></script>
+  <script src="push-settings.js?v=0.10.1" defer></script>
+  <script src="education.js?v=0.10.1" defer></script><script src="lesson-reminders.js?v=0.10.1" defer></script><script src="portal.js?v=0.10.1" defer></script>
+  <link rel="stylesheet" href="assessment.css?v=0.10.1">
+  <link rel="stylesheet" href="subjects.css?v=0.10.1">
+  <link rel="stylesheet" href="portal.css?v=0.10.1">
+  <link rel="stylesheet" href="mobile-nav.css?v=0.10.1">
+  <link rel="stylesheet" href="schedule.css?v=0.10.1">
+  <link rel="stylesheet" href="theme.css?v=0.10.1">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="stylesheet" href="theme-community.css?v=0.10.0">
-<script src="desktop-nav.js?v=0.10.0" defer></script><script src="schedule-export.js?v=0.10.0" defer></script><link rel="stylesheet" href="theme-091.css?v=0.10.0"></head>
+<link rel="stylesheet" href="theme-community.css?v=0.10.1">
+<script src="desktop-nav.js?v=0.10.1" defer></script><script src="schedule-export.js?v=0.10.1" defer></script><link rel="stylesheet" href="theme-091.css?v=0.10.1"></head>
 <body>
   <header>
     <h1><span class="brand-mark" aria-hidden="true">К</span><span>КТЭиП ПК<span class="brand-caption">Кабинет преподавателя · Кызыл</span></span></h1>
@@ -54,7 +55,7 @@
 <button class="tab-btn" data-tab="people" onclick="switchTab('people',this)">Люди</button>
 <button class="tab-btn" data-tab="help" onclick="switchTab('help',this)">Справочник</button>
 <button class="tab-btn" data-tab="profile" onclick="switchTab('profile',this)">Мой профиль</button>
-      <small class="site-version" data-site-version>Версия 0.10.0</small>
+      <small class="site-version" data-site-version>Версия 0.10.1</small>
     </nav>
 
     <div id="content" class="content"></div>
@@ -160,6 +161,14 @@
         await loadStudents();
       }
     }
+
+    document.addEventListener('lms-live-update',event=>{
+      if(!event.detail.topics.some(t=>['resync','content','people'].includes(t)))return;
+      const content=document.getElementById('content');
+      if(currentTab==='lectures'&&document.getElementById('lecturesList'))Realtime.update('teacher-materials',document.getElementById('lecturesList'),loadLectures);
+      else if(currentTab==='tests'&&document.getElementById('testsList'))Realtime.update('teacher-tests',document.getElementById('testsList'),loadTests);
+      else if(['subjects','students'].includes(currentTab)){const tab=currentTab;Realtime.update('teacher-learning',content,()=>currentTab===tab?render():undefined);}
+    });
 
     function subjectPicker() {
       return `<div class="form-group">

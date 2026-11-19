@@ -1,5 +1,6 @@
 import http from 'node:http';import fs from 'node:fs/promises';import path from 'node:path';import {createRequire,registerHooks} from 'node:module';import {pathToFileURL} from 'node:url';import {Readable} from 'node:stream';import pg from 'pg';
 import {createDatabase} from './db.mjs';import {createStorage} from './storage.mjs';import {createAuth} from './auth.mjs';
+import {createRealtime} from './realtime.mjs';
 const require=createRequire(import.meta.url);registerHooks({resolve(specifier,context,next){if(specifier==='npm:jose@6.1.3')return {url:pathToFileURL(require.resolve('jose')).href,shortCircuit:true};return next(specifier,context);}});
 globalThis.Deno={env:{get:key=>process.env[key]}};globalThis.EdgeRuntime={waitUntil:task=>task.catch(()=>{})};
 pg.types.setTypeParser(1082,value=>value);pg.types.setTypeParser(1700,Number);
@@ -12,12 +13,15 @@ const {createHandler}=await import('./runtime/lms/api.mjs'),{createPublicHandler
 const {ApiError}=await import('./runtime/lms/shared.mjs');
 const verifyLocal=async token=>{try{return await auth.verify(token);}catch(e){throw new ApiError(e.status||401,e.code||'unauthenticated',e.message);}};
 const api=createHandler(db,verifyLocal),publicAPI=createPublicHandler(db,{background:task=>task.catch(()=>{})});
+const realtime=createRealtime({pool,authenticate:auth.streamIdentity,publicURL,createListener:()=>new pg.Client({connectionString:env.DATABASE_URL}),onChange:event=>{if(['news','groups','schedule'].includes(event.kind))publicAPI.invalidate?.();}});
+await realtime.start();
 const server=http.createServer(async(req,res)=>{
  try{
   const u=new URL(req.url,publicURL);if(u.pathname==='/healthz'){await pool.query('select 1');res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end('{"ok":true}');return;}
   const max=u.pathname.startsWith('/storage/v1/')?55*1024*1024:1024*1024;if(Number(req.headers['content-length']||0)>max){res.writeHead(413);res.end();return;}
   const headers=new Headers();for(const [k,v]of Object.entries(req.headers))if(v!=null)headers.set(k,Array.isArray(v)?v.join(','):v);
   const request=new Request(publicURL+req.url,{method:req.method,headers,...(!['GET','HEAD'].includes(req.method)?{body:Readable.toWeb(req),duplex:'half'}:{})});let response;
+  if(u.pathname==='/events'){await realtime.handle(request,req,res);return;}
   if(u.pathname.startsWith('/auth/'))response=await auth.handle(request,req.headers['x-real-ip']||req.socket.remoteAddress);
   else if(u.pathname.startsWith('/storage/v1/'))response=await files.handle(request);
   else if(u.pathname==='/functions/v1/lms-public')response=await publicAPI(request);
@@ -43,4 +47,4 @@ async function tick(){if(workerBusy)return;workerBusy=true;try{
  await Promise.all([worker(),worker(),worker()]);
  }catch{console.error('Scheduled task failed; will retry next minute');}finally{workerBusy=false;}}
 let timer;function schedule(){timer=setTimeout(async()=>{await tick();schedule();},60000-Date.now()%60000);}if(env.WORKER_ENABLED!=='0')schedule();
-process.on('SIGTERM',()=>{clearTimeout(timer);server.close(()=>pool.end().then(()=>process.exit(0)));});
+process.on('SIGTERM',()=>{clearTimeout(timer);realtime.close().finally(()=>server.close(()=>pool.end().then(()=>process.exit(0))));});
