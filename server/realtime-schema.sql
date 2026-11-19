@@ -8,6 +8,7 @@ begin
  if tg_op='UPDATE' and d=prior then return null;end if;
  if tg_table_name in ('news_posts','news_likes') then topic:='news';
  elsif tg_table_name='curator_messages' then topic:='chat';
+ elsif tg_table_name='curator_chat_reads' then topic:='chat-unread';owner_id:=d->>'user_id';
  elsif tg_table_name='study_groups' then
   if tg_op<>'UPDATE' or (d->>'name',d->>'course',d->>'program',d->>'lessons_per_day') is distinct from (prior->>'name',prior->>'course',prior->>'program',prior->>'lessons_per_day') then
    perform pg_catalog.pg_notify('lms_changes',jsonb_build_object('kind','groups')::text);
@@ -52,7 +53,7 @@ end; $$;
 revoke all on function public.lms_realtime_signal() from public,anon,authenticated;
 grant execute on function public.lms_realtime_signal() to lms_backend;
 do $$ declare t text;begin
- foreach t in array array['news_posts','news_likes','curator_messages','study_groups','weekly_schedule_cells','group_lesson_times','schedule_entries',
+ foreach t in array array['news_posts','news_likes','curator_messages','curator_chat_reads','study_groups','weekly_schedule_cells','group_lesson_times','schedule_entries',
  'notifications','notification_reads','notification_subscriptions','lesson_reminder_subscriptions','push_devices','test_results','test_result_reviews','test_grading_scales',
  'subjects','subject_teachers','materials','tests','profiles','account_roles','teacher_profiles','teacher_documents','account_avatars','education_profiles','portal_settings','role_changes','teachers'] loop
   execute format('drop trigger if exists lms_realtime on public.%I',t);

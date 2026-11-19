@@ -14,6 +14,7 @@ const CuratorChat=(()=>{
     const list=root.querySelector('[data-chat-messages]');list.insertAdjacentHTML(older?'afterbegin':'beforeend',fresh.map(m=>`<article class="curator-message${m.author_id===person.uid?' own-message':''}"><div><strong>${e(m.author_name)}</strong><time>${e(new Date(m.created_at).toLocaleString('ru-RU',{timeZone:'Asia/Krasnoyarsk'}))}</time></div><p>${e(m.body)}</p></article>`).join(''));
     if(older||initial)root.querySelector('[data-chat-older]').disabled=data.rows.length<50;
     root.querySelector('[data-chat-status]').textContent='';
+    if(newest&&typeof CuratorChatNotifications!=='undefined'&&!document.hidden)await CuratorChatNotifications.read(newest);
    }catch(error){if(!root.isConnected||generation!==token)return;if(error.code==='permission-denied'){clear();root.innerHTML='<p role="alert">Доступ к чату закрыт. Обновите страницу.</p>';return;}root.querySelector('[data-chat-status]').textContent='Не удалось обновить сообщения. Повторим при восстановлении связи.';}
    finally{busy=false;if(queued&&root.isConnected&&generation===token){queued=false;queueMicrotask(()=>load());}}
   }
@@ -27,5 +28,5 @@ const CuratorChat=(()=>{
   document.addEventListener('lms-live-update',live);
   await load();const poll=async()=>{if(!root.isConnected||generation!==token){document.removeEventListener('lms-live-update',live);return;}if(!document.hidden&&(typeof Realtime==='undefined'||!Realtime.connected))await load();timer=setTimeout(poll,15000);};timer=setTimeout(poll,15000);
  }
- window.addEventListener('pagehide',clear);return {render,clear};
+ window.addEventListener('pagehide',clear);return {render,clear,isVisible:()=>!!active?.isConnected&&!!active.querySelector('[data-chat-messages]')&&!document.hidden};
 })();

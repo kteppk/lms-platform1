@@ -18,7 +18,7 @@ const MobileNavigation = (() => {
     logout: '<path d="M10 4H4v16h6m4-13 5 5-5 5m-6-5h11"/>',
   };
   const svg = name => `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name] || icons.lectures}</svg>`;
-  let navigate, menu, bar, activeTab, opener, primaryTabs = [];
+  let navigate, menu, bar, activeTab, opener, primaryTabs = [],chatUnread=0;
   const mobile = () => matchMedia('(max-width: 1024px)').matches;
 
   function closeMenu() {
@@ -40,7 +40,7 @@ const MobileNavigation = (() => {
     });
     const more = document.getElementById('mobileMore');
     more.classList.toggle('active', !primaryTabs.includes(tab));
-    more.setAttribute('aria-label', primaryTabs.includes(tab) ? 'Ещё: все разделы' : `Ещё: открыт раздел «${selected.textContent.trim()}»`);
+    more.setAttribute('aria-label', (primaryTabs.includes(tab) ? 'Ещё: все разделы' : `Ещё: открыт раздел «${selected.dataset.chatLabel||selected.textContent.trim()}»`)+(chatUnread?`. В чате непрочитанных сообщений: ${chatUnread}`:''));
     if (activeTab && activeTab !== tab && mobile()) window.scrollTo({ top: 0, behavior: 'instant' });
     activeTab = tab;
   }
@@ -141,5 +141,9 @@ const MobileNavigation = (() => {
     sync();
   }
 
-  return { init, closeMenu };
+  function setChatUnread(count){chatUnread=Math.max(0,Number(count)||0);const more=document.getElementById('mobileMore');if(!more)return;
+    let badge=more.querySelector('[data-chat-unread]');if(!badge&&chatUnread){badge=document.createElement('span');badge.className='chat-unread chat-unread-more';badge.dataset.chatUnread='';badge.setAttribute('aria-hidden','true');more.append(badge);}
+    if(badge){badge.hidden=!chatUnread;badge.textContent=chatUnread?(chatUnread>99?'99+':String(chatUnread)):'';}sync();
+  }
+  return { init, closeMenu,setChatUnread };
 })();

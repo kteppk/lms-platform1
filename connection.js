@@ -1,7 +1,7 @@
 const AppConnection=(()=>{
   const prefix='lms-reference-v1:',ownerKey='lms-reference-owner-v1',modeKey='lms-reference-mode-v1';
   const policies={listScheduleGroups:300000,getWeeklySchedule:30000,listSchedule:30000,listSubjects:60000,listNews:60000};
-  const reads=new Set(['profile','listSubjects','listSubjectTeachers','getSubjectContent','listMaterials','listStudentTests','listTeacherTests','listStudents','getStudentAttempt','listActiveAttempts','listResults','getResult','listResultTests','getTestResults','exportTestResults','listTeachers','getTeacherProfile','listSchedule','listScheduleGroups','getWeeklySchedule','listNotifications','listNotificationSubscriptions','listRoleChanges','listNews','registrationStatistics','searchPeople','getPerson','getMyEducation','getGroupLessonTimes','getLessonReminder','exportSchedule','getPushSettings','listCuratorMessages','getPortalSettings','listAccounts']);
+  const reads=new Set(['profile','listSubjects','listSubjectTeachers','getSubjectContent','listMaterials','listStudentTests','listTeacherTests','listStudents','getStudentAttempt','listActiveAttempts','listResults','getResult','listResultTests','getTestResults','exportTestResults','listTeachers','getTeacherProfile','listSchedule','listScheduleGroups','getWeeklySchedule','listNotifications','listNotificationSubscriptions','listRoleChanges','listNews','registrationStatistics','searchPeople','getPerson','getMyEducation','getGroupLessonTimes','getLessonReminder','exportSchedule','getPushSettings','listCuratorMessages','getCuratorChatSummary','getPortalSettings','listAccounts']);
   const memory=new Map(),pending=new Map();let owner=null,epoch=0,worker=null;
   const online=()=>navigator.onLine!==false;
   const e=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -32,7 +32,7 @@ const AppConnection=(()=>{
     if(!online()){if(cached)return clone(cached,true);throw networkError();}
     if(cached&&!options.fresh&&!cached.refresh&&Date.now()-cached.savedAt<policies[action])return clone(cached,false);
     const id=uid+':'+key(action,data);let task=reads.has(action)?pending.get(id):null;
-    if(!task){task=send().then(value=>{if(policies[action])store(action,data,value,uid,generation);else if(!reads.has(action)&&!['saveStudentDraft','submitStudentTest','readNotifications','addNotificationSubscription','removeNotificationSubscription'].includes(action))invalidate();return value;});if(reads.has(action)){pending.set(id,task);task.finally(()=>{if(pending.get(id)===task)pending.delete(id);}).catch(()=>{});}}
+    if(!task){task=send().then(value=>{if(policies[action])store(action,data,value,uid,generation);else if(!reads.has(action)&&!['saveStudentDraft','submitStudentTest','readNotifications','markCuratorChatRead','addNotificationSubscription','removeNotificationSubscription'].includes(action))invalidate();return value;});if(reads.has(action)){pending.set(id,task);task.finally(()=>{if(pending.get(id)===task)pending.delete(id);}).catch(()=>{});}}
     if(!cached)return task;
     if(options.fresh)return task.catch(error=>{if(recoverable(error))return clone(cached,true);throw error;});
     let usedCache=false,timer;

@@ -22,6 +22,8 @@ function fixture(role){let liked=false,messages=[],title='Новость для 
  case 'exportSchedule':return {week:'2026-11-16',generatedAt:new Date().toISOString(),groups:[{group:{id:'g',name:'9241',course:'4',program:'Программирование',lessons_per_day:6},cells:[{weekday:1,lesson_number:1,status:'lesson',title:'Математика',teacher_label:'ФИО',room:'20',starts_at:'08:00:00',ends_at:'09:35:00'}]}]};
  case 'listActiveAttempts':return [];
  case 'listCuratorMessages':return {rows:messages.filter(m=>!data.after||BigInt(m.id)>BigInt(data.after))};
+ case 'getCuratorChatSummary':return {unreadCount:0,lastReadId:String(messages.length),latestId:String(messages.length),latestIncoming:null};
+ case 'markCuratorChatRead':return {unreadCount:0,lastReadId:String(messages.length),latestId:String(messages.length),latestIncoming:null};
  case 'sendCuratorMessage':messages.push({id:String(messages.length+1),body:data.body,author_id:role,author_name:person.name,created_at:new Date().toISOString()});return {id:String(messages.length)};
  default:throw Error('Unexpected fixture action '+action);
  }};

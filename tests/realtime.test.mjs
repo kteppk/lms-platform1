@@ -14,6 +14,7 @@ test('public and private invalidations follow role, current group and exact reci
  assert.deepEqual(permittedTopics({kind:'news'},guest),['news']);assert.deepEqual(permittedTopics({kind:'schedule',groupId:'other'},student),[]);assert.deepEqual(permittedTopics({kind:'schedule',groupId:'g'},guest),['schedule']);
  for(const role of ['guest','student','teacher'])assert.deepEqual(permittedTopics({kind:'chat'},{uid:'s',role}),[]);
  assert.deepEqual(permittedTopics({kind:'chat'},curator),['chat']);assert.deepEqual(permittedTopics({kind:'notices',userId:'other'},student),[]);assert.deepEqual(permittedTopics({kind:'notices',userId:'s'},student),['notices']);
+ assert.deepEqual(permittedTopics({kind:'chat-unread',userId:'c'},curator),['chat-unread']);assert.deepEqual(permittedTopics({kind:'chat-unread',userId:'other'},curator),[]);assert.deepEqual(permittedTopics({kind:'chat-unread',userId:'s'},student),[]);
  assert.deepEqual(permittedTopics({kind:'accounts'},student),[]);assert.deepEqual(permittedTopics({kind:'results',userId:'other',teacherId:'s'},student),[]);
  assert.deepEqual(permittedTopics({kind:'results',userId:'s'},student),['results']);assert.deepEqual(permittedTopics({kind:'content'},guest),[]);
 });

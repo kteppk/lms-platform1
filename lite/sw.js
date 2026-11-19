@@ -1,5 +1,5 @@
 if(self.location.hostname==='kteppk.github.io'){importScripts('../moved-sw.js');}else{
-const VERSION='0.10.1',PREFIX='lms-lite-shell:',CACHE=PREFIX+VERSION;
+const VERSION='0.10.2',PREFIX='lms-lite-shell:',CACHE=PREFIX+VERSION;
 const ASSETS=['index.html','lite.css?v='+VERSION,'app.js?v='+VERSION].map(p=>new URL(p,self.registration.scope).href);
 self.addEventListener('install',event=>event.waitUntil((async()=>{const cache=await caches.open(CACHE);await cache.addAll(ASSETS);await self.skipWaiting();})()));
 self.addEventListener('activate',event=>event.waitUntil((async()=>{for(const key of await caches.keys())if(key.startsWith(PREFIX)&&key!==CACHE)await caches.delete(key);await self.clients.claim();})()));

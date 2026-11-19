@@ -36,6 +36,7 @@ const Portal = (() => {
     const node=document.createElement('div');node.className='toast'+(severity==='danger'?' danger':severity==='success'?' success':'');
     node.innerHTML=`<strong>${e(title)}</strong>${ActionMenu.icon('close','Закрыть уведомление','data-portal="close-toast"','ui-icon-button icon-close')}${body?`<p>${e(body)}</p>`:''}${destination?button('Открыть','navigate',`data-tab="${e(destination)}"`,'toast-open'):''}`;
     root.append(node);setTimeout(()=>node.remove(),severity==='danger'?20000:9000);
+    return node;
   }
   async function poll(initial=false){
     if(polling||document.hidden||!AppConnection.online())return;polling=true;
@@ -76,6 +77,7 @@ const Portal = (() => {
       window.addEventListener('focus',()=>getProfile(auth.currentUser).then(p=>{if(p.role!==profile.role)location.replace(cabinetPage(p.role));}).catch(()=>{}));
     }
     DesktopNavigation.init();if(typeof MobileNavigation!=='undefined')MobileNavigation.init(profile,navigate);
+    if(typeof CuratorChatNotifications!=='undefined')CuratorChatNotifications.start(profile);
     poll(true);
   }
   async function home(container){return News.home(container,profile);}

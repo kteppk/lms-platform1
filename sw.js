@@ -1,6 +1,6 @@
-/* Generated for release "0.10.1". Static files only; no API, tokens or uploads. */
+/* Generated for release "0.10.2". Static files only; no API, tokens or uploads. */
 if(self.location.hostname==='kteppk.github.io'){importScripts('./moved-sw.js');}else{
-const VERSION="0.10.1";
+const VERSION="0.10.2";
 // Push messages carry no auth tokens or chat content. Never navigate off-site.
 self.addEventListener('push',event=>{event.waitUntil((async()=>{let data={};try{data=event.data?.json()||{};}catch{}if(data.category==='lesson'&&data.expiresAt&&Date.parse(data.expiresAt)<=Date.now())return;const route=data.destination==='schedule'?'schedule':'home';await self.registration.showNotification(String(data.title||'КТЭиП ПК').slice(0,150),{body:String(data.body||'На платформе новое уведомление.').slice(0,500),tag:String(data.id||'lms-update'),icon:new URL('app-icon-192.png',self.registration.scope).href,data:{route,groupId:/^[A-Za-z0-9_-]{1,128}$/.test(data.groupId||'')?data.groupId:null}});})());});
 self.addEventListener('notificationclick',event=>{event.notification.close();event.waitUntil((async()=>{const route=event.notification.data?.route==='schedule'?'schedule':'home';const url=new URL('index.html',self.registration.scope);url.searchParams.set('open',route);const group=event.notification.data?.groupId;if(route==='schedule'&&group&&/^[A-Za-z0-9_-]{1,128}$/.test(group))url.searchParams.set('group',group);const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});const target=windows.find(w=>new URL(w.url).origin===self.location.origin&&w.url.startsWith(self.registration.scope));if(target){await target.navigate(url.href);await target.focus();}else await self.clients.openWindow(url.href);})());});

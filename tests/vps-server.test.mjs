@@ -44,3 +44,18 @@ test('password changes revoke older access tokens and admin recovery is private 
  const list=await auth.adminAction({uid:admin.body.user.uid},'listRecoveryRequests',{});assert.equal(list.data.length,1);const issued=await auth.adminAction({uid:admin.body.user.uid},'createAccountRecovery',{userId:user.body.user.uid}),token=new URL(issued.data.url).searchParams.get('reset');
  assert.equal((await call('reset',{token,password:'RecoveredPassword123'})).status,200);assert.equal((await call('reset',{token,password:'DuplicatePassword123'})).status,400);assert.equal((await call('login',{email:'student@example.test',password:'RecoveredPassword123'})).status,200);
 });
+
+test('chat summary and read API use the current identity and reject ordinary accounts',async()=>{
+ const member=await call('login',{email:'student@example.test',password:'RecoveredPassword123'});
+ assert.equal((await rpc(member,'getCuratorChatSummary',{userId:admin.body.user.uid})).status,403);
+ assert.equal((await rpc(member,'markCuratorChatRead',{messageId:'0'})).status,403);
+ await pg.query("update account_roles set role='curator' where user_id=$1",[member.body.user.uid]);
+ const sent=await rpc(admin,'sendCuratorMessage',{body:'Проверка счётчика',clientId:'counter-api'});assert.equal(sent.status,200);
+ const summary=await rpc(member,'getCuratorChatSummary',{userId:admin.body.user.uid});assert.equal(summary.body.data.unreadCount,1);
+ assert.equal((await rpc(admin,'getCuratorChatSummary')).body.data.unreadCount,0);
+ assert.equal((await rpc(member,'markCuratorChatRead',{messageId:sent.body.data.id,userId:admin.body.user.uid})).body.data.unreadCount,0);
+ assert.equal((await pg.query('select count(*)::int n from curator_chat_reads where user_id=$1',[admin.body.user.uid])).rows[0].n,0);
+ assert.equal((await rpc(member,'markCuratorChatRead',{messageId:'invalid'})).status,400);
+ await pg.query("update account_roles set role='student' where user_id=$1",[member.body.user.uid]);
+ assert.equal((await rpc(member,'getCuratorChatSummary')).status,403);
+});

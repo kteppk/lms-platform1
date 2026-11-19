@@ -1,11 +1,11 @@
 // PostgreSQL NOTIFY -> scoped SSE invalidations. Data still comes from the API.
-const kinds=new Set(['news','chat','groups','schedule','notices','subscriptions','results','content','settings','accounts','people','profile','permissions','session','resync']);
+const kinds=new Set(['news','chat','chat-unread','groups','schedule','notices','subscriptions','results','content','settings','accounts','people','profile','permissions','session','resync']);
 export function permittedTopics(event,client){
  const k=event.kind,uid=client.uid,role=client.role;
  if(k==='news'||k==='groups')return [k];
  if(k==='schedule')return event.groupId&&event.groupId===client.groupId?['schedule']:[];
  if(!uid)return [];
- if(k==='chat')return ['curator','admin'].includes(role)?['chat']:[];
+ if(k==='chat'||k==='chat-unread')return ['curator','admin'].includes(role)&&(!event.userId||event.userId===uid)?[k]:[];
  if(k==='notices')return !event.userId||event.userId===uid?['notices']:[];
  if(['subscriptions','profile'].includes(k))return event.userId===uid?[k]:[];
  if(k==='results')return event.userId===uid||event.teacherId===uid&&['teacher','admin'].includes(role)?['results']:[];

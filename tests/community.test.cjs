@@ -11,6 +11,25 @@ before(async()=>{
  await db.exec("insert into news_posts(id,channel,title,body,published_at) values('first','college','Первая','Текст',now()-interval '3 days'),('last','site','Последняя','Текст',now()-interval '1 day'),('future','site','Скрытая','Текст',now()+interval '1 day')");
 });
 after(async()=>db?.close());
+
+test('chat counters are private, exclude own messages, and read positions never move backwards or into the future',async()=>{
+ try{
+ for(const user of ['student','teacher','missing']){
+  await assert.rejects(rpc('curator_chat_summary',[user]),{code:'42501'});
+  await assert.rejects(rpc('read_curator_chat',[user,'0']),{code:'42501'});
+ }
+ const own=await rpc('send_curator_message',['curator','Своё сообщение','unread-own']);assert.equal((await rpc('curator_chat_summary',['curator'])).unreadCount,0);
+ const first=await rpc('send_curator_message',['admin','Не сохранять текст в сводке','unread-first']);
+ let summary=await rpc('curator_chat_summary',['curator']);assert.equal(summary.unreadCount,1);assert.equal(summary.latestIncoming.id,first.id);assert.equal(summary.latestIncoming.authorName,'Админ');assert.equal(JSON.stringify(summary).includes('Не сохранять текст'),false);
+ assert.equal((await rpc('read_curator_chat',['curator',own.id])).unreadCount,1);
+ assert.equal((await rpc('read_curator_chat',['curator',first.id])).unreadCount,0);
+ assert.equal((await rpc('read_curator_chat',['curator','0'])).lastReadId,first.id);
+ assert.equal((await rpc('read_curator_chat',['curator','999999999999999999'])).lastReadId,first.id);
+ await rpc('send_curator_message',['admin','Новое после прочтения','unread-later']);assert.equal((await rpc('curator_chat_summary',['curator'])).unreadCount,1);
+ for(const f of ['curator_chat_summary(text)','read_curator_chat(text,bigint)'])assert.equal((await db.query("select has_function_privilege('anon',$1,'execute') yes",[f])).rows[0].yes,false);
+ assert.equal((await db.query("select has_table_privilege('authenticated','curator_chat_reads','select') yes")).rows[0].yes,false);
+ }finally{await db.exec("delete from curator_messages where client_id in('unread-own','unread-first','unread-later');delete from curator_chat_reads where user_id in('admin','curator');");}
+});
 test('curator retains student permissions, appears in student list and can be assigned only by admin',async()=>{
  assert.ok((await db.query('select * from student_profiles')).rows.some(p=>p.id==='curator'));
  await rpc('check_result_reader',['curator',false]);
@@ -79,4 +98,14 @@ test('endpoint validation denies untrusted URLs and encrypted payload independen
  const signing=await crypto.subtle.generateKey({name:'ECDSA',namedCurve:'P-256'},true,['sign','verify']),jwk=await crypto.subtle.exportKey('jwk',signing.privateKey),pub=base(new Uint8Array(await crypto.subtle.exportKey('raw',signing.publicKey)));
  const header=await vapid('https://fcm.googleapis.com/fcm/send/a',pub,jwk.d,'https://kteppk.github.io/lms-platform1/'),jwt=header.match(/t=([^,]+)/)[1],parts=jwt.split('.');
  assert.equal(await crypto.subtle.verify({name:'ECDSA',hash:'SHA-256'},signing.publicKey,Buffer.from(parts[2],'base64url'),Buffer.from(parts.slice(0,2).join('.'))),true);assert.equal(JSON.parse(Buffer.from(parts[1],'base64url')).aud,'https://fcm.googleapis.com');
+});
+
+test('unread migration is repeatable and never marks newer incoming messages as read',async()=>{
+ await db.exec('reset role');await db.exec(fs.readFileSync('supabase/migrations/20261119000100_curator_chat_unread.sql','utf8'));await db.exec('set role service_role');
+ assert.equal((await rpc('curator_chat_summary',['curator'])).unreadCount,0);
+ await rpc('send_curator_message',['admin','Новое сообщение после миграции','migration-new-message']);
+ const before=await rpc('curator_chat_summary',['curator']);assert.equal(before.unreadCount,1);
+ await db.exec('reset role');await db.exec(fs.readFileSync('supabase/migrations/20261119000100_curator_chat_unread.sql','utf8'));await db.exec('set role service_role');
+ assert.deepEqual(await rpc('curator_chat_summary',['curator']),before);
+ await rpc('set_account_role',['admin','curator','student','curator']);await assert.rejects(rpc('read_curator_chat',['curator',before.latestId]),{code:'42501'});await assert.rejects(rpc('curator_chat_summary',['curator']),{code:'42501'});await rpc('set_account_role',['admin','curator','curator','student']);
 });
