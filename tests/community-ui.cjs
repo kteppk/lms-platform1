@@ -35,6 +35,8 @@ function fixture(role){let liked=false,messages=[],title='Новость для 
  case 'listActiveAttempts':return [];
  case 'listTeachers':return [{id:'instructor',name:'Проверочный Преподаватель',subjectIds:['math','law']}];
  case 'getTeacherProfile':return {id:'instructor',name:'Проверочный Преподаватель',documents:[],subjects:[{id:'math',title:'Математика',description:'Программа курса'},{id:'law',title:'Право'}]};
+ case 'getSubjectContent':assert.equal(data.teacherId,'instructor');assert.equal(data.subjectId,'math');return {
+  subject:{title:'Математика',description:'Программа курса'},teacher:{id:'instructor',name:'Проверочный Преподаватель'},lectures:[],books:[],tests:[]};
  case 'listCuratorMessages':return {rows:messages.filter(m=>!data.after||BigInt(m.id)>BigInt(data.after))};
  case 'getCuratorChatSummary':return {unreadCount:0,lastReadId:String(messages.length),latestId:String(messages.length),latestIncoming:null};
  case 'markCuratorChatRead':return {unreadCount:0,lastReadId:String(messages.length),latestId:String(messages.length),latestIncoming:null};
@@ -84,11 +86,15 @@ async function checkChat(page,role,width){
   }
   await page.setViewportSize({width:1280,height:900});
   await menu.click();await page.getByRole('button',{name:'Обновить новости',exact:true}).waitFor();await page.keyboard.press('Escape');
-  if(role==='teacher'){
+  if(['teacher','student'].includes(role)){
    await page.locator('.tabs [data-tab="teachers"]').click();await page.getByRole('button',{name:'Открыть профиль'}).click();
-   const subjects=page.locator('.profile-heading h2 + .teacher-subjects');
-   assert.deepEqual(await subjects.locator('li').allTextContents(),['МатематикаПрограмма курса','Право']);
-   await subjects.locator('summary').click();await subjects.getByText('Программа курса').waitFor();
+   await page.locator('.profile-heading').getByRole('button',{name:'Посмотреть предметы'}).click();
+   const subjects=page.locator('.subjects-grid .subject-card');
+   await subjects.first().waitFor();assert.deepEqual(await subjects.locator('h3').allTextContents(),['Математика','Право']);
+   await page.locator('#subjectSearch').fill('математика');await subjects.filter({visible:true}).first().getByRole('button',{name:'Открыть предмет'}).click();
+   await page.getByText('Программа курса',{exact:true}).waitFor();assert.equal(await page.getByRole('heading',{name:'Математика',exact:true}).count(),1);
+   await page.getByRole('button',{name:'К предметам преподавателя'}).click();
+   await page.getByRole('heading',{name:'Предметы преподавателя'}).waitFor();
    await page.locator('.tabs [data-tab="home"]').click();await page.locator('.news-article').waitFor();
   }
   if(role!=='guest'){
@@ -120,8 +126,25 @@ async function checkChat(page,role,width){
    const profile=page.locator('header .profile-link'),url=page.url();await profile.click();assert.equal(page.url(),url);await page.locator('#profileMenu #userName').waitFor();
    await page.locator('#profileMenu [data-tab="help"]').click();await page.locator('#helpSearch').waitFor();assert.equal(await page.locator('#profileMenu').isHidden(),true);
    await page.locator('#notificationButton').click();await page.locator('#notificationsDialog [data-notice-list]').waitFor();await page.locator('#notificationsDialog [data-action-menu-toggle]').click();await page.locator('[data-portal="notice-settings"]').click();
-   await page.locator('.push-settings summary').click();await page.locator('[data-push-save]').waitFor();assert.equal(await page.locator('[data-push-schedule]').isChecked(),true);assert.equal(await page.locator('[data-push-announcements]').isChecked(),false);await page.locator('[data-portal="close-dialog"]').click();
+   await page.locator('.push-settings summary').click();await page.locator('[data-push-save]').waitFor();assert.equal(await page.locator('[data-push-schedule]').isChecked(),true);assert.equal(await page.locator('[data-push-announcements]').isChecked(),false);
+   assert.equal(await page.locator('[data-push-chat]').count(),canPublish?1:0);
+   if(canPublish)assert.equal(await page.locator('[data-push-chat]').isChecked(),false);
+   await page.locator('[data-portal="close-dialog"]').click();
    await page.setViewportSize({width:320,height:844});await profile.click();const box=await page.locator('#profileMenu').boundingBox();assert.ok(box.x>=0&&box.x+box.width<=320);await page.keyboard.press('Escape');assert.equal(await page.locator('#profileMenu').isHidden(),true);await page.setViewportSize({width:1280,height:900});
+  }
+  if(role==='guest'||role==='student'||role==='curator'){
+   assert.equal((await (await page.request.get(base+'manifest.webmanifest')).json()).start_url,'./index.html');
+   await page.addInitScript(()=>Object.defineProperty(navigator,'standalone',{value:true}));
+   await page.goto(base+'guest.html');
+   await page.waitForURL(role==='guest'?'**/index.html':'**/student.html');
+   if(role==='guest'){
+    await page.getByRole('link',{name:/Войти как гость/}).click();await page.waitForURL('**/guest.html?guest=1');
+   }else{
+    await page.goto(base+'guest.html');await page.waitForURL('**/student.html');
+    await page.goto(base+'index.html?open=curator-chat');await page.waitForURL('**/student.html');
+    if(role==='curator')await page.locator('.chat-composer').waitFor();
+    else assert.equal(await page.locator('.chat-composer').count(),0);
+   }
   }
   await page.locator('.tabs [data-tab="home"]').click();await page.locator('.news-article').waitFor();await page.screenshot({path:path.join(root,'.qa-output',role+'-desktop.png'),fullPage:true});
   for(const width of [320,390]){await page.setViewportSize({width,height:844});await page.locator('#mobileNavigation [data-mobile-tab="schedule"]').click();await page.locator('#scheduleGroupSelect').selectOption('g');await page.locator('.schedule-week-grid').waitFor();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,role+' schedule '+width);if(role!=='guest'){await page.locator('[data-reminder-toggle]').click();await page.locator('#lessonReminderDialog').waitFor();assert.equal(await page.locator('#lessonReminderDialog [type="submit"]').isDisabled(),true);await page.locator('[data-reminder-consent]').check();assert.equal(await page.locator('#lessonReminderDialog [type="submit"]').isEnabled(),true);await page.locator('[data-reminder-close]').click();}await page.locator('#mobileNavigation [data-mobile-tab="home"]').click();await page.locator('.news-article').waitFor();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,role+' news '+width);await checkChat(page,role,width);}

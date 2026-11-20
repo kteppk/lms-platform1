@@ -1,4 +1,4 @@
-const openSection=new URLSearchParams(location.search).get('open');if(['home','schedule'].includes(openSection))sessionStorage.setItem('lms-open-section',openSection);
+const openSection=new URLSearchParams(location.search).get('open');if(['home','schedule','curator-chat'].includes(openSection))sessionStorage.setItem('lms-open-section',openSection);
 const openGroup=new URLSearchParams(location.search).get('group');if(openSection==='schedule'&&openGroup&&/^[A-Za-z0-9_-]{1,128}$/.test(openGroup))sessionStorage.setItem('lms-open-group',openGroup);
 const resetToken=new URLSearchParams(location.search).get('reset');
 let handlingForm = false;

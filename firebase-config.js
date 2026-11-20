@@ -121,7 +121,8 @@ function watchCabinet(role, onReady) {
       if(typeof AppConnection!=='undefined')AppConnection.ready();
       if (typeof Portal !== 'undefined') await Portal.init(profile);
       await onReady();
-      const target=sessionStorage.getItem('lms-open-section');sessionStorage.removeItem('lms-open-section');const group=sessionStorage.getItem('lms-open-group');sessionStorage.removeItem('lms-open-group');if(target==='schedule'&&group&&/^[A-Za-z0-9_-]{1,128}$/.test(group))Schedule.selectGroup(group);if(['home','schedule'].includes(target))Portal.navigate(target);
+      const target=sessionStorage.getItem('lms-open-section');sessionStorage.removeItem('lms-open-section');const group=sessionStorage.getItem('lms-open-group');sessionStorage.removeItem('lms-open-group');if(target==='schedule'&&group&&/^[A-Za-z0-9_-]{1,128}$/.test(group))Schedule.selectGroup(group);
+      if(['home','schedule'].includes(target)||target==='curator-chat'&&['admin','curator'].includes(profile.role))Portal.navigate(target);
     } catch (error) {
       showStatus('Не удалось открыть кабинет. ' + error.message);
       if(typeof AppConnection!=='undefined')AppConnection.recovery(error);

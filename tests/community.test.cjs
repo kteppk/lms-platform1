@@ -100,6 +100,34 @@ test('endpoint validation denies untrusted URLs and encrypted payload independen
  assert.equal(await crypto.subtle.verify({name:'ECDSA',hash:'SHA-256'},signing.publicKey,Buffer.from(parts[2],'base64url'),Buffer.from(parts.slice(0,2).join('.'))),true);assert.equal(JSON.parse(Buffer.from(parts[1],'base64url')).aud,'https://fcm.googleapis.com');
 });
 
+test('chat notices and opted-in push stay private, skip the author, and respect read receipts and revoked roles',async()=>{
+ const key='B'+'a'.repeat(86),auth='a'.repeat(22);
+ const endpoint=user=>'https://fcm.googleapis.com/fcm/send/chat-'+user;
+ const setup=(user,chat)=>rpc('save_push_device',[user,endpoint(user),key,auth,false,false,null,chat]);
+ await assert.rejects(setup('student',true),{code:'42501'});
+ assert.equal((await setup('admin',true)).chat,true);
+ assert.equal((await setup('curator',true)).chat,true);
+ const message=await rpc('send_curator_message',['admin','Закрытая переписка','notice-privacy']);
+ await rpc('send_curator_message',['admin','Закрытая переписка','notice-privacy']);
+ const noticeFor=async user=>(await rpc('notification_feed',[user,0])).rows.filter(n=>n.category==='chat'&&n.context.messageId===message.id);
+ const [notice]=await noticeFor('curator');assert.equal((await noticeFor('curator')).length,1);assert.equal(notice.destination,'curator-chat');assert.equal(notice.read,false);
+ for(const user of ['admin','teacher','student'])assert.deepEqual(await noticeFor(user),[]);
+ const jobs=await rpc('claim_browser_push');assert.equal(jobs.length,1);assert.equal(jobs[0].endpoint,endpoint('curator'));
+ assert.equal(jobs[0].payload.category,'chat');assert.equal(jobs[0].payload.destination,'curator-chat');
+ assert.doesNotMatch(JSON.stringify(jobs),/Закрытая переписка/);
+ await rpc('finish_browser_push',[jobs[0].id,jobs[0].lease,201]);
+ const next=await rpc('send_curator_message',['admin','Прочитано до доставки','notice-read-before-push']);
+ await rpc('read_curator_chat',['curator',next.id]);
+ assert.equal((await noticeFor('curator'))[0].read,true);
+ assert.equal((await rpc('claim_browser_push')).length,0);
+ await rpc('send_curator_message',['admin','Доступ отозван','notice-role-revoked']);
+ await rpc('set_account_role',['admin','curator','student','curator']);
+ assert.equal((await rpc('claim_browser_push')).length,0);assert.deepEqual(await noticeFor('curator'),[]);
+ await rpc('set_account_role',['admin','curator','curator','student']);
+ await setup('curator',false);
+ await db.exec("delete from push_devices where endpoint like '%/send/chat-%';delete from curator_chat_reads where user_id='curator';delete from curator_messages where client_id in('notice-privacy','notice-read-before-push','notice-role-revoked');");
+});
+
 test('unread migration is repeatable and never marks newer incoming messages as read',async()=>{
  await db.exec('reset role');await db.exec(fs.readFileSync('supabase/migrations/20261119000100_curator_chat_unread.sql','utf8'));await db.exec('set role service_role');
  assert.equal((await rpc('curator_chat_summary',['curator'])).unreadCount,0);

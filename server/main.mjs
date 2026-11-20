@@ -61,7 +61,7 @@ async function tick(){if(workerBusy)return;workerBusy=true;try{
  const {rows}=await pool.query('select public.claim_browser_push() jobs');const queue=[...(rows[0].jobs??[])];
  async function worker(){while(queue.length){const job=queue.shift();let status=503;try{
   if(!validPushEndpoint(job.endpoint))status=410;else if(job.payload.category==='lesson'&&Date.parse(job.payload.expiresAt)<=Date.now())status=400;
-  else{const body=await encryptPush(job.p256dh,job.auth,JSON.stringify(job.payload));const ttl=job.payload.category==='lesson'?String(Math.max(1,Math.min(60,Math.floor((Date.parse(job.payload.expiresAt)-Date.now())/1000)))):'3600';
+  else{const body=await encryptPush(job.p256dh,job.auth,JSON.stringify(job.payload));const ttl=job.payload.category==='lesson'?String(Math.max(1,Math.min(60,Math.floor((Date.parse(job.payload.expiresAt)-Date.now())/1000)))):job.payload.category==='chat'?'600':'3600';
    const response=await fetch(job.endpoint,{method:'POST',redirect:'error',signal:AbortSignal.timeout(8000),headers:{Authorization:await vapid(job.endpoint,env.WEB_PUSH_PUBLIC_KEY,env.WEB_PUSH_PRIVATE_KEY,publicURL),'Content-Encoding':'aes128gcm','Content-Type':'application/octet-stream',TTL:ttl,Urgency:'normal'},body});status=response.status;await response.body?.cancel();}
  }catch{status=503;}await pool.query('select public.finish_browser_push($1,$2,$3)',[job.id,job.lease,status]);}}
  await Promise.all([worker(),worker(),worker()]);

@@ -2,6 +2,15 @@ const SubjectSearch=(()=>{
   const e=v=>escapeHtml(v),normalize=v=>v.normalize('NFC').toLocaleLowerCase('ru').replace(/ё/g,'е').trim();
   function toolbar(){return '<div class="subject-search"><label for="subjectSearch">Найти предмет</label><input type="search" id="subjectSearch" autocomplete="off" placeholder="Название или описание"><p id="subjectSearchStatus" role="status" aria-live="polite"></p></div>';}
   function attrs(s){return `data-subject-search="${e(normalize(s.title+' '+s.description))}"`;}
+  function catalog(subjects,openButton,showTeacherCount=true){
+    return `${toolbar()}<div class="subjects-grid">${subjects.map(subject=>`
+      <article class="item subject-card" ${attrs(subject)}>
+        <h3>${e(subject.title)}</h3>
+        <p class="subject-description subject-preview">${e(subject.description)}</p>
+        ${showTeacherCount?`<p class="meta">Преподавателей: ${e(subject.teacherCount)}</p>`:''}
+        ${openButton(subject)}
+      </article>`).join('')||'<p>Предметов пока нет.</p>'}</div>`;
+  }
   function update(){
     const input=document.getElementById('subjectSearch');if(!input)return;
     const words=normalize(input.value).split(/\s+/u).filter(Boolean),cards=[...document.querySelectorAll('[data-subject-search]')];let visible=0;
@@ -12,5 +21,5 @@ const SubjectSearch=(()=>{
   function previews(){for(const p of document.querySelectorAll('.subject-preview'))if(p.clientHeight)p.classList.toggle('is-truncated',p.scrollHeight>p.clientHeight+1);}
   window.addEventListener('resize',previews);
   document.addEventListener('input',event=>{if(event.target.id==='subjectSearch')update();});
-  return {toolbar,attrs,update};
+  return {toolbar,attrs,catalog,update};
 })();

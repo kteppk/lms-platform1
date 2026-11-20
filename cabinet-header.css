@@ -28,11 +28,6 @@ header .profile-menu > .profile-menu-logout { color: var(--danger); }
 .news-heading-actions { display: flex; align-items: center; gap: 8px; margin-inline-start: auto; }
 .news-heading-actions .news-composer-button { width: auto; min-height: 44px; }
 .profile-heading > div { min-width: 0; }
-.teacher-subjects { display: flex; flex-wrap: wrap; gap: 6px 8px; padding: 0; margin: 8px 0; list-style: none; }
-.teacher-subjects > li { max-width: 100%; padding: 4px 9px; border: 1px solid var(--line); overflow-wrap: anywhere; }
-.teacher-subjects > li:has(details[open]) { flex-basis: 100%; }
-.teacher-subjects summary { cursor: pointer; }
-.teacher-subjects p { margin: 6px 0; }
 .news-photos, .news-photo-editor-list { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; margin: 16px 0; }
 .news-photos a:only-child { grid-column: 1/-1; }
 .news-photos a { display: block; background: var(--paper); overflow: hidden; }

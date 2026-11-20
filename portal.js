@@ -1,5 +1,5 @@
 const Portal = (() => {
-  let profile, teachers=[], selectedTeacher=null, editingTeacher=null, accountRows=[], accountOffset=0, accountSearch='', pendingTeacher=null;
+  let profile, teachers=[], editingTeacher=null, accountRows=[], accountOffset=0, accountSearch='', pendingTeacher=null;
   let noticeOffset=0, seen=new Set(), polling=false;
   const noticeById=new Map();
   const roles={student:'Студент',curator:'Куратор-студент',teacher:'Преподаватель',admin:'Администратор'};
@@ -62,7 +62,7 @@ const Portal = (() => {
     if(view==='subscriptions')return Subscriptions.render(target);
     if(view==='settings'){
       target.innerHTML='<h3>Настройки браузерных уведомлений</h3><section></section>';
-      return PushSettings.render(target.querySelector('section'));
+      return PushSettings.render(target.querySelector('section'),profile.role);
     }
     return renderNotices(target);
   }
@@ -89,7 +89,7 @@ const Portal = (() => {
     if(polling||document.hidden||!AppConnection.online())return;polling=true;
     try{
       const feed=await callFunction('listNotifications');
-      const fresh=feed.rows.filter(n=>!n.read&&!seen.has(n.id));
+      const fresh=feed.rows.filter(n=>n.category!=='chat'&&!n.read&&!seen.has(n.id));
       feed.rows.forEach(n=>seen.add(n.id));
       setUnread(feed.unreadCount);
       if(!initial&&fresh.length===1){const n=fresh[0],preview=n.category==='schedule'?n.body.split('\n')[0]:n.body.length>240?n.body.slice(0,240)+'…':n.body;toast(n.title,preview,n.severity,n.destination);}
@@ -136,6 +136,7 @@ const Portal = (() => {
   }
   async function renderTeachers(container){
     delete container.dataset.teacherId;
+    delete container.dataset.teacherScreen;
     container.innerHTML='<h2>Преподаватели</h2><p>Загрузка профилей…</p>';
     teachers=await callFunction('listTeachers');if(!container.isConnected)return;
     container.innerHTML=`<h2>Преподаватели</h2><p class="section-lead">Образование, опыт и достижения преподавателей техникума.</p><div class="teacher-grid">${teachers.map(t=>`<article class="item teacher-card">${avatar(t)}<h3>${e(t.name)}</h3><p class="meta">${e(t.position||'Преподаватель')}</p><span class="badge mint">Предметов: ${t.subjectIds.length}</span><div class="actions">${button('Открыть профиль','view-teacher',`data-id="${e(t.id)}"`,'primary')}</div></article>`).join('')||empty('Профили преподавателей пока не добавлены.')}</div>`;
@@ -144,15 +145,28 @@ const Portal = (() => {
       <section class="profile-block"><h3>Дипломы, грамоты и сертификаты</h3><p class="hint">Документы, которые преподаватель добавил в свой профиль.</p><div class="document-list">${p.documents.map(d=>{
         const url=safeMaterialUrl(d.url);return `<article class="item"><span class="badge">${categories[d.category]}</span><h4>${e(d.title)}</h4><p class="meta">${e(d.issued_year||'')}</p>${url&&d.mime.startsWith('image/')?`<a href="${e(url)}" target="_blank" rel="noopener noreferrer"><img class="document-preview" src="${e(url)}" alt="${e(d.title)}" loading="lazy"></a>`:''}${url?materialLink(url,d.mime==='application/pdf'?'Открыть PDF / скачать':'Открыть документ'):''}</article>`;
       }).join('')||empty('Документов пока нет. Преподаватель может добавить их в своём профиле.')}</div></section>`; }
-  async function viewTeacher(uid,container=document.getElementById('portalPage')){
+  async function viewTeacher(uid,container=document.getElementById('portalPage'),showSubjects=false){
     container.dataset.teacherId=uid;
-    selectedTeacher=await callFunction('getTeacherProfile',{teacherId:uid});if(!container?.isConnected)return;
-    const p=selectedTeacher;
-    const subjects=p.subjects||[];
-    const subjectList=subjects.length?`<ul class="teacher-subjects" aria-label="Предметы преподавателя">${subjects.map(s=>`<li>${s.description?`<details><summary>${e(s.title)}</summary><p class="teacher-profile-text">${e(s.description)}</p></details>`:`<span>${e(s.title)}</span>`}</li>`).join('')}</ul>`:'<p class="meta">Предметы пока не указаны.</p>';
-    container.innerHTML=`${button('← Все преподаватели','teacher-list')}<div class="profile-heading">${avatar(p)}<div><h2>${e(p.name)}</h2>${subjectList}<p>${e(p.position||'Преподаватель')}</p>${p.experience_years!==null&&p.experience_years!==undefined?`<span class="badge mint">Стаж: ${p.experience_years} лет</span>`:''}</div></div>
+    const screen=showSubjects?'subjects':'profile';
+    container.dataset.teacherScreen=screen;
+    const p=await callFunction('getTeacherProfile',{teacherId:uid});
+    if(!container.isConnected||container.dataset.teacherId!==uid||container.dataset.teacherScreen!==screen)return;
+    if(showSubjects){
+      container.innerHTML=`${button('← К профилю','view-teacher',`data-id="${e(uid)}"`)}<div class="subject-heading">${avatar(p)}<div><h2>Предметы преподавателя</h2><p>${e(p.name)}</p></div></div>`+
+        SubjectSearch.catalog(p.subjects||[],s=>button('Открыть предмет','teacher-subject-open',`data-id="${e(s.id)}" data-teacher="${e(uid)}"`,'primary'),false);
+      SubjectSearch.update();
+      return;
+    }
+    container.innerHTML=`${button('← Все преподаватели','teacher-list')}<div class="profile-heading">${avatar(p)}<div><h2>${e(p.name)}</h2><p>${e(p.position||'Преподаватель')}</p>${button('Посмотреть предметы','teacher-subjects',`data-id="${e(uid)}"`)}</div></div>
       ${p.canEdit?button('Редактировать профиль','edit-teacher',`data-id="${e(p.id)}"`,'primary'):''}
       ${teacherDetails(p)}`;
+  }
+  async function viewTeacherSubject(uid,subjectId,container){
+    container.dataset.teacherScreen='subject';
+    container.dataset.teacherSubjectId=subjectId;
+    const page=await callFunction('getSubjectContent',{subjectId,teacherId:uid});
+    if(!container.isConnected||container.dataset.teacherId!==uid||container.dataset.teacherScreen!=='subject'||container.dataset.teacherSubjectId!==subjectId)return;
+    container.innerHTML=button('← К предметам преподавателя','teacher-subjects',`data-id="${e(uid)}"`)+SubjectContent.render(page);
   }
   async function editTeacher(uid){
     const container=document.getElementById('portalPage');
@@ -175,7 +189,7 @@ const Portal = (() => {
   }
   async function renderSchedule(container){ return Schedule.render(container,profile); }
   function noticeCards(rows){
-    return rows.map(n=>`<article class="item notice-card ${n.read?'':'unread'} ${n.severity==='danger'?'danger':''}"><span class="notice-category">${n.category==='schedule'?'По подписке':n.category==='announcement'?'Объявление':'Личное'}</span><span class="meta">${e(new Date(n.created_at).toLocaleString('ru-RU'))}${n.read?'':' · Новое'}</span><h3>${e(n.title)}</h3><p>${e(n.body)}</p><div class="actions notice-actions">${button('Открыть','notice-open',`data-id="${e(n.id)}" data-tab="${e(n.destination)}"`)}${n.read?'':ActionMenu.render(button('Прочитано','notice-read',`data-id="${e(n.id)}"`),'Действия с уведомлением')}</div></article>`).join('')||empty('Уведомлений пока нет.');
+    return rows.map(n=>`<article class="item notice-card ${n.read?'':'unread'} ${n.severity==='danger'?'danger':''}"><span class="notice-category">${n.category==='schedule'?'По подписке':n.category==='announcement'?'Объявление':n.category==='chat'?'Чат кураторов':'Личное'}</span><span class="meta">${e(new Date(n.created_at).toLocaleString('ru-RU'))}${n.read?'':' · Новое'}</span><h3>${e(n.title)}</h3><p>${e(n.body)}</p><div class="actions notice-actions">${button('Открыть','notice-open',`data-id="${e(n.id)}" data-tab="${e(n.destination)}"`)}${n.read?'':ActionMenu.render(button('Прочитано','notice-read',`data-id="${e(n.id)}"`),'Действия с уведомлением')}</div></article>`).join('')||empty('Уведомлений пока нет.');
   }
   async function renderNotices(container){
     const offset=noticeOffset,feed=await callFunction('listNotifications',{offset});
@@ -203,7 +217,7 @@ const Portal = (() => {
     if(tab==='curator-chat')await CuratorChat.render(target,profile);
     if(tab==='home')await home(target);
     if(tab==='profile')await myProfile(target);
-    if(tab==='teachers'){const uid=pendingTeacher;pendingTeacher=null;if(uid)await viewTeacher(uid,target);else await renderTeachers(target);}
+    if(tab==='teachers'){const selection=pendingTeacher;pendingTeacher=null;if(selection)await viewTeacher(selection.uid,target,selection.showSubjects);else await renderTeachers(target);}
     if(tab==='schedule')await renderSchedule(target);
     if(tab==='accounts')await renderAccounts(target);
     if(tab==='announcements')await announcements(target);
@@ -221,6 +235,12 @@ const Portal = (() => {
     if(name==='close-dialog')return document.getElementById('notificationsDialog').close();
     if(name==='open-notifications')return openNotices();
     if(name==='view-teacher'){if(!container){navigate('teachers');await new Promise(r=>setTimeout(r,0));}return viewTeacher(node.dataset.id);}
+    if(name==='teacher-subjects')return viewTeacher(node.dataset.id,container,true);
+    if(name==='teacher-subject-open'){
+      const {id,teacher}=node.dataset;
+      if(typeof openInstructorSubject==='function')return openInstructorSubject(id,teacher);
+      return viewTeacherSubject(teacher,id,container);
+    }
     if(name==='teacher-list')return renderTeachers(container);
     if(name==='edit-own-profile')return editTeacher(profile.uid);
     if(name==='edit-teacher')return editTeacher(node.dataset.id);
@@ -285,7 +305,7 @@ const Portal = (() => {
     const submit=form.querySelector('[type="submit"]');if(submit.disabled)return;submit.disabled=true;showStatus('');
     try{await formAction(form.dataset.portalForm);}catch(error){showStatus(error.message);toast('Изменения не сохранены',error.message,'danger');}finally{submit.disabled=false;}
   });
-  function openTeacher(uid){pendingTeacher=uid;navigate('teachers');}
+  function openTeacher(uid,showSubjects=false){pendingTeacher={uid,showSubjects};navigate('teachers');}
   function openSubscriptions(){return openNotices('subscriptions');}
   document.addEventListener('lms-live-update',async event=>{
     if(!profile)return;const changed=event.detail.topics,all=changed.includes('resync'),root=document.getElementById('portalPage');
@@ -298,7 +318,16 @@ const Portal = (() => {
     if(!root?.isConnected)return;
     const tab=document.querySelector('.tabs [data-tab].active')?.dataset.tab;
     const relevant=tab==='accounts'&&(all||changed.includes('accounts'))||tab==='profile'&&(all||changed.includes('profile'))||tab==='teachers'&&(all||changed.some(t=>['content','people'].includes(t)))||tab==='help'&&(all||changed.includes('settings'));
-    if(relevant&&!root.querySelector('[data-portal-form="teacher-profile"]'))Realtime.update('portal-view',root,()=>tab==='accounts'?renderAccounts(root):tab==='profile'?myProfile(root):tab==='teachers'?(root.dataset.teacherId?viewTeacher(root.dataset.teacherId,root):renderTeachers(root)):AccountTools.render(tab,root));
+    if(relevant&&!root.querySelector('[data-portal-form="teacher-profile"]'))Realtime.update('portal-view',root,()=>{
+      if(tab==='accounts')return renderAccounts(root);
+      if(tab==='profile'&&!root.dataset.teacherId)return myProfile(root);
+      if(tab==='teachers'||tab==='profile'){
+        const {teacherId,teacherScreen,teacherSubjectId}=root.dataset;
+        if(!teacherId)return renderTeachers(root);
+        return teacherScreen==='subject'?viewTeacherSubject(teacherId,teacherSubjectId,root):viewTeacher(teacherId,root,teacherScreen==='subjects');
+      }
+      return AccountTools.render(tab,root);
+    });
   });
   return {teacherDetails,init,render,navigate,toast,openTeacher,openSubscriptions};
 })();
