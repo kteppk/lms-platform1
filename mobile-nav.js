@@ -60,13 +60,13 @@ const MobileNavigation = (() => {
     const tabs = [...document.querySelectorAll('main > .tabs button[data-tab]')];
     if (!tabs.length) return;
     const has = tab => tabs.some(button => button.dataset.tab === tab);
-    const fourth = has('accounts') ? 'notifications' : has('journal') ? 'journal' : 'results';
-    primaryTabs = person.role==='guest'?['home','schedule']:['home', has('accounts') ? 'accounts' : 'subjects', 'schedule', fourth];
-    const labels = { home: 'Новости', subjects: 'Предметы', accounts: 'Аккаунты', schedule: 'Расписание', results: 'Результаты', journal: 'Результаты', notifications: 'События' };
+    primaryTabs = person.role==='guest'?['home','schedule']:has('accounts')?['home','accounts','schedule']:['home','subjects','schedule',has('journal')?'journal':'results'];
+    const labels = { home: 'Новости', subjects: 'Предметы', accounts: 'Админ панель', schedule: 'Расписание', results: 'Результаты', journal: 'Результаты' };
 
     bar = document.createElement('nav');
     bar.id = 'mobileNavigation';
     bar.className = 'mobile-navigation';
+    bar.style.setProperty('--mobile-nav-columns',primaryTabs.length+1);
     bar.setAttribute('aria-label', 'Нижняя навигация');
     bar.innerHTML = primaryTabs.map(tab => `<button type="button" class="mobile-nav-button" data-mobile-tab="${tab}">${svg(tab)}<span>${labels[tab]}</span></button>`).join('') +
       `<button type="button" class="mobile-nav-button" id="mobileMore" aria-haspopup="dialog" aria-expanded="false" aria-controls="mobileMenu">${svg('more')}<span>Ещё</span></button>`;
@@ -81,30 +81,14 @@ const MobileNavigation = (() => {
       <p id="mobileProfileName" class="mobile-profile-name"></p>
       <nav class="mobile-menu-grid" aria-label="Все разделы кабинета">${tabs.map(button => `<button type="button" data-mobile-tab="${button.dataset.tab}">${svg(button.dataset.tab === 'students' ? 'accounts' : button.dataset.tab)}<span>${escapeHtml(button.textContent.trim())}</span></button>`).join('')}</nav>
       <p class="site-version" data-site-version>Версия ${escapeHtml(SiteRelease.version)}</p>
-      <div class="mobile-menu-footer"><button type="button" data-mobile-action="logout">${svg('logout')}<span>Выйти из аккаунта</span></button></div>`;
-    if(person.role==='guest')menu.querySelector('.mobile-menu-footer').innerHTML='<a class="guest-login" href="index.html">Войти / зарегистрироваться</a>';
+      ${person.role==='guest'?'<div class="mobile-menu-footer"><a class="guest-login" href="index.html">Войти / зарегистрироваться</a></div>':''}`;
     document.body.append(menu);
-    for (const link of document.querySelectorAll('header .user-info a[href]')) {
-      if (new URL(link.href).pathname === location.pathname) continue;
-      const copy = link.cloneNode(true);
-      copy.className = 'mobile-cabinet-link';
-      menu.querySelector('.mobile-menu-footer').prepend(copy);
-    }
 
     const profileButton = document.querySelector('.profile-link');
     const initials = document.createElement('span');
     initials.className = 'mobile-initials';
     initials.setAttribute('aria-hidden', 'true');
     profileButton?.append(initials);
-    const bell = document.getElementById('notificationButton');
-    if(bell){bell.classList.add('mobile-header-bell');
-    // Keep the accessible full text and the unread count on the desktop as well.
-    const label = document.createElement('span');
-    label.className = 'notification-label';
-    label.textContent = 'Уведомления';
-    for (const node of [...bell.childNodes]) if (node.nodeType === Node.TEXT_NODE) node.remove();
-    bell.prepend(label);
-    bell.insertAdjacentHTML('afterbegin', svg('notifications'));}
     updateName();
     new MutationObserver(updateName).observe(document.getElementById('userName'), { childList: true, characterData: true, subtree: true });
     for (const tab of tabs) new MutationObserver(sync).observe(tab, { attributes: true, attributeFilter: ['class'] });
@@ -134,7 +118,6 @@ const MobileNavigation = (() => {
         closeMenu();
         navigate(button.dataset.mobileTab);
       } else if (button.dataset.mobileAction === 'close') closeMenu();
-      else if (button.dataset.mobileAction === 'logout') { closeMenu(); logout(); }
     });
     matchMedia('(max-width: 1024px)').addEventListener('change', event => { if (!event.matches) closeMenu(); });
     document.body.classList.add('has-mobile-navigation');

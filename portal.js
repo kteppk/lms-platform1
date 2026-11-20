@@ -1,6 +1,6 @@
 const Portal = (() => {
   let profile, teachers=[], selectedTeacher=null, editingTeacher=null, accountRows=[], accountOffset=0, accountSearch='', pendingTeacher=null;
-  let noticeRows=[], noticeOffset=0, seen=new Set(), polling=false, pendingSubscriptions=false;
+  let noticeOffset=0, seen=new Set(), polling=false;
   const noticeById=new Map();
   const roles={student:'Студент',curator:'Куратор-студент',teacher:'Преподаватель',admin:'Администратор'};
   const categories={diploma:'Диплом',award:'Грамота',certificate:'Сертификат',other:'Другой документ'};
@@ -19,10 +19,52 @@ const Portal = (() => {
     if(tab==='announcements')tab='home';
     ActionMenu.closeAll();
     if(typeof MobileNavigation!=='undefined')MobileNavigation.closeMenu();
+    closeProfileMenu();
+    if(tab==='notifications'){openNotices().catch(error=>toast('Не удалось загрузить уведомления',error.message,'danger'));return;}
     document.getElementById('notificationsDialog')?.close();
     const target=document.querySelector(`.tabs [data-tab="${tab}"]`);
     if(target) target.click();
-    else document.querySelector('.tabs [data-tab="notifications"]')?.click();
+    else openNotices().catch(error=>toast('Не удалось загрузить уведомления',error.message,'danger'));
+  }
+  function closeProfileMenu(restore=false){
+    const menu=document.getElementById('profileMenu'),trigger=document.querySelector('header .profile-link');
+    if(!menu||menu.hidden)return;
+    menu.hidden=true;trigger.setAttribute('aria-expanded','false');
+    if(restore)trigger.focus();
+  }
+  function setupHeader(){
+    const info=document.querySelector('header .user-info'),trigger=info.querySelector('.profile-link');
+    const bell=document.createElement('button');bell.type='button';bell.id='notificationButton';bell.className='notification-button header-bell';bell.dataset.portal='open-notifications';
+    bell.setAttribute('aria-label','Уведомления');bell.setAttribute('aria-haspopup','dialog');bell.setAttribute('aria-controls','notificationsDialog');
+    bell.innerHTML='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-11 13h4"/></svg><span class="badge" id="notificationCount" aria-hidden="true">0</span>';
+    info.prepend(bell);
+    const teaching=location.pathname.endsWith('/teacher.html');
+    const cabinet=profile.role==='admin'&&profile.canTeach&&!teaching?'<a href="teacher.html">Учебный кабинет</a>':button('Учебный кабинет','navigate','data-tab="home"','profile-menu-item');
+    const admin=profile.role==='admin'&&teaching?'<a href="admin.html?tab=accounts">Админ панель</a>':'';
+    const panel=document.createElement('div');panel.id='profileMenu';panel.className='profile-menu';panel.hidden=true;panel.setAttribute('role','group');panel.setAttribute('aria-label','Действия аккаунта');
+    const name=trigger.querySelector('#userName');panel.append(name);
+    panel.insertAdjacentHTML('beforeend',cabinet+admin+button('Выйти','account-logout','','profile-menu-item profile-menu-logout')+button('Справочник','navigate','data-tab="help"','profile-menu-item'));
+    info.append(panel);
+    trigger.setAttribute('aria-expanded','false');trigger.setAttribute('aria-controls','profileMenu');
+    trigger.addEventListener('click',()=>{if(!panel.hidden){closeProfileMenu();return;}ActionMenu.closeAll();panel.hidden=false;trigger.setAttribute('aria-expanded','true');});
+    document.addEventListener('click',event=>{if(!panel.contains(event.target)&&!trigger.contains(event.target))closeProfileMenu();});
+    info.addEventListener('focusout',event=>{if(!info.contains(event.relatedTarget))closeProfileMenu();});
+    document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!panel.hidden){event.preventDefault();closeProfileMenu(true);}});
+  }
+  async function openNotices(view='history',reset=true){
+    closeProfileMenu();
+    const dialog=document.getElementById('notificationsDialog'),target=dialog.querySelector('#popupNotices');
+    const changed=target.dataset.noticeView!==view;
+    target.dataset.noticeView=view;
+    if(reset)noticeOffset=0;
+    if(changed)target.replaceChildren();
+    if(!dialog.open)dialog.showModal();
+    if(view==='subscriptions')return Subscriptions.render(target);
+    if(view==='settings'){
+      target.innerHTML='<h3>Настройки браузерных уведомлений</h3><section></section>';
+      return PushSettings.render(target.querySelector('section'));
+    }
+    return renderNotices(target);
   }
   function nameNotice(){
     let notice=document.getElementById('nameNotice');
@@ -38,14 +80,18 @@ const Portal = (() => {
     root.append(node);setTimeout(()=>node.remove(),severity==='danger'?20000:9000);
     return node;
   }
+  function setUnread(count){
+    const badge=document.getElementById('notificationCount');
+    badge.textContent=count>99?'99+':String(count);badge.hidden=!count;
+    document.getElementById('notificationButton').setAttribute('aria-label',count?`Уведомления: непрочитанных ${count}`:'Уведомления');
+  }
   async function poll(initial=false){
     if(polling||document.hidden||!AppConnection.online())return;polling=true;
     try{
       const feed=await callFunction('listNotifications');
       const fresh=feed.rows.filter(n=>!n.read&&!seen.has(n.id));
       feed.rows.forEach(n=>seen.add(n.id));
-      document.getElementById('notificationCount').textContent=feed.unreadCount;
-      document.getElementById('notificationButton').setAttribute('aria-label',`Уведомления: непрочитанных ${feed.unreadCount}`);
+      setUnread(feed.unreadCount);
       if(!initial&&fresh.length===1){const n=fresh[0],preview=n.category==='schedule'?n.body.split('\n')[0]:n.body.length>240?n.body.slice(0,240)+'…':n.body;toast(n.title,preview,n.severity,n.destination);}
       else if(!initial&&fresh.length>1)toast('Новые уведомления',`Новых событий: ${fresh.length}. Откройте историю изменений.`,fresh.some(n=>n.severity==='danger')?'danger':'info','notifications');
     }catch{ /* A failed background refresh never interrupts a test or form. */ }
@@ -62,14 +108,8 @@ const Portal = (() => {
     if(!document.getElementById('toastRegion')){
       const root=document.createElement('div');root.id='toastRegion';root.setAttribute('role','status');root.setAttribute('aria-live','polite');document.body.append(root);
       const dialog=document.createElement('dialog');dialog.id='notificationsDialog';dialog.className='notification-dialog';dialog.setAttribute('aria-labelledby','notificationDialogTitle');
-      dialog.innerHTML=`<div class="dialog-heading"><h2 id="notificationDialogTitle">Уведомления</h2><div class="dialog-actions">${ActionMenu.render(button('Мои подписки','subscriptions')+button('Прочитать эту страницу','notices-read-page','disabled')+button('Вся история','navigate','data-tab="notifications"'),'Действия с уведомлениями')}${ActionMenu.icon('close','Закрыть уведомления','data-portal="close-dialog" autofocus','ui-icon-button icon-close')}</div></div><div id="popupNotices"></div>`;document.body.append(dialog);
-      const bell=document.createElement('button');bell.id='notificationButton';bell.className='notification-button';bell.dataset.portal='open-notifications';bell.innerHTML='Уведомления <span class="badge" id="notificationCount">0</span>';
-      document.querySelector('.user-info .logout').before(bell);
-      if(profile.role==='admin'){
-        const link=document.createElement('a');link.href=location.pathname.endsWith('teacher.html')?'admin.html':profile.canTeach?'teacher.html':'admin.html';
-        link.textContent=location.pathname.endsWith('teacher.html')?'Администрирование':profile.canTeach?'Учебный кабинет':'Администрирование';
-        link.className='tab-btn';document.querySelector('.user-info').append(link);
-      }
+      dialog.innerHTML=`<div class="dialog-heading"><h2 id="notificationDialogTitle">Уведомления</h2><div class="dialog-actions">${ActionMenu.render(button('Мои подписки','subscriptions')+button('Настройки уведомлений','notice-settings')+button('Прочитать эту страницу','notices-read-page','disabled')+button('Вся история','open-notifications'),'Действия с уведомлениями')}${ActionMenu.icon('close','Закрыть уведомления','data-portal="close-dialog" autofocus','ui-icon-button icon-close')}</div></div><div id="popupNotices"></div>`;document.body.append(dialog);
+      setupHeader();
       const connection=navigator.connection;const slow=connection?.saveData||['slow-2g','2g'].includes(connection?.effectiveType);
       setInterval(()=>poll(),slow?300000:120000);
       document.addEventListener('visibilitychange',()=>{if(!document.hidden)poll();});
@@ -136,16 +176,16 @@ const Portal = (() => {
   function noticeCards(rows){
     return rows.map(n=>`<article class="item notice-card ${n.read?'':'unread'} ${n.severity==='danger'?'danger':''}"><span class="notice-category">${n.category==='schedule'?'По подписке':n.category==='announcement'?'Объявление':'Личное'}</span><span class="meta">${e(new Date(n.created_at).toLocaleString('ru-RU'))}${n.read?'':' · Новое'}</span><h3>${e(n.title)}</h3><p>${e(n.body)}</p><div class="actions notice-actions">${button('Открыть','notice-open',`data-id="${e(n.id)}" data-tab="${e(n.destination)}"`)}${n.read?'':ActionMenu.render(button('Прочитано','notice-read',`data-id="${e(n.id)}"`),'Действия с уведомлением')}</div></article>`).join('')||empty('Уведомлений пока нет.');
   }
-  async function renderNotices(container,popup=false){
-    const feed=await callFunction('listNotifications',{offset:popup?0:noticeOffset});if(!container?.isConnected)return;noticeRows=feed.rows;feed.rows.forEach(n=>noticeById.set(n.id,n));
-    const tools=button('Мои подписки','subscriptions')+button('Прочитать эту страницу','notices-read-page',feed.rows.some(n=>!n.read)?'':'disabled');
-    if(popup)document.querySelector('#notificationsDialog [data-portal="notices-read-page"]').disabled=!feed.rows.some(n=>!n.read);
-    container.innerHTML=`${popup?'':`<div class="page-heading"><h2>Уведомления</h2>${ActionMenu.render(tools,'Действия с уведомлениями')}</div><p class="section-lead">Личные результаты, объявления и изменения расписаний по вашим подпискам.</p>`}<div data-notice-list>${noticeCards(feed.rows)}</div>${popup?'':`<div class="actions pagination-actions">${button('← Назад','notices-prev',noticeOffset?'':'disabled')}${button('Далее →','notices-next',feed.rows.length===50?'':'disabled')}</div>`}`;
-    if(!popup){const push=document.createElement('section');container.prepend(push);PushSettings.render(push);}
-    document.getElementById('notificationCount').textContent=feed.unreadCount;
+  async function renderNotices(container){
+    const offset=noticeOffset,feed=await callFunction('listNotifications',{offset});
+    if(!container?.isConnected||container.dataset.noticeView!=='history'||noticeOffset!==offset)return;
+    feed.rows.forEach(n=>noticeById.set(n.id,n));
+    document.querySelector('#notificationsDialog [data-portal="notices-read-page"]').disabled=!feed.rows.some(n=>!n.read);
+    container.innerHTML=`<div data-notice-list>${noticeCards(feed.rows)}</div>${offset||feed.rows.length===50?`<div class="actions pagination-actions">${button('Назад','notices-prev',offset?'':'disabled')}${button('Далее','notices-next',feed.rows.length===50?'':'disabled')}</div>`:''}`;
+    setUnread(feed.unreadCount);
   }
   async function renderAccounts(container){
-    container.innerHTML='<h2>Аккаунты и роли</h2><p role="status">Загрузка аккаунтов…</p>';
+    container.innerHTML='<h2>Админ панель</h2><p role="status">Загрузка аккаунтов…</p>';
     const rows=await callFunction('listAccounts',{search:accountSearch,offset:accountOffset});if(!container.isConnected)return;accountRows=rows;
     container.innerHTML=`<h2>Аккаунты и роли</h2><p class="section-lead">Новые пользователи — студенты. Изменение роли сохраняет материалы и результаты. Последний администратор защищён от понижения.</p><section id="registrationStats" class="registration-statistics"></section><form class="account-search" data-portal-form="accounts-search"><input id="accountSearch" aria-label="Поиск по ФИО или email" placeholder="Найти по ФИО или email" value="${e(accountSearch)}" maxlength="120"><button class="primary" type="submit">Найти</button></form><div class="table-wrap"><table><thead><tr><th>Пользователь</th><th>Роль</th><th>Действие</th></tr></thead><tbody>${rows.map(p=>`<tr><td class="account-name"><strong>${e(p.name)}</strong><small>${e(p.email)}</small>${p.needs_name?'<span class="badge">Заполнить поля ФИО</span>':''}${p.id===profile.uid?'<span class="badge">Это вы</span>':''}</td><td><select aria-label="Роль ${e(p.email)}" data-role-id="${e(p.id)}">${Object.entries(roles).map(([role,label])=>`<option value="${role}" ${role===p.role?'selected':''}>${label}</option>`).join('')}</select></td><td>${button('Сохранить роль','role-save',`data-id="${e(p.id)}"`)}<button type="button" class="secondary" data-recovery-user="${e(p.id)}">Восстановить доступ</button></td></tr>`).join('')}</tbody></table></div>${!rows.length?empty('Аккаунты не найдены.'):''}<details class="role-log"><summary>История назначения ролей</summary><p>Последние 50 назначений. Доступны только администрации. Уведомление получает только владелец изменённого аккаунта.</p>${button('Загрузить историю','role-log')}<div id="roleChangeLog"></div></details><div class="actions">${button('← Назад','accounts-prev',accountOffset?'':'disabled')}${button('Далее →','accounts-next',rows.length===50?'':'disabled')}</div>`;
     const live=document.createElement('section');live.className='profile-block online-statistics';container.querySelector('#registrationStats').before(live);AdministrationTools.online(live);
@@ -155,7 +195,7 @@ const Portal = (() => {
   }
   async function announcements(container){return News.home(container,profile);}
   async function render(tab,parent){
-    if(!['home','profile','teachers','schedule','notifications','accounts','announcements','people','help','curator-chat'].includes(tab))return false;
+    if(!['home','profile','teachers','schedule','accounts','announcements','help','curator-chat'].includes(tab))return false;
     if(tab!=='curator-chat')CuratorChat.clear();
     if(tab!=='schedule'&&typeof Realtime!=='undefined')Realtime.watchGroup(null);
     parent.innerHTML='<section id="portalPage" aria-live="polite"></section>';const target=parent.firstElementChild;
@@ -164,20 +204,21 @@ const Portal = (() => {
     if(tab==='profile')await myProfile(target);
     if(tab==='teachers'){const uid=pendingTeacher;pendingTeacher=null;if(uid)await viewTeacher(uid,target);else await renderTeachers(target);}
     if(tab==='schedule')await renderSchedule(target);
-    if(tab==='notifications'){if(pendingSubscriptions){pendingSubscriptions=false;await Subscriptions.render(target);}else await renderNotices(target);}
     if(tab==='accounts')await renderAccounts(target);
     if(tab==='announcements')await announcements(target);
-    if(tab==='people'||tab==='help')await AccountTools.render(tab,target);
+    if(tab==='help')await AccountTools.render(tab,target);
     return true;
   }
   async function action(name,node){
     const container=document.getElementById('portalPage');
     if(name==='navigate')return navigate(node.dataset.tab);
     if(name==='subscriptions')return openSubscriptions();
+    if(name==='account-logout'){closeProfileMenu();return logout();}
+    if(name==='notice-settings')return openNotices('settings');
     if(name==='role-log'){const rows=await callFunction('listRoleChanges');const target=container.querySelector('#roleChangeLog');target.innerHTML=rows.length?rows.map(r=>`<article class="role-log-row"><strong>${e(r.user_name)}</strong><span>${e(roles[r.old_role])} → ${e(roles[r.new_role])}</span><small>${e(r.actor_name)} · ${e(new Date(r.created_at).toLocaleString('ru-RU',{timeZone:'Asia/Krasnoyarsk'}))}</small></article>`).join(''):'<p>Назначений пока нет.</p>';return;}
     if(name==='close-toast')return node.closest('.toast').remove();
     if(name==='close-dialog')return document.getElementById('notificationsDialog').close();
-    if(name==='open-notifications'){const dialog=document.getElementById('notificationsDialog');dialog.showModal();return renderNotices(document.getElementById('popupNotices'),true);}
+    if(name==='open-notifications')return openNotices();
     if(name==='view-teacher'){if(!container){navigate('teachers');await new Promise(r=>setTimeout(r,0));}return viewTeacher(node.dataset.id);}
     if(name==='teacher-list')return renderTeachers(container);
     if(name==='edit-own-profile')return editTeacher(profile.uid);
@@ -194,13 +235,13 @@ const Portal = (() => {
       if(p.id===profile.uid&&role!=='admin'){location.replace(cabinetPage(role));return;}return renderAccounts(container);
     }
     if(name==='accounts-next'||name==='accounts-prev'){accountOffset=Math.max(0,accountOffset+(name.endsWith('next')?50:-50));return renderAccounts(container);}
-    if(name==='notices-next'||name==='notices-prev'){noticeOffset=Math.max(0,noticeOffset+(name.endsWith('next')?50:-50));return renderNotices(container);}
+    if(name==='notices-next'||name==='notices-prev'){noticeOffset=Math.max(0,noticeOffset+(name.endsWith('next')?50:-50));return openNotices('history',false);}
     if(['notice-read','notice-open','notices-read-page'].includes(name)){
-      const noticeRoot=node.closest('#notificationsDialog')?document.getElementById('popupNotices'):container;
+      const noticeRoot=document.getElementById('popupNotices');
       const ids=name==='notices-read-page'?[...noticeRoot.querySelectorAll('[data-portal="notice-open"]')].map(n=>n.dataset.id):[node.dataset.id];
       await callFunction('readNotifications',{ids});await poll();
       if(name==='notice-open'){const notice=noticeById.get(node.dataset.id);if(notice?.context?.groupId)Schedule.selectGroup(notice.context.groupId);return navigate(node.dataset.tab);}
-      const popup=document.getElementById('notificationsDialog').open;return renderNotices(popup?document.getElementById('popupNotices'):container,popup);
+      return renderNotices(noticeRoot);
     }
   }
   async function formAction(kind){
@@ -244,20 +285,18 @@ const Portal = (() => {
     try{await formAction(form.dataset.portalForm);}catch(error){showStatus(error.message);toast('Изменения не сохранены',error.message,'danger');}finally{submit.disabled=false;}
   });
   function openTeacher(uid){pendingTeacher=uid;navigate('teachers');}
-  function openSubscriptions(){pendingSubscriptions=true;navigate('notifications');}
+  function openSubscriptions(){return openNotices('subscriptions');}
   document.addEventListener('lms-live-update',async event=>{
     if(!profile)return;const changed=event.detail.topics,all=changed.includes('resync'),root=document.getElementById('portalPage');
     if(all||changed.includes('profile')){const current=await getProfile(auth.currentUser).catch(()=>null);if(current){profile={...profile,...current};document.getElementById('userName').textContent=profile.name;AccountTools.syncHeader(profile.avatarUrl);}}
     if(all||changed.some(t=>['notices','subscriptions'].includes(t))){
       await poll();
       const popup=document.getElementById('notificationsDialog');
-      if(popup?.open){const target=popup.querySelector('#popupNotices');const feed=await callFunction('listNotifications').catch(()=>null);if(feed&&target?.isConnected){const list=target.querySelector('[data-notice-list]');if(list){list.innerHTML=noticeCards(feed.rows);feed.rows.forEach(n=>noticeById.set(n.id,n));}}}
-      const list=root?.querySelector('[data-notice-list]');if(list)Realtime.update('notices',list,async()=>{const feed=await callFunction('listNotifications',{offset:noticeOffset});if(!list.isConnected)return;list.innerHTML=noticeCards(feed.rows);feed.rows.forEach(n=>noticeById.set(n.id,n));document.getElementById('notificationCount').textContent=feed.unreadCount;const next=root.querySelector('[data-portal="notices-next"]');if(next)next.disabled=feed.rows.length<50;});
-      if(root?.querySelector('[data-sub-form]'))Realtime.update('subscriptions',root,()=>Subscriptions.render(root));
+      if(popup?.open){const target=popup.querySelector('#popupNotices');if(target.dataset.noticeView==='history')await renderNotices(target).catch(()=>{});}
     }
     if(!root?.isConnected)return;
     const tab=document.querySelector('.tabs [data-tab].active')?.dataset.tab;
-    const relevant=tab==='accounts'&&(all||changed.includes('accounts'))||tab==='profile'&&(all||changed.includes('profile'))||['teachers','people'].includes(tab)&&(all||changed.includes('people'))||tab==='help'&&(all||changed.includes('settings'));
+    const relevant=tab==='accounts'&&(all||changed.includes('accounts'))||tab==='profile'&&(all||changed.includes('profile'))||tab==='teachers'&&(all||changed.includes('people'))||tab==='help'&&(all||changed.includes('settings'));
     if(relevant&&!root.querySelector('[data-portal-form="teacher-profile"]'))Realtime.update('portal-view',root,()=>tab==='accounts'?renderAccounts(root):tab==='profile'?myProfile(root):tab==='teachers'?(root.dataset.teacherId?viewTeacher(root.dataset.teacherId,root):renderTeachers(root)):AccountTools.render(tab,root));
   });
   return {teacherDetails,init,render,navigate,toast,openTeacher,openSubscriptions};

@@ -22,6 +22,16 @@ presenceHistory.start();
 const server=http.createServer(async(req,res)=>{
  try{
   const u=new URL(req.url,publicURL);if(u.pathname==='/healthz'){await pool.query('select 1');res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end('{"ok":true}');return;}
+  const photo=u.pathname.match(/^\/storage\/v1\/news-photo\/([0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})$/);
+  if(photo){
+   if(!['GET','HEAD'].includes(req.method)){res.writeHead(405,{Allow:'GET, HEAD'}).end();return;}
+   const {rows}=await pool.query(`select p.content from public.news_post_photos p join public.news_posts n on n.id=p.post_id
+    where p.id=$1::uuid and n.hidden_at is null and n.published_at<=now()`,[photo[1]]);
+   if(!rows.length){res.writeHead(404,{'Cache-Control':'no-store'}).end();return;}
+   const image=rows[0].content;
+   res.writeHead(200,{'Content-Type':'image/jpeg','Content-Length':image.length,'Cache-Control':'no-cache','Content-Security-Policy':"default-src 'none'",'X-Content-Type-Options':'nosniff'});
+   res.end(req.method==='HEAD'?undefined:image);return;
+  }
   const max=u.pathname.startsWith('/storage/v1/')?55*1024*1024:1024*1024;if(Number(req.headers['content-length']||0)>max){res.writeHead(413);res.end();return;}
   const headers=new Headers();for(const [k,v]of Object.entries(req.headers))if(v!=null)headers.set(k,Array.isArray(v)?v.join(','):v);
   const request=new Request(publicURL+req.url,{method:req.method,headers,...(!['GET','HEAD'].includes(req.method)?{body:Readable.toWeb(req),duplex:'half'}:{})});let response;

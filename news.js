@@ -1,6 +1,50 @@
 const News = (()=>{
   const e=v=>escapeHtml(v),names={site:'Новости сайта',college:'Новости техникума'},kinds={news:'Новость',announcement:'Объявление',update:'Журнал обновлений'};
-  const records=new Map(),states=new WeakMap();let currentPerson=null;
+  const records=new Map(),states=new WeakMap(),editorPhotos=new WeakMap();let currentPerson=null;
+  const maxPhotos=4, maxPhotoBytes=140*1024;
+  const photoUrl=id=>typeof id==='string'&&/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(id)?'/storage/v1/news-photo/'+id:'';
+  function gallery(post){
+    const images=(post.photos||[]).map(photoUrl).filter(Boolean);
+    return images.length?`<div class="news-photos">${images.map((url,i)=>`<a href="${url}" target="_blank" rel="noopener" aria-label="Открыть фото ${i+1}"><img src="${url}" alt="Фото ${i+1} к публикации «${e(post.title)}»" loading="lazy" decoding="async"></a>`).join('')}</div>`:'';
+  }
+  async function preparePhoto(file){
+    if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>20*1024*1024||!file.size)throw Error('Выберите фото JPEG, PNG или WebP размером до 20 МБ.');
+    let image;
+    try{image=await createImageBitmap(file);}catch{throw Error('Не удалось открыть фото «'+file.name+'».');}
+    try{
+      const canvas=document.createElement('canvas'),context=canvas.getContext('2d');
+      for(const size of [1600,1200,900,650]){
+        const scale=Math.min(1,size/Math.max(image.width,image.height));
+        canvas.width=Math.max(1,Math.round(image.width*scale));canvas.height=Math.max(1,Math.round(image.height*scale));
+        context.fillStyle='#fff';context.fillRect(0,0,canvas.width,canvas.height);context.drawImage(image,0,0,canvas.width,canvas.height);
+        for(const quality of [.85,.72,.58]){
+          const imageUrl=canvas.toDataURL('image/jpeg',quality),data=imageUrl.split(',')[1];
+          if(data&&Math.ceil(data.length*3/4)<=maxPhotoBytes)return {data,url:imageUrl};
+        }
+      }
+      throw Error('Не удалось уменьшить размер фото «'+file.name+'».');
+    }finally{image.close();}
+  }
+  function photoEditor(form,post){
+    const photos=(post?.photos||[]).filter(photoUrl).map(id=>({id,url:photoUrl(id)}));
+    form.insertAdjacentHTML('beforeend',`<fieldset class="news-photo-editor"><legend>Фотографии</legend><label for="newsPhotos">Добавить фото<input id="newsPhotos" type="file" multiple accept="image/jpeg,image/png,image/webp"></label><small>До ${maxPhotos} фото. JPEG, PNG или WebP.</small><div class="news-photo-editor-list"></div><p class="news-photo-error" role="status"></p></fieldset>`);
+    const field=form.querySelector('.news-photo-editor'),input=field.querySelector('input'),list=field.querySelector('.news-photo-editor-list'),status=field.querySelector('[role="status"]'),submit=form.querySelector('[type="submit"]');
+    form.querySelector('.actions').before(field);
+    const update=()=>{
+      list.innerHTML=photos.map(({url},i)=>`<article><img src="${url}" alt="Фото ${i+1}"><button type="button" class="secondary" data-remove-photo="${i}" aria-label="Убрать фото ${i+1}">Убрать фото</button></article>`).join('');
+      input.disabled=photos.length>=maxPhotos;
+    };
+    list.onclick=event=>{const button=event.target.closest('[data-remove-photo]');if(!button||form.dataset.preparingPhotos||submit.disabled)return;photos.splice(Number(button.dataset.removePhoto),1);status.textContent='';update();};
+    input.onchange=async()=>{
+      const chosen=[...input.files];input.value='';if(!chosen.length||submit.disabled)return;
+      if(photos.length+chosen.length>maxPhotos){status.textContent='Можно прикрепить до четырёх фотографий.';return;}
+      input.disabled=submit.disabled=true;form.dataset.preparingPhotos='true';status.textContent='Подготавливаем фото…';
+      try{const prepared=[];for(const file of chosen)prepared.push(await preparePhoto(file));photos.push(...prepared);status.textContent='';}
+      catch(error){status.textContent=error.message;}
+      finally{delete form.dataset.preparingPhotos;submit.disabled=false;update();}
+    };
+    editorPhotos.set(form,photos);update();
+  }
   async function refresh(list){
     const state=states.get(list);if(!state||!list.isConnected)return;
     if(state.loading){state.refreshAfter=true;return;}
@@ -22,7 +66,7 @@ const News = (()=>{
   function article(n,manage=false){
     records.set(n.id,n);
     const long=n.body.length>600,commit=/^[a-f0-9]{40}$/.test(n.commit_sha??'')?n.commit_sha:null;
-    return `<article class="news-article" data-news-id="${e(n.id)}"><div class="news-meta"><span class="news-tag" data-news-channel="${e(n.channel)}">${names[n.channel]||names.site}</span><span>${kinds[n.kind]||'Новость'}</span><time datetime="${e(n.published_at)}">${e(new Date(n.published_at).toLocaleString('ru-RU',{timeZone:'Asia/Krasnoyarsk',dateStyle:'long',timeStyle:'short'}))}</time>${manage&&!n.imported&&n.can_edit?ActionMenu.render(`<button type="button" class="secondary" data-news-action="edit" data-id="${e(n.id)}">Редактировать</button><button type="button" class="danger-button" data-news-action="delete" data-id="${e(n.id)}">Удалить</button>`,'Действия с публикацией'):''}</div><h3>${e(n.title)}</h3><p class="news-body">${e(long?n.body.slice(0,380)+'…':n.body)}</p>${long?`<details class="news-full"><summary>Читать полностью</summary><p class="news-body">${e(n.body)}</p></details>`:''}${commit?`<a class="commit-link" href="https://github.com/kteppk/lms-platform1/commit/${commit}" target="_blank" rel="noopener noreferrer">Коммит ${commit.slice(0,7)} ↗</a>`:''}<div class="news-reactions">${like(n)}</div></article>`;
+    return `<article class="news-article" data-news-id="${e(n.id)}"><div class="news-meta"><span class="news-tag" data-news-channel="${e(n.channel)}">${names[n.channel]||names.site}</span><span>${kinds[n.kind]||'Новость'}</span><time datetime="${e(n.published_at)}">${e(new Date(n.published_at).toLocaleString('ru-RU',{timeZone:'Asia/Krasnoyarsk',dateStyle:'long',timeStyle:'short'}))}</time>${manage&&n.can_edit?ActionMenu.render(`<button type="button" class="secondary" data-news-action="edit" data-id="${e(n.id)}">Редактировать</button><button type="button" class="danger-button" data-news-action="delete" data-id="${e(n.id)}">Удалить</button>`,'Действия с публикацией'):''}</div><h3>${e(n.title)}</h3><p class="news-body">${e(long?n.body.slice(0,380)+'…':n.body)}</p>${long?`<details class="news-full"><summary>Читать полностью</summary><p class="news-body">${e(n.body)}</p></details>`:''}${commit?`<a class="commit-link" href="https://github.com/kteppk/lms-platform1/commit/${commit}" target="_blank" rel="noopener noreferrer">Коммит ${commit.slice(0,7)} ↗</a>`:''}${gallery(n)}<div class="news-reactions">${like(n)}</div></article>`;
   }
   async function feed(root,channel,more=false,manage=false,fresh=false){
     let state=states.get(root);if(!more||!state){state={channel,offset:0,manage};states.set(root,state);root.innerHTML='<p role="status">Загрузка новостей…</p>';}
@@ -50,6 +94,7 @@ const News = (()=>{
     root._editingNews=post;
     root.querySelector('#newsEditor').innerHTML=`<h3>${post?'Редактировать публикацию':'Новая публикация'}</h3><form data-news-form><div class="field-grid"><label for="newsChannel">Тег<select id="newsChannel"><option value="site" ${post?.channel==='site'?'selected':''}>Новости сайта</option><option value="college" ${post?.channel==='college'?'selected':''}>Новости техникума</option></select></label><label for="newsKind">Вид публикации<select id="newsKind">${Object.entries(kinds).map(([v,t])=>`<option value="${v}" ${post?.kind===v?'selected':''}>${t}</option>`).join('')}</select></label></div><label for="newsTitle">Заголовок<input id="newsTitle" required maxlength="200" value="${e(post?.title??'')}"></label><label for="newsBody">Текст<textarea id="newsBody" required maxlength="20000" rows="7">${e(post?.body??'')}</textarea></label><label class="check-label"><input id="newsNotify" type="checkbox">Также отправить общее уведомление (текст до 2000 символов)</label><label class="check-label"><input id="newsImportant" type="checkbox">Выделить уведомление как важное</label><p class="hint">По умолчанию публикация появляется только в новостях. Для рассылки включите «Также отправить общее уведомление». Обновления GitHub добавляются автоматически, без рассылки.</p><div class="actions"><button type="submit" class="primary">${post?'Сохранить изменения':'Опубликовать'}</button>${post?'<button type="button" class="secondary" data-news-action="cancel">Отменить</button>':''}</div></form>`;
     const target=root.querySelector('#newsEditor');target.hidden=false;target.querySelector('h3').outerHTML=`<div class="dialog-heading"><h3>${post?'Редактировать публикацию':'Новая публикация'}</h3>${ActionMenu.icon('close','Закрыть редактор публикации','data-news-action="cancel"','ui-icon-button icon-close')}</div>`;
+    photoEditor(target.querySelector('form'),post);
     if(currentPerson.role!=='admin'){target.querySelector('#newsKind').innerHTML='<option value="news">Новость</option>';target.querySelector('#newsNotify').closest('label').remove();target.querySelector('#newsImportant').closest('label').remove();target.querySelector('.hint').textContent='Куратор может публиковать новости и менять свои записи. Общие рассылки отправляет администрация.';}
   }
   async function manager(root){return home(root,currentPerson);}
@@ -81,7 +126,8 @@ const News = (()=>{
     const root=form.closest('[data-news-manager]'),post=root._editingNews;
     try{
       const channel=form.querySelector('#newsChannel').value;
-      await callFunction('saveNewsPost',{id:post?.id,revision:post?.revision,channel,kind:form.querySelector('#newsKind').value,title:form.querySelector('#newsTitle').value,body:form.querySelector('#newsBody').value,notify:form.querySelector('#newsNotify')?.checked===true,important:form.querySelector('#newsImportant')?.checked===true});
+      const photos=(editorPhotos.get(form)||[]).map(({id,data})=>id?{id}:{data});
+      await callFunction('saveNewsPost',{id:post?.id,revision:post?.revision,channel,kind:form.querySelector('#newsKind').value,title:form.querySelector('#newsTitle').value,body:form.querySelector('#newsBody').value,notify:form.querySelector('#newsNotify')?.checked===true,important:form.querySelector('#newsImportant')?.checked===true,photos});
       root._editingNews=null;root.querySelector('#newsEditor').hidden=true;root.querySelector('#newsEditor').replaceChildren();root.querySelector('#newsTag').value='all';const list=root.querySelector('[data-news-feed]');list.dataset.newsFeed='all';await feed(list,'all',false,true);Portal.toast('Публикация сохранена','','success');
     }catch(error){Portal.toast('Публикация не сохранена',error.message,'danger');}finally{button.disabled=false;}
   });

@@ -12,30 +12,29 @@
   <script src="gradebook.js?v=1.0.0"></script>
   <script src="release.js?v=1.0.0"></script>
   <script src="action-menu.js?v=1.0.0" defer></script>
-  <script src="news.js?v=1.0.0" defer></script>
+  <script src="news.js?v=1.0.0&build=cabinet1" defer></script>
   <script src="subject-search.js?v=1.0.0" defer></script>
-  <script src="mobile-nav.js?v=1.0.0" defer></script>
+  <script src="mobile-nav.js?v=1.0.0&build=cabinet1" defer></script>
   <script src="schedule.js?v=1.0.0" defer></script>
-  <script src="subscriptions.js?v=1.0.0" defer></script>
-  <script src="account-tools.js?v=1.0.0" defer></script>
+  <script src="subscriptions.js?v=1.0.0&build=cabinet1" defer></script>
+  <script src="account-tools.js?v=1.0.0&build=cabinet1" defer></script>
   <script src="curator-chat.js?v=1.0.0" defer></script><script src="chat-unread.js?v=1.0.0" defer></script>
   <script src="push-settings.js?v=1.0.0" defer></script>
-  <script src="education.js?v=1.0.0" defer></script><script src="lesson-reminders.js?v=1.0.0" defer></script><script src="portal.js?v=1.0.0" defer></script>
+  <script src="education.js?v=1.0.0" defer></script><script src="lesson-reminders.js?v=1.0.0" defer></script><script src="portal.js?v=1.0.0&build=cabinet1" defer></script>
   <link rel="stylesheet" href="assessment.css?v=1.0.0">
   <link rel="stylesheet" href="subjects.css?v=1.0.0">
   <link rel="stylesheet" href="portal.css?v=1.0.0">
-  <link rel="stylesheet" href="mobile-nav.css?v=1.0.0">
+  <link rel="stylesheet" href="mobile-nav.css?v=1.0.0&build=cabinet1">
   <link rel="stylesheet" href="schedule.css?v=1.0.0">
   <link rel="stylesheet" href="theme.css?v=1.0.0">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="stylesheet" href="theme-community.css?v=1.0.0">
-<script src="desktop-nav.js?v=1.0.0" defer></script><script src="schedule-export.js?v=1.0.0" defer></script><link rel="stylesheet" href="theme-091.css?v=1.0.0"><link rel="stylesheet" href="theme-100.css?v=1.0.0"><link rel="stylesheet" href="online-history.css?build=activity1"><script src="online-history.js?build=activity1" defer></script><script src="admin-tools.js?v=1.0.0&build=activity1" defer></script></head>
+<script src="desktop-nav.js?v=1.0.0" defer></script><script src="schedule-export.js?v=1.0.0" defer></script><link rel="stylesheet" href="theme-091.css?v=1.0.0"><link rel="stylesheet" href="theme-100.css?v=1.0.0"><link rel="stylesheet" href="online-history.css?build=activity1"><script src="online-history.js?build=activity1" defer></script><script src="admin-tools.js?v=1.0.0&build=activity1" defer></script><link rel="stylesheet" href="cabinet-header.css?v=1.0.0"></head>
 <body>
   <header>
     <h1><span class="brand-mark" aria-hidden="true">К</span><span>КТЭиП ПК<span class="brand-caption">Кабинет студента · Кызыл</span></span></h1>
     <div class="user-info">
-      <button class="profile-link" type="button" onclick="Portal.navigate('profile')"><span id="userName"></span></button>
-      <button class="logout" onclick="logout()">Выйти</button>
+      <button class="profile-link" type="button" aria-label="Меню профиля"><span id="userName"></span></button>
     </div>
   </header>
 
@@ -50,8 +49,6 @@
       <button class="tab-btn" data-tab="results" onclick="switchTab('results', this)">Мои результаты</button>
       <span class="nav-label">Информация</span><button class="tab-btn" data-tab="teachers" onclick="switchTab('teachers',this)">Преподаватели</button>
 <button class="tab-btn" data-tab="schedule" onclick="switchTab('schedule',this)">Расписание</button>
-<button class="tab-btn" data-tab="notifications" onclick="switchTab('notifications',this)">Уведомления</button>
-<button class="tab-btn" data-tab="people" onclick="switchTab('people',this)">Люди</button>
 <button class="tab-btn" data-tab="help" onclick="switchTab('help',this)">Справочник</button>
 <button class="tab-btn" data-tab="profile" onclick="switchTab('profile',this)">Мой профиль</button>
       <small class="site-version" data-site-version>Версия 1.0.0</small>

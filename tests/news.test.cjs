@@ -38,13 +38,36 @@ test('unified feed merges both tags in one deterministic chronological paginatio
  assert.ok(first.rows.some(n=>n.channel==='site'));assert.ok(first.rows.some(n=>n.channel==='college'));
 });
 
-test('explicit notifications import once; legacy publisher remains compatible; imported commits cannot be edited',async()=>{
+test('explicit notifications import once and admins can remove imported posts without restoring them on sync',async()=>{
  const p=await save('admin','Общее объявление','site',null,true);
  assert.equal((await db.query('select count(*)::int n from news_posts where title=$1',[p.title])).rows[0].n,1);
  await db.query("insert into notifications(actor_id,category,title,body,destination) values('admin','announcement','Из прежнего API','Текст','notifications')");
  assert.equal((await db.query("select count(*)::int n from news_posts where title='Из прежнего API'")).rows[0].n,1);
  const imported=(await rpc('news_feed',['site',0])).rows.find(n=>n.imported);
- await assert.rejects(save('admin','Переписать импорт','site',imported),/уже изменена/);
+ const updated=await save('admin','Изменённая запись','site',imported);
+ assert.equal(updated.title,'Изменённая запись');
+ await rpc('delete_news_post',['admin',updated.id,updated.revision]);
+ await db.query("insert into news_posts(channel,title,body,source_key) values('site','Повторный импорт','Текст',$1) on conflict(source_key) do nothing",[updated.source_key]);
+ assert.equal((await rpc('news_feed',['site',0])).rows.some(n=>n.id===updated.id),false);
+ assert.equal((await rpc('guest_read',['listNews',JSON.stringify({channel:'site'})])).rows.some(n=>n.id===updated.id),false);
+ await assert.rejects(rpc('lite_public_snapshot',['post',null,'2026-11-16',0,updated.id]),{code:'P0002'});
+});
+test('photo edits are atomic, apply to one post only and preserve curator permissions',async()=>{
+ await db.exec("insert into profiles(id,name,email) values('news-curator','Куратор','curator@test');update account_roles set role='curator' where user_id='news-curator'");
+ const image=Buffer.from([255,216,255,224,255,217]).toString('base64');
+ const savePhotos=(actor,post,photos)=>rpc('save_news_post_with_photos',[actor,post?.id??null,post?.revision??0,'college','news','Новость с фото','Текст',false,false,JSON.stringify(photos)]);
+ const post=await savePhotos('news-curator',null,[{data:image},{data:image}]);
+ const feed=await rpc('news_feed_v2',['news-curator','all','newest',0]);const item=feed.rows.find(n=>n.id===post.id);
+ assert.ok(item.can_edit);assert.equal(item.photos.length,2);assert.equal(JSON.stringify(item).includes(image),false);
+ await assert.rejects(savePhotos('student',post,[]),{code:'42501'});
+ await assert.rejects(savePhotos('news-curator',null,[{id:item.photos[0]}]),{code:'22023'});
+ await assert.rejects(savePhotos('admin',post,[{data:'invalid'}]),{code:'22023'});
+ const edited=await savePhotos('admin',post,[{id:item.photos[1]}]);assert.equal(edited.revision,post.revision+1);
+ assert.deepEqual((await rpc('news_feed_v2',[null,'all','newest',0])).rows.find(n=>n.id===post.id).photos,[item.photos[1]]);
+ await rpc('delete_news_post',['news-curator',edited.id,edited.revision]);
+ assert.equal((await db.query('select count(*)::int n from news_post_photos where post_id=$1',[post.id])).rows[0].n,0);
+ assert.equal((await db.query("select has_table_privilege('authenticated','news_post_photos','select') allowed")).rows[0].allowed,false);
+ await db.exec("delete from profiles where id='news-curator'");
 });
 test('registration totals count mutually exclusive current roles, include zero months and deny students',async()=>{
  const d=await rpc('registration_statistics',['admin']);assert.equal(d.total,3);assert.equal(d.students,1);assert.equal(d.teachers,1);assert.equal(d.admins,1);assert.equal(d.months.length,6);assert.equal(d.last7,3);

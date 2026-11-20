@@ -1,5 +1,5 @@
 import type {SupabaseClient} from 'npm:@supabase/supabase-js@2.89.0';
-import {dataOf,id,invalid,requireAdmin,text} from './shared.ts';
+import {ApiError,dataOf,id,invalid,record,requireAdmin,text} from './shared.ts';
 import type {Actor,Input} from './shared.ts';
 import release from '../../../release.json' with {type:'json'};
 
@@ -54,11 +54,22 @@ export async function newsAction(db:SupabaseClient,actor:Actor,action:unknown,in
       if(typeof input.liked!=='boolean')invalid('Укажите состояние лайка.');
       data=await dataOf(db.rpc('set_news_like',{p_user:actor.uid,p_post:id(input.id),p_liked:input.liked}));break;
     }
-    case 'saveNewsPost':
+    case 'saveNewsPost':{
+      if(!['admin','curator'].includes(actor.role))throw new ApiError(403,'permission-denied','Публикации доступны администраторам и кураторам.');
       if(!['site','college'].includes(String(input.channel))||!['news','announcement','update'].includes(String(input.kind)))invalid('Выберите ленту и тип публикации.');
       if(input.id&&(!Number.isInteger(input.revision)||Number(input.revision)<0))invalid('Обновите новость.');
-      data=await dataOf(db.rpc('save_news_post',{p_actor:actor.uid,p_id:input.id?id(input.id):null,p_revision:input.id?input.revision:0,
-        p_channel:input.channel,p_kind:input.kind,p_title:text(input.title,200,'Заголовок'),p_body:text(input.body,20000,'Текст'),p_notify:input.notify===true,p_important:input.important===true}));break;
+      const args={p_actor:actor.uid,p_id:input.id?id(input.id):null,p_revision:input.id?input.revision:0,
+        p_channel:input.channel,p_kind:input.kind,p_title:text(input.title,200,'Заголовок'),p_body:text(input.body,20000,'Текст'),p_notify:input.notify===true,p_important:input.important===true};
+      if(input.photos===undefined){data=await dataOf(db.rpc('save_news_post',args));break;}
+      if(!Array.isArray(input.photos)||input.photos.length>4)invalid('Можно прикрепить до четырёх фотографий.');
+      const photos=input.photos.map(value=>{
+        const photo=record(value);
+        if(typeof photo.id==='string'&&/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(photo.id)&&photo.data===undefined)return {id:photo.id};
+        if(typeof photo.data==='string'&&photo.data.length<=191148&&/^\/9j\/[A-Za-z0-9+/]*={0,2}$/.test(photo.data)&&photo.id===undefined)return {data:photo.data};
+        return invalid('Не удалось прочитать фотографию.');
+      });
+      data=await dataOf(db.rpc('save_news_post_with_photos',{...args,p_photos:photos}));break;
+    }
     case 'deleteNewsPost':
       if(!Number.isInteger(input.revision)||Number(input.revision)<0)invalid('Обновите новость.');
       data=await dataOf(db.rpc('delete_news_post',{p_actor:actor.uid,p_id:id(input.id),p_revision:input.revision}));break;

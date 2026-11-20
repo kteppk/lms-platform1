@@ -82,7 +82,7 @@
     inset: auto 0 0;
     z-index: 30;
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(var(--mobile-nav-columns, 5), minmax(0, 1fr));
     min-height: var(--mobile-nav-height);
     padding: 6px max(5px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(5px, env(safe-area-inset-left, 0px));
     border-top: 1px solid var(--line);
