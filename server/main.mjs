@@ -1,6 +1,7 @@
 import http from 'node:http';import fs from 'node:fs/promises';import path from 'node:path';import {createRequire,registerHooks} from 'node:module';import {pathToFileURL} from 'node:url';import {Readable} from 'node:stream';import pg from 'pg';
 import {createDatabase} from './db.mjs';import {createStorage} from './storage.mjs';import {createAuth} from './auth.mjs';
 import {createRealtime} from './realtime.mjs';
+import {createPresenceHistory} from './presence-history.mjs';
 const require=createRequire(import.meta.url);registerHooks({resolve(specifier,context,next){if(specifier==='npm:jose@6.1.3')return {url:pathToFileURL(require.resolve('jose')).href,shortCircuit:true};return next(specifier,context);}});
 globalThis.Deno={env:{get:key=>process.env[key]}};globalThis.EdgeRuntime={waitUntil:task=>task.catch(()=>{})};
 pg.types.setTypeParser(1082,value=>value);pg.types.setTypeParser(1700,Number);
@@ -13,8 +14,11 @@ const {createHandler}=await import('./runtime/lms/api.mjs'),{createPublicHandler
 const {ApiError}=await import('./runtime/lms/shared.mjs');
 const verifyLocal=async token=>{try{return await auth.verify(token);}catch(e){throw new ApiError(e.status||401,e.code||'unauthenticated',e.message);}};
 const api=createHandler(db,verifyLocal),publicAPI=createPublicHandler(db,{background:task=>task.catch(()=>{})});
-const realtime=createRealtime({pool,authenticate:auth.streamIdentity,publicURL,createListener:()=>new pg.Client({connectionString:env.DATABASE_URL}),onChange:event=>{if(['news','groups','schedule'].includes(event.kind))publicAPI.invalidate?.();}});
+let presenceHistory;
+const realtime=createRealtime({pool,authenticate:auth.streamIdentity,publicURL,createListener:()=>new pg.Client({connectionString:env.DATABASE_URL}),onChange:event=>{if(['news','groups','schedule'].includes(event.kind))publicAPI.invalidate?.();if(event.kind==='presence')presenceHistory?.capture();}});
 await realtime.start();
+presenceHistory=createPresenceHistory({pool,getPresence:realtime.presence,onSample:()=>realtime.publish({kind:'activity'}),onError:()=>console.error('Online history save failed; retrying later')});
+presenceHistory.start();
 const server=http.createServer(async(req,res)=>{
  try{
   const u=new URL(req.url,publicURL);if(u.pathname==='/healthz'){await pool.query('select 1');res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end('{"ok":true}');return;}
@@ -30,7 +34,8 @@ const server=http.createServer(async(req,res)=>{
    if(body?.action==='getOnlineStats'){
     try{const identity=await auth.verify(request.headers.get('Authorization')?.replace(/^Bearer /,''));const role=(await pool.query('select role from public.account_roles where user_id=$1',[identity.uid])).rows[0]?.role;
      if(role!=='admin')throw Object.assign(Error('Статистика онлайна доступна только администрации.'),{status:403,code:'permission-denied'});
-     response=Response.json({data:realtime.presence()},{headers:{'Cache-Control':'no-store'}});
+     const historyRange=body.data?.historyRange;
+     response=Response.json({data:{...realtime.presence(),...(historyRange!==undefined?{history:await presenceHistory.read(historyRange)}:{})}},{headers:{'Cache-Control':'no-store'}});
     }catch(e){response=Response.json({code:e.code||'internal',error:e.status?e.message:'Не удалось загрузить статистику.'},{status:e.status||500,headers:{'Cache-Control':'no-store'}});}
    }else if(['listRecoveryRequests','createAccountRecovery'].includes(body?.action)){
     try{const identity=await auth.verify(request.headers.get('Authorization')?.replace(/^Bearer /,''));response=Response.json(await auth.adminAction(identity,body.action,body.data??{}),{headers:{'Cache-Control':'no-store'}});}catch(e){response=Response.json({code:e.code||'internal',error:e.status?e.message:'Не удалось выполнить запрос.'},{status:e.status||500});}
@@ -52,4 +57,4 @@ async function tick(){if(workerBusy)return;workerBusy=true;try{
  await Promise.all([worker(),worker(),worker()]);
  }catch{console.error('Scheduled task failed; will retry next minute');}finally{workerBusy=false;}}
 let timer;function schedule(){timer=setTimeout(async()=>{await tick();schedule();},60000-Date.now()%60000);}if(env.WORKER_ENABLED!=='0')schedule();
-process.on('SIGTERM',()=>{clearTimeout(timer);realtime.close().finally(()=>server.close(()=>pool.end().then(()=>process.exit(0))));});
+process.on('SIGTERM',()=>{clearTimeout(timer);presenceHistory.close().finally(()=>realtime.close().finally(()=>server.close(()=>pool.end().then(()=>process.exit(0)))));});

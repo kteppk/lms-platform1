@@ -20,6 +20,8 @@ export async function syncGitHubNews(db:SupabaseClient,fetcher:typeof fetch=fetc
         if(typeof c.sha!=='string'||! /^[a-f0-9]{40}$/.test(c.sha))throw new Error('Invalid commit');
         latest||=c.sha;
         if(c.sha.startsWith(stop)||c.sha.startsWith(release.githubBaseCommit)){found=true;break;}
+        // Explicitly requested quiet maintenance still advances the sync cursor.
+        if(/\[skip-news\]/i.test(String(c.commit?.message??'')))continue;
         const translated:Record<string,string>={a35e2b5:'Версия 0.9.0: новости, гостевой доступ, чат кураторов и уведомления\n\nДобавлены гостевой просмотр новостей и расписания, фильтры публикаций и лайки. Закрытый чат доступен кураторам-студентам и администрации. Браузерные уведомления включаются отдельно на каждом устройстве.',b6b3677:'Проверены кабинеты, права кураторов и доставка уведомлений\n\nНа рабочем сайте проверены кабинеты, лайки, закрытый чат и настоящая доставка push-уведомлений. Временные проверочные данные удалены.'};
         const message=translated[c.sha.slice(0,7)]??String(c.commit?.message??'Обновление сайта'),date=c.commit?.committer?.date;
         if(!date||!Number.isFinite(Date.parse(date)))throw new Error('Invalid commit date');

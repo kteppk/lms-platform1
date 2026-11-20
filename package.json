@@ -2,7 +2,7 @@
   "name": "lms-platform",
   "private": true,
   "scripts": {
-    "test": "node --experimental-transform-types --test tests/assessment.test.cjs tests/client-retry.test.cjs tests/schedule.test.cjs tests/results.test.cjs tests/identity-notifications.test.cjs tests/news.test.cjs tests/connection.test.cjs tests/people.test.cjs tests/lite.test.cjs tests/community.test.cjs tests/schedule-photo-import.test.cjs tests/updates-091.test.cjs tests/realtime.test.mjs",
+    "test": "node --experimental-transform-types --test tests/assessment.test.cjs tests/client-retry.test.cjs tests/schedule.test.cjs tests/results.test.cjs tests/identity-notifications.test.cjs tests/news.test.cjs tests/connection.test.cjs tests/people.test.cjs tests/lite.test.cjs tests/community.test.cjs tests/schedule-photo-import.test.cjs tests/updates-091.test.cjs tests/realtime.test.mjs tests/presence-history.test.mjs",
     "test:mobile": "node tests/mobile-navigation.cjs",
     "release": "node scripts/release.cjs",
     "test:community-ui": "node tests/community-ui.cjs",

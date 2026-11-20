@@ -10,7 +10,12 @@ function fixture(role){let liked=false,messages=[],title='Новость для 
  case 'listNotifications':return {rows:[],unreadCount:0};
  case 'listAccounts':return [{id:role,name:person.name,email:person.email,role}];
  case 'registrationStatistics':return {total:10,students:6,teachers:2,admins:1,last7:3,last30:5,months:[]};
- case 'getOnlineStats':return {accounts:2,roles:{student:1,teacher:0,curator:0,admin:1},guestConnections:3,available:true};
+ case 'getOnlineStats':{
+  const stats={accounts:2,roles:{student:1,teacher:0,curator:0,admin:1},guestConnections:3,available:true};if(!data.historyRange)return stats;
+  const config={'60m':[60,1],'7h':[420,5],'24h':[1440,15],'3d':[4320,30],'7d':[10080,60]}[data.historyRange];
+  const now=Date.now(),start=now-config[0]*60000,points=Array.from({length:Math.ceil(config[0]/config[1])},(_,i)=>({at:new Date(start+i*config[1]*60000).toISOString(),accounts:i<3||i===10?null:i%8,guestConnections:i<3||i===10?null:i%5,samples:i<3||i===10?0:1}));
+  return {...stats,history:{range:data.historyRange,stepMinutes:config[1],from:new Date(start).toISOString(),to:new Date(now).toISOString(),collectionStartedAt:new Date(start).toISOString(),points}};
+ }
  case 'listSubjectJoinRequests':return [];
  case 'listRecoveryRequests':return [];
  case 'getPushSettings':return {publicKey:'B'+'a'.repeat(86),device:null};
@@ -66,7 +71,12 @@ async function checkChat(page,role,width){
   if(role!=='guest'){await page.locator('.news-like').click();await page.locator('.news-like[aria-pressed="true"]').waitFor();await page.locator('.news-like').click();await page.locator('.news-like[aria-pressed="false"]').waitFor();}
   assert.equal(await page.locator('.tabs [data-tab="curator-chat"]').count(),['admin','curator'].includes(role)?1:0);
   if(['admin','curator'].includes(role)){await page.locator('.tabs [data-tab="curator-chat"]').click();await page.locator('#chatBody').fill('<script>проверка</script>');await page.locator('[data-chat-form] button').click();await page.locator('.curator-message p').waitFor();assert.equal(await page.locator('.curator-message p').textContent(),'<script>проверка</script>');assert.equal(await page.locator('.curator-message script').count(),0);}
-  if(role==='admin'){await page.locator('.tabs [data-tab="accounts"]').click();await page.locator('.online-stat-grid').waitFor();assert.equal(await page.locator('.online-total strong').textContent(),'2');await page.getByText('Новых заявок нет.',{exact:true}).waitFor();}
+  if(role==='admin'){await page.locator('.tabs [data-tab="accounts"]').click();await page.locator('.online-stat-grid').waitFor();assert.equal(await page.locator('.online-total strong').textContent(),'2');await page.getByText('Новых заявок нет.',{exact:true}).waitFor();
+   await page.locator('[data-history-plot] svg').waitFor();for(const range of ['7h','24h','3d','7d','60m']){await page.locator('[data-history-range]').selectOption(range);await page.locator('[data-history-plot] svg').waitFor();await page.locator('[data-history-status]').filter({hasText:'Обновлено'}).waitFor();}
+   await page.locator('[data-history-plot] svg').focus();await page.keyboard.press('ArrowLeft');assert.match(await page.locator('[data-history-tooltip]').textContent(),/Аккаунты|нет измерений/);
+   for(const width of [320,390]){await page.setViewportSize({width,height:844});await page.locator('[data-history-range]').selectOption('7d');await page.locator('[data-history-plot] svg').waitFor();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'activity chart fits '+width);await page.locator('[data-history-plot]').screenshot({path:path.join(root,'.qa-output',`activity-${width}.png`)});}
+   await page.setViewportSize({width:1280,height:900});
+  }
   if(['admin','curator'].includes(role)){await page.locator('.tabs [data-tab="home"]').click();await page.locator('[data-news-action="compose"]').click();await page.locator('#newsTitle').fill('Новая публикация');await page.locator('#newsBody').fill('Текст новости');assert.equal(await page.locator('#newsNotify').count(),role==='admin'?1:0);await page.locator('[data-news-form] [type="submit"]').click();await page.getByRole('heading',{name:'Новая публикация',exact:true}).waitFor();}
   if(['student','curator'].includes(role)){await page.locator('.tabs [data-tab="profile"]').click();await page.locator('#educationBirth').waitFor();await page.locator('#educationSpecialty').fill('Информационные системы');await page.getByRole('button',{name:'Сохранить учебные данные',exact:true}).click();await page.getByText('Учебные данные сохранены.',{exact:true}).waitFor();assert.match(await page.locator('[data-own-age]').textContent(),/18 лет/);}
   if(role!=='guest'){await page.locator('.tabs [data-tab="people"]').click();await page.getByRole('button',{name:'Открыть профиль',exact:true}).click();await page.getByText('Высшее образование',{exact:true}).waitFor();assert.equal(await page.getByRole('button',{name:'Профиль преподавателя',exact:true}).count(),0);}

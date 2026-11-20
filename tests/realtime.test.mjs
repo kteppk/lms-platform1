@@ -43,6 +43,7 @@ test('online statistics deduplicate accounts, count anonymous connections separa
   await delay(5);const first=await h.open('student'),second=await h.open('student'),guest=await h.open(null,'?public=1'),admin=await h.open('admin');await delay(10);
   const count=h.hub.presence();assert.equal(count.accounts,2);assert.equal(count.roles.student,1);assert.equal(count.roles.admin,1);assert.equal(count.guestConnections,1);
   assert.deepEqual(permittedTopics({kind:'presence'},{uid:'s',role:'student'}),[]);assert.deepEqual(permittedTopics({kind:'presence'},{uid:'a',role:'admin'}),['presence']);
+  assert.deepEqual(permittedTopics({kind:'activity'},{uid:'s',role:'curator'}),[]);assert.deepEqual(permittedTopics({kind:'activity'},{uid:'a',role:'admin'}),['activity']);
   first.emit('close');assert.equal(h.hub.presence().roles.student,1);second.emit('close');assert.equal(h.hub.presence().roles.student,0);guest.emit('close');assert.equal(h.hub.presence().guestConnections,0);
   assert.equal(JSON.stringify(h.hub.presence()).includes('sessionHash'),false);admin.emit('close');assert.equal(h.hub.presence().accounts,0);
  }finally{await h.hub.close();}

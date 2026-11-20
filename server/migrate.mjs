@@ -25,5 +25,6 @@ try{
  await client.query('begin');await client.query('truncate app_auth.reset_tokens,app_auth.recovery_requests,app_auth.sessions,app_auth.users');
  for(const u of users){if(!u.passwordHash||!u.salt)throw Error('Missing password hash for an imported account');await client.query('insert into app_auth.users(id,email,display_name,email_verified,password,disabled,created_at,last_login_at) values($1,$2,$3,$4,$5,$6,$7,$8)',[u.localId,u.email,u.displayName||'',!!u.emailVerified,{algorithm:'firebase-scrypt',hash:u.passwordHash,salt:u.salt},!!u.disabled,new Date(Number(u.createdAt)||Date.now()),u.lastLoginAt?new Date(Number(u.lastLoginAt)):null]);}await client.query('commit');
  await client.query(await fs.readFile(new URL('./realtime-schema.sql',import.meta.url),'utf8'));
+ await client.query(await fs.readFile(new URL('./presence-schema.sql',import.meta.url),'utf8'));
  console.log('Restored and verified '+names.length+' public tables and '+users.length+' login accounts.');
 }catch(e){await client.query('rollback').catch(()=>{});console.error('Restore failed: '+e.message);process.exitCode=1;}finally{client.release();await pool.end();}

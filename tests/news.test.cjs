@@ -66,6 +66,15 @@ test('GitHub importer is idempotent, handles multiple commits and preserves the 
  await syncGitHubNews(client,fetcher);assert.equal(records.size,2);
  await syncGitHubNews(client,async()=>new Response('',{status:403}));assert.equal(cursor,'b'.repeat(40));assert.equal(updates.at(-1).locked_until,null);
 });
+test('quiet maintenance commits are omitted from news while the sync cursor still advances',async()=>{
+ const {syncGitHubNews}=await import(pathToFileURL(path.resolve('supabase/functions/lms/news.ts')));let cursor='264a2e1',posts=[];
+ const client={rpc:async()=>({data:{cursor_sha:cursor},error:null}),from:table=>({upsert:async rows=>{posts.push(...rows);return {error:null};},update:values=>({eq:async()=>{if(values.cursor_sha)cursor=values.cursor_sha;return {error:null};}})})};
+ const quiet={sha:'d'.repeat(40),commit:{message:'[skip-news] Административная статистика',committer:{date:'2026-11-20T03:00:00Z'}}};
+ const normal={sha:'c'.repeat(40),commit:{message:'Объявление об учебных материалах',committer:{date:'2026-11-20T02:00:00Z'}}};
+ await syncGitHubNews(client,async()=>new Response(JSON.stringify([quiet,normal,{sha:'264a2e1'+'0'.repeat(33)}])));
+ assert.equal(cursor,quiet.sha);assert.equal(posts.length,1);assert.equal(posts[0].commit_sha,normal.sha);
+ await syncGitHubNews(client,async()=>new Response(JSON.stringify([quiet,normal])));assert.equal(posts.length,1);
+});
 test('version is shared by release manifest, generated client and package',()=>{
  const release=require('../release.json'),pkg=require('../package.json');assert.match(release.version,/^\d+\.\d+\.\d+$/);assert.equal(pkg.version,release.version);assert.ok(fs.readFileSync('release.js','utf8').includes(JSON.stringify(release)));
 });

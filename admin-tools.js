@@ -1,11 +1,13 @@
 const AdministrationTools=(()=>{
  const e=v=>escapeHtml(v??'');let onlineRoot=null,busy=false,again=false;
  async function online(root=onlineRoot){
-  if(!root?.isConnected||document.hidden)return;onlineRoot=root;if(busy){again=true;return;}busy=true;
+  if(!root?.isConnected||document.hidden)return;onlineRoot=root;
+  if(!root.querySelector('[data-online-current]')){root.innerHTML='<div data-online-current></div><section class="online-history" data-online-history></section>';if(typeof OnlineHistory!=='undefined')OnlineHistory.render(root.querySelector('[data-online-history]'));}
+  const current=root.querySelector('[data-online-current]');if(busy){again=true;return;}busy=true;
   try{const data=await callFunction('getOnlineStats',{},undefined,{fresh:true});if(!root.isConnected)return;
    const labels={student:'Студенты',teacher:'Преподаватели',curator:'Кураторы',admin:'Администрация'};
-   root.innerHTML=`<div class="page-heading"><h3>Онлайн сейчас</h3><span class="online-live">${data.available?'В реальном времени':'Восстанавливаем соединение'}</span></div><div class="online-stat-grid"><div class="online-total"><strong>${e(data.accounts)}</strong><span>аккаунтов онлайн</span></div>${Object.entries(labels).map(([role,label])=>`<div><strong>${e(data.roles[role])}</strong><span>${label}</span></div>`).join('')}<div><strong>${e(data.guestConnections)}</strong><span>гостевых подключений</span></div></div><p class="hint">Сайт открыт на видимом экране. Один аккаунт считается один раз, даже в нескольких вкладках. Гости считаются по подключениям. При обрыве интернета данные обновляются после обнаружения разрыва.</p>`;
-  }catch{if(root.isConnected)root.innerHTML='<h3>Онлайн сейчас</h3><p role="status">Не удалось обновить статистику. Повторим при восстановлении связи.</p>';}
+   current.innerHTML=`<div class="page-heading"><h3>Онлайн сейчас</h3><span class="online-live">${data.available?'В реальном времени':'Восстанавливаем соединение'}</span></div><div class="online-stat-grid"><div class="online-total"><strong>${e(data.accounts)}</strong><span>аккаунтов онлайн</span></div>${Object.entries(labels).map(([role,label])=>`<div><strong>${e(data.roles[role])}</strong><span>${label}</span></div>`).join('')}<div><strong>${e(data.guestConnections)}</strong><span>гостевых подключений</span></div></div><p class="hint">Сайт открыт на видимом экране. Один аккаунт считается один раз, даже в нескольких вкладках. Гости считаются по подключениям. При обрыве интернета данные обновляются после обнаружения разрыва.</p>`;
+  }catch{if(root.isConnected)current.innerHTML='<h3>Онлайн сейчас</h3><p role="status">Не удалось обновить статистику. Повторим при восстановлении связи.</p>';}
   finally{busy=false;if(again){again=false;queueMicrotask(()=>online());}}
  }
  async function requests(root){
