@@ -141,7 +141,6 @@ const Portal = (() => {
     container.innerHTML=`<h2>Преподаватели</h2><p class="section-lead">Образование, опыт и достижения преподавателей техникума.</p><div class="teacher-grid">${teachers.map(t=>`<article class="item teacher-card">${avatar(t)}<h3>${e(t.name)}</h3><p class="meta">${e(t.position||'Преподаватель')}</p><span class="badge mint">Предметов: ${t.subjectIds.length}</span><div class="actions">${button('Открыть профиль','view-teacher',`data-id="${e(t.id)}"`,'primary')}</div></article>`).join('')||empty('Профили преподавателей пока не добавлены.')}</div>`;
   }
   function teacherDetails(p){return `<div class="teacher-profile-overview"><span>${e(p.position||'Преподаватель')}</span>${p.experience_years!=null?`<span>Педагогический стаж: ${e(p.experience_years)} лет</span>`:''}<span>Документов: ${(p.documents||[]).length}</span></div>${[['Образование',p.education],['Квалификация и повышение квалификации',p.qualification],...(p.bio?[['Дополнительная информация',p.bio]]:[])].map(([title,body])=>`<section class="profile-block"><h3>${title}</h3><p class="teacher-profile-text">${e(body||'Информация пока не заполнена.')}</p></section>`).join('')}
-      <section class="profile-block"><h3>Предметы преподавателя</h3><div class="teacher-subject-list">${(p.subjects||[]).map(s=>`<article><h4>${e(s.title)}</h4>${s.description?`<p class="teacher-profile-text">${e(s.description)}</p>`:''}</article>`).join('')||empty('Предметы пока не указаны.')}</div></section>
       <section class="profile-block"><h3>Дипломы, грамоты и сертификаты</h3><p class="hint">Документы, которые преподаватель добавил в свой профиль.</p><div class="document-list">${p.documents.map(d=>{
         const url=safeMaterialUrl(d.url);return `<article class="item"><span class="badge">${categories[d.category]}</span><h4>${e(d.title)}</h4><p class="meta">${e(d.issued_year||'')}</p>${url&&d.mime.startsWith('image/')?`<a href="${e(url)}" target="_blank" rel="noopener noreferrer"><img class="document-preview" src="${e(url)}" alt="${e(d.title)}" loading="lazy"></a>`:''}${url?materialLink(url,d.mime==='application/pdf'?'Открыть PDF / скачать':'Открыть документ'):''}</article>`;
       }).join('')||empty('Документов пока нет. Преподаватель может добавить их в своём профиле.')}</div></section>`; }
@@ -149,7 +148,9 @@ const Portal = (() => {
     container.dataset.teacherId=uid;
     selectedTeacher=await callFunction('getTeacherProfile',{teacherId:uid});if(!container?.isConnected)return;
     const p=selectedTeacher;
-    container.innerHTML=`${button('← Все преподаватели','teacher-list')}<div class="profile-heading">${avatar(p)}<div><h2>${e(p.name)}</h2><p>${e(p.position||'Преподаватель')}</p>${p.experience_years!==null&&p.experience_years!==undefined?`<span class="badge mint">Стаж: ${p.experience_years} лет</span>`:''}</div></div>
+    const subjects=p.subjects||[];
+    const subjectList=subjects.length?`<ul class="teacher-subjects" aria-label="Предметы преподавателя">${subjects.map(s=>`<li>${s.description?`<details><summary>${e(s.title)}</summary><p class="teacher-profile-text">${e(s.description)}</p></details>`:`<span>${e(s.title)}</span>`}</li>`).join('')}</ul>`:'<p class="meta">Предметы пока не указаны.</p>';
+    container.innerHTML=`${button('← Все преподаватели','teacher-list')}<div class="profile-heading">${avatar(p)}<div><h2>${e(p.name)}</h2>${subjectList}<p>${e(p.position||'Преподаватель')}</p>${p.experience_years!==null&&p.experience_years!==undefined?`<span class="badge mint">Стаж: ${p.experience_years} лет</span>`:''}</div></div>
       ${p.canEdit?button('Редактировать профиль','edit-teacher',`data-id="${e(p.id)}"`,'primary'):''}
       ${teacherDetails(p)}`;
   }
@@ -296,7 +297,7 @@ const Portal = (() => {
     }
     if(!root?.isConnected)return;
     const tab=document.querySelector('.tabs [data-tab].active')?.dataset.tab;
-    const relevant=tab==='accounts'&&(all||changed.includes('accounts'))||tab==='profile'&&(all||changed.includes('profile'))||tab==='teachers'&&(all||changed.includes('people'))||tab==='help'&&(all||changed.includes('settings'));
+    const relevant=tab==='accounts'&&(all||changed.includes('accounts'))||tab==='profile'&&(all||changed.includes('profile'))||tab==='teachers'&&(all||changed.some(t=>['content','people'].includes(t)))||tab==='help'&&(all||changed.includes('settings'));
     if(relevant&&!root.querySelector('[data-portal-form="teacher-profile"]'))Realtime.update('portal-view',root,()=>tab==='accounts'?renderAccounts(root):tab==='profile'?myProfile(root):tab==='teachers'?(root.dataset.teacherId?viewTeacher(root.dataset.teacherId,root):renderTeachers(root)):AccountTools.render(tab,root));
   });
   return {teacherDetails,init,render,navigate,toast,openTeacher,openSubscriptions};

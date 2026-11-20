@@ -33,6 +33,8 @@ function fixture(role){let liked=false,messages=[],title='Новость для 
  case 'getGroupLessonTimes':return [{lesson_number:1,starts_at:'08:00:00',ends_at:'09:35:00'}];
  case 'exportSchedule':return {week:'2026-11-16',generatedAt:new Date().toISOString(),groups:[{group:{id:'g',name:'9241',course:'4',program:'Программирование',lessons_per_day:6},cells:[{weekday:1,lesson_number:1,status:'lesson',title:'Математика',teacher_label:'ФИО',room:'20',starts_at:'08:00:00',ends_at:'09:35:00'}]}]};
  case 'listActiveAttempts':return [];
+ case 'listTeachers':return [{id:'instructor',name:'Проверочный Преподаватель',subjectIds:['math','law']}];
+ case 'getTeacherProfile':return {id:'instructor',name:'Проверочный Преподаватель',documents:[],subjects:[{id:'math',title:'Математика',description:'Программа курса'},{id:'law',title:'Право'}]};
  case 'listCuratorMessages':return {rows:messages.filter(m=>!data.after||BigInt(m.id)>BigInt(data.after))};
  case 'getCuratorChatSummary':return {unreadCount:0,lastReadId:String(messages.length),latestId:String(messages.length),latestIncoming:null};
  case 'markCuratorChatRead':return {unreadCount:0,lastReadId:String(messages.length),latestId:String(messages.length),latestIncoming:null};
@@ -67,6 +69,28 @@ async function checkChat(page,role,width){
   await page.goto(base+(role==='curator'?'student':role)+'.html');await page.locator('.news-article').waitFor();
   assert.equal(await page.locator('.tabs [data-tab="home"]').textContent(),'Новости');
   assert.equal(await page.locator('.tabs [data-tab="announcements"]').count(),0);
+  assert.equal(await page.locator('.tabs [data-tab="students"]').count(),0);
+  assert.equal(await page.locator('link[rel="icon"]').getAttribute('href'),'favicon.ico');
+  const actions=page.locator('.news-heading-actions');
+  const menu=actions.getByRole('button',{name:'Действия с новостями'});
+  const compose=actions.getByRole('button',{name:'Написать новость'});
+  const canPublish=['admin','curator'].includes(role);
+  assert.equal(await compose.count(),canPublish?1:0);
+  for(const width of [1280,320]){
+   await page.setViewportSize({width,height:900});
+   const menuBox=await menu.boundingBox();
+   assert.ok(menuBox.x+menuBox.width<=width,'news menu fits '+width);
+   if(canPublish){const editorBox=await compose.boundingBox();assert.ok(Math.abs(editorBox.y-menuBox.y)<=4&&menuBox.x-editorBox.x-editorBox.width<=12,'actions side by side '+width);}
+  }
+  await page.setViewportSize({width:1280,height:900});
+  await menu.click();await page.getByRole('button',{name:'Обновить новости',exact:true}).waitFor();await page.keyboard.press('Escape');
+  if(role==='teacher'){
+   await page.locator('.tabs [data-tab="teachers"]').click();await page.getByRole('button',{name:'Открыть профиль'}).click();
+   const subjects=page.locator('.profile-heading h2 + .teacher-subjects');
+   assert.deepEqual(await subjects.locator('li').allTextContents(),['МатематикаПрограмма курса','Право']);
+   await subjects.locator('summary').click();await subjects.getByText('Программа курса').waitFor();
+   await page.locator('.tabs [data-tab="home"]').click();await page.locator('.news-article').waitFor();
+  }
   if(role!=='guest'){
    await page.setViewportSize({width:1280,height:580});await page.evaluate(()=>window.scrollTo(0,0));await page.waitForTimeout(100);const profile=await page.locator('.tabs [data-tab="profile"]').boundingBox();assert.ok(profile.y>=0&&profile.y+profile.height<=580,role+' profile stays on screen');await page.evaluate(()=>window.scrollTo(0,1300));await page.waitForTimeout(100);const moved=await page.locator('.tabs [data-tab="profile"]').boundingBox();assert.ok(moved.y>=0&&moved.y+moved.height<=580,role+' sticky profile');await page.setViewportSize({width:1280,height:900});
   }

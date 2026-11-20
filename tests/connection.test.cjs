@@ -1,9 +1,9 @@
 const {test}=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const vm=require('node:vm');
 function storage(){const s={};Object.defineProperties(s,{getItem:{value:k=>s[k]??null},setItem:{value:(k,v)=>{s[k]=String(v);}},removeItem:{value:k=>{delete s[k];}}});return s;}
-function client(){
+function client(overrides={}){
  const localStorage=storage(),sessionStorage=storage(),events=[];
  const sandbox={localStorage,sessionStorage,navigator:{onLine:true},Date,Map,Set,JSON,Object,Promise,CustomEvent:class{constructor(type,args){this.type=type;this.detail=args.detail;}},setTimeout:(fn,ms)=>setTimeout(fn,Math.min(ms,20)),clearTimeout,
-  document:{addEventListener(){},dispatchEvent:e=>events.push(e)},window:{addEventListener(){}},location:{}};
+  document:{addEventListener(){},dispatchEvent:e=>events.push(e)},window:{addEventListener(){}},location:{},...overrides};
  const context=vm.createContext(sandbox);vm.runInContext(fs.readFileSync('connection.js','utf8')+'\nthis.client=AppConnection;',context);return {...sandbox,connection:sandbox.client,events};
 }
 test('reference cache is bounded to safe actions and the current user; private results/profile are never persisted',async()=>{
@@ -45,6 +45,22 @@ test('offline writes are rejected without queueing; simultaneous reads share one
 test('generated offline manifest is valid, contains local authentication and no external/API/storage endpoints',()=>{
  const context=vm.createContext({});vm.runInContext(fs.readFileSync('sw-manifest.js','utf8')+';this.assets=OFFLINE_ASSETS;',context);
  assert.ok(context.assets.some(p=>p.startsWith('local-auth.js')));assert.ok(context.assets.includes('offline.html'));
+ assert.equal(fs.readFileSync('favicon.ico').readUInt16LE(2),1);
+ assert.ok(context.assets.includes('favicon.ico'));
  for(const file of context.assets){assert.ok(!/^https?:/.test(file));assert.ok(!file.includes('/functions/v1/')&&!file.includes('/storage/v1/'));assert.ok(fs.existsSync(file.split('?')[0]),file);}
  new vm.Script(fs.readFileSync('sw.js','utf8'));
+});
+test('a newly activated shell refreshes an open page after pending edits are safe',async()=>{
+ const listeners={},intervals=new Map();let safe=true,reloads=0,checks=0;
+ const serviceWorker={controller:null,addEventListener:(name,fn)=>listeners[name]=fn,register:async()=>({update:async()=>{checks++;}})};
+ client({navigator:{onLine:true,serviceWorker},Realtime:{safe:()=>safe},
+  document:{hidden:false,body:{},addEventListener:(name,fn)=>listeners[name]=fn,querySelector:()=>null},
+  window:{addEventListener:(name,fn)=>listeners[name]=fn},location:{reload:()=>{reloads++;}},
+  setInterval:(fn,ms)=>intervals.set(ms,fn)});
+ listeners.load();await Promise.resolve();
+ serviceWorker.controller={version:'first'};listeners.controllerchange();assert.equal(reloads,0);
+ intervals.get(60000)();assert.equal(checks,1);
+ safe=false;serviceWorker.controller={version:'next'};listeners.controllerchange();assert.equal(reloads,0);
+ safe=true;intervals.get(1000)();intervals.get(1000)();assert.equal(reloads,1);
+ serviceWorker.controller={version:'later'};listeners.controllerchange();assert.equal(reloads,2);
 });

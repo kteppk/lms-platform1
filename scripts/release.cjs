@@ -1,5 +1,6 @@
 const fs=require('node:fs');
 const path=require('node:path');
+const crypto=require('node:crypto');
 const root=path.resolve(__dirname,'..'),file=path.join(root,'release.json');
 const release=JSON.parse(fs.readFileSync(file,'utf8'));
 const part=process.argv[2];
@@ -16,12 +17,16 @@ if(fs.existsSync(lockFile)){const lock=JSON.parse(fs.readFileSync(lockFile,'utf8
 fs.writeFileSync(path.join(root,'release.js'),'// Generated from release.json by scripts/release.cjs\nconst SiteRelease = Object.freeze('+JSON.stringify(release)+');\n');
 for(const html of ['index.html','student.html','teacher.html','admin.html','guest.html','offline.html']){
   const p=path.join(root,html);let source=fs.readFileSync(p,'utf8').replace(/(data-site-version>)[^<]*/g,'$1Версия '+release.version);
-  source=source.replace(/(src|href)="([^"?]+\.(?:js|css))(?:\?[^\"]*)?"/g,(all,attribute,url)=>/^https?:/.test(url)?all:`${attribute}="${url}?v=${release.version}"`);
+  source=source.replace(/(src|href)="([^"?]+\.(?:js|css))(?:\?([^"]*))?"/g,(all,attribute,url,query)=>/^https?:/.test(url)?all:`${attribute}="${url}?v=${release.version}${query?.match(/&build=[^&]+/)?.[0]||''}"`);
   fs.writeFileSync(p,source);
 }
-const assets=new Set(['index.html','student.html','teacher.html','admin.html','guest.html','offline.html','manifest.webmanifest','app-icon-192.png','app-icon-512.png','name-fields.mjs?v=identity1','supabase/functions/_shared/name-rules.mjs?v=identity1']);
+const assets=new Set(['index.html','student.html','teacher.html','admin.html','guest.html','offline.html','manifest.webmanifest','favicon.ico','app-icon-192.png','app-icon-512.png','name-fields.mjs?v=identity1','supabase/functions/_shared/name-rules.mjs?v=identity1']);
 for(const html of ['index.html','student.html','teacher.html','admin.html','guest.html','offline.html'])for(const match of fs.readFileSync(path.join(root,html),'utf8').matchAll(/(?:src|href)="([^\"]+)"/g))if(!/^https?:/.test(match[1])&&/\.(js|css|mjs)(\?|$)/.test(match[1]))assets.add(match[1]);
 fs.writeFileSync(path.join(root,'sw-manifest.js'),'// Generated static shell only.\nconst OFFLINE_ASSETS='+JSON.stringify([...assets])+';\n');
-fs.writeFileSync(path.join(root,'sw.js'),fs.readFileSync(path.join(root,'scripts/service-worker.template.js'),'utf8').replaceAll('__VERSION__',JSON.stringify(release.version)));
+const fingerprint=crypto.createHash('sha256');
+for(const asset of assets)fingerprint.update(asset).update(fs.readFileSync(path.join(root,asset.split('?')[0])));
+const template=fs.readFileSync(path.join(root,'scripts/service-worker.template.js'),'utf8');
+const build=fingerprint.update(template).digest('hex').slice(0,12);
+fs.writeFileSync(path.join(root,'sw.js'),template.replaceAll('__VERSION__',JSON.stringify(release.version)).replaceAll('__BUILD__',JSON.stringify(build)));
 require('./build-lite.cjs');
 console.log('Release '+release.version+' prepared. Update release.json title/notes, then commit and push.');

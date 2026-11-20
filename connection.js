@@ -2,7 +2,7 @@ const AppConnection=(()=>{
   const prefix='lms-reference-v1:',ownerKey='lms-reference-owner-v1',modeKey='lms-reference-mode-v1';
   const policies={listScheduleGroups:300000,getWeeklySchedule:30000,listSchedule:30000,listSubjects:60000,listNews:60000};
   const reads=new Set(['profile','listSubjects','listSubjectTeachers','getSubjectContent','listMaterials','listStudentTests','listTeacherTests','listStudents','getStudentAttempt','listActiveAttempts','listResults','getResult','listResultTests','getTestResults','exportTestResults','listTeachers','getTeacherProfile','listSchedule','listScheduleGroups','getWeeklySchedule','listNotifications','listNotificationSubscriptions','listRoleChanges','listNews','registrationStatistics','searchPeople','getPerson','getMyEducation','getGroupLessonTimes','getLessonReminder','exportSchedule','getPushSettings','listCuratorMessages','getOnlineStats','listSubjectJoinRequests','getCuratorChatSummary','getPortalSettings','listAccounts']);
-  const memory=new Map(),pending=new Map();let owner=null,epoch=0,worker=null;
+  const memory=new Map(),pending=new Map();let owner=null,epoch=0;
   const online=()=>navigator.onLine!==false;
   const e=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   function storage(){try{return sessionStorage.getItem(modeKey)==='session'?sessionStorage:localStorage;}catch{return null;}}
@@ -53,28 +53,50 @@ const AppConnection=(()=>{
   }
   function status(){const bar=document.getElementById('connectionStatus');if(!bar)return;bar.hidden=online();bar.textContent='Нет интернета. Доступны ранее сохранённые расписания и справочные данные. Отправка работ требует подключения.';}
   function ready(){document.getElementById('appLoading')?.remove();document.getElementById('connectionRecovery')?.remove();}
-  function updateButton(registration){
-    if(!registration.waiting||!registration.active||!navigator.serviceWorker.controller||document.getElementById('appUpdate'))return;
-    worker=registration.waiting;const box=document.createElement('aside');box.id='appUpdate';box.className='app-update';box.innerHTML='<span>Доступно обновление сайта.</span><button type="button" class="secondary" data-connection="update">Обновить сайт</button>';const heading=document.querySelector('body > header');if(heading)heading.after(box);else(document.querySelector('.auth-container')||document.body).prepend(box);
+  function canReload(){
+    if(document.hidden||!online()||document.querySelector('main[hidden]'))return false;
+    if(document.querySelector('#test-answers')&&typeof attempt!=='undefined'&&attempt&&!attempt.result)return false;
+    if(typeof Realtime!=='undefined')return Realtime.safe(document.body);
+    return !document.querySelector('dialog[open]')&&![...document.querySelectorAll('form input')].some(input=>
+      !input.closest('[hidden],.hidden')&&(input.type==='checkbox'?input.checked!==input.defaultChecked:input.value!==input.defaultValue));
+  }
+  function manageUpdates(){
+    const serviceWorker=navigator.serviceWorker;
+    if(!serviceWorker)return;
+    let controller=serviceWorker.controller,needsReload=false;
+    function apply(){
+      if(!needsReload||!canReload())return;
+      needsReload=false;
+      location.reload();
+    }
+    serviceWorker.addEventListener('controllerchange',()=>{
+      const next=serviceWorker.controller;
+      if(next&&controller&&next!==controller)needsReload=true;
+      controller=next;
+      apply();
+    });
+    serviceWorker.register('./sw.js',{scope:'./',updateViaCache:'none'}).then(registration=>{
+      function check(){
+        apply();
+        if(!document.hidden&&online())registration.update().catch(()=>{});
+      }
+      document.addEventListener('visibilitychange',check);
+      window.addEventListener('online',check);
+      registration.waiting?.postMessage({type:'ACTIVATE_UPDATE'});
+      setInterval(check,60000);
+      setInterval(apply,1000);
+    }).catch(()=>{});
   }
   document.addEventListener('click',event=>{
     const button=event.target.closest('[data-connection]');if(!button)return;
     if(button.dataset.connection==='retry')location.reload();
     if(button.dataset.connection==='logout'&&typeof logout==='function')logout();
-    if(button.dataset.connection==='update'){
-      if(typeof attempt!=='undefined'&&attempt&&!attempt.result){alert('Сначала завершите или сохраните текущую попытку. Обновление можно установить позже.');return;}
-      if(!confirm('Страница будет перезагружена. Сохраните заполненные формы перед обновлением. Продолжить?'))return;
-      navigator.serviceWorker.addEventListener('controllerchange',()=>location.reload(),{once:true});worker?.postMessage({type:'ACTIVATE_UPDATE'});
-    }
   });
   document.addEventListener('DOMContentLoaded',()=>{
     const bar=document.createElement('aside');bar.id='connectionStatus';bar.className='connection-status';bar.setAttribute('role','status');document.body.prepend(bar);status();
     if(document.querySelector('main[hidden]')){const box=document.createElement('section');box.id='appLoading';box.className='connection-recovery';box.innerHTML='<p role="status">Открываем кабинет…</p><p>При медленном интернете это может занять немного времени.</p>';document.querySelector('main').before(box);setTimeout(()=>{if(box.isConnected)box.insertAdjacentHTML('beforeend','<button type="button" class="secondary" data-connection="retry">Повторить загрузку</button>');},12000);}
   });
   window.addEventListener('online',status);window.addEventListener('offline',status);
-  window.addEventListener('load',()=>{
-    if(!('serviceWorker' in navigator))return;
-    navigator.serviceWorker.register('./sw.js',{scope:'./',updateViaCache:'none'}).then(reg=>{updateButton(reg);reg.addEventListener('updatefound',()=>reg.installing?.addEventListener('statechange',()=>updateButton(reg)));}).catch(()=>{});
-  });
+  window.addEventListener('load',manageUpdates);
   return {request,note,begin,rememberDevice,savedSchedules,hasDrafts,clearUser,recovery,ready,online,peek,networkError,recoverable,invalidate,draftStorage:storage};
 })();

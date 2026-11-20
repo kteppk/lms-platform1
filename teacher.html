@@ -4,15 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Кабинет преподавателя</title>
-  <script src="connection.js?v=1.0.0"></script>
-<script src="realtime.js?v=1.0.0" defer></script>
+  <script src="connection.js?v=1.0.0&build=cabinet2"></script>
+<script src="realtime.js?v=1.0.0&build=cabinet2" defer></script>
   <script src="local-auth.js?v=1.0.0"></script>
   <script src="firebase-config.js?v=1.0.0"></script>
   <script src="results-export.js?v=1.0.0"></script>
   <script src="gradebook.js?v=1.0.0"></script>
   <script src="release.js?v=1.0.0"></script>
   <script src="action-menu.js?v=1.0.0" defer></script>
-  <script src="news.js?v=1.0.0&build=cabinet1" defer></script>
+  <script src="news.js?v=1.0.0&build=cabinet2" defer></script>
   <script src="subject-search.js?v=1.0.0" defer></script>
   <script src="mobile-nav.js?v=1.0.0&build=cabinet1" defer></script>
   <script src="schedule.js?v=1.0.0" defer></script>
@@ -20,7 +20,7 @@
   <script src="account-tools.js?v=1.0.0&build=cabinet1" defer></script>
   <script src="curator-chat.js?v=1.0.0" defer></script><script src="chat-unread.js?v=1.0.0" defer></script>
   <script src="push-settings.js?v=1.0.0" defer></script>
-  <script src="education.js?v=1.0.0" defer></script><script src="lesson-reminders.js?v=1.0.0" defer></script><script src="portal.js?v=1.0.0&build=cabinet1" defer></script>
+  <script src="education.js?v=1.0.0" defer></script><script src="lesson-reminders.js?v=1.0.0" defer></script><script src="portal.js?v=1.0.0&build=cabinet2" defer></script>
   <link rel="stylesheet" href="assessment.css?v=1.0.0">
   <link rel="stylesheet" href="subjects.css?v=1.0.0">
   <link rel="stylesheet" href="portal.css?v=1.0.0">
@@ -29,7 +29,7 @@
   <link rel="stylesheet" href="theme.css?v=1.0.0">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="stylesheet" href="theme-community.css?v=1.0.0">
-<script src="desktop-nav.js?v=1.0.0" defer></script><script src="schedule-export.js?v=1.0.0" defer></script><link rel="stylesheet" href="theme-091.css?v=1.0.0"><link rel="stylesheet" href="theme-100.css?v=1.0.0"><link rel="stylesheet" href="online-history.css?build=activity1"><script src="online-history.js?build=activity1" defer></script><script src="admin-tools.js?v=1.0.0&build=activity1" defer></script><link rel="stylesheet" href="cabinet-header.css?v=1.0.0"></head>
+<script src="desktop-nav.js?v=1.0.0" defer></script><script src="schedule-export.js?v=1.0.0" defer></script><link rel="stylesheet" href="theme-091.css?v=1.0.0"><link rel="stylesheet" href="theme-100.css?v=1.0.0"><link rel="stylesheet" href="online-history.css?v=1.0.0"><script src="online-history.js?v=1.0.0" defer></script><script src="admin-tools.js?v=1.0.0&build=activity1" defer></script><link rel="stylesheet" href="cabinet-header.css?v=1.0.0&build=cabinet2"><link rel="icon" type="image/x-icon" href="favicon.ico"></head>
 <body>
   <header>
     <h1><span class="brand-mark" aria-hidden="true">К</span><span>КТЭиП ПК<span class="brand-caption">Кабинет преподавателя · Кызыл</span></span></h1>
@@ -46,7 +46,6 @@
       <button class="tab-btn" data-tab="subjects" onclick="switchTab('subjects', this)">Предметы</button>
       <button class="tab-btn" id="lecturesTab" data-tab="lectures" onclick="switchTab('lectures', this)">Материалы</button>
       <button class="tab-btn" data-tab="tests" onclick="switchTab('tests', this)">Тесты</button>
-      <button class="tab-btn" data-tab="students" onclick="switchTab('students', this)">Студенты</button>
       <button class="tab-btn" data-tab="journal" onclick="switchTab('journal', this)">Результаты тестов</button>
       <span class="nav-label">Информация</span><button class="tab-btn" data-tab="teachers" onclick="switchTab('teachers',this)">Преподаватели</button>
 <button class="tab-btn" data-tab="schedule" onclick="switchTab('schedule',this)">Расписание</button>
@@ -152,11 +151,6 @@
         addQuestion();
         await loadTests();
       }
-      
-      if (currentTab === 'students') {
-        content.innerHTML = `<h2>Список студентов</h2><div id="studentsList"></div>`;
-        await loadStudents();
-      }
     }
 
     document.addEventListener('lms-live-update',event=>{
@@ -164,7 +158,7 @@
       const content=document.getElementById('content');
       if(currentTab==='lectures'&&document.getElementById('lecturesList'))Realtime.update('teacher-materials',document.getElementById('lecturesList'),loadLectures);
       else if(currentTab==='tests'&&document.getElementById('testsList'))Realtime.update('teacher-tests',document.getElementById('testsList'),loadTests);
-      else if(['subjects','students'].includes(currentTab)){const tab=currentTab;Realtime.update('teacher-learning',content,()=>currentTab===tab?render():undefined);}
+      else if(currentTab==='subjects')Realtime.update('teacher-learning',content,()=>currentTab==='subjects'?render():undefined);
     });
 
     function subjectPicker() {
@@ -422,17 +416,6 @@
           </div>
         </div>`;
       }).join('') || '<p>Нет тестов</p>';
-    }
-
-    async function loadStudents() {
-      const list = document.getElementById('studentsList');
-      const students = await callFunction('listStudents');
-      list.innerHTML = students.map(data => {
-        return `<div class="item">
-          <h3>${escapeHtml(data.name)}</h3>
-          <div class="meta">${escapeHtml(data.email)}</div>
-        </div>`;
-      }).join('') || '<p>Нет студентов</p>';
     }
 
     watchCabinet('teacher', render);

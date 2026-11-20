@@ -46,5 +46,5 @@ const Realtime=(()=>{
  window.addEventListener('online',()=>{emit(['resync']);stop();connect();flush();});window.addEventListener('offline',stop);window.addEventListener('pagehide',stop);
  window.addEventListener('pageshow',event=>{if(event.persisted){stop();connect();emit(['resync']);}});
  setInterval(()=>{if(person&&visible()&&online()&&!connected&&Date.now()-lastFallback>60000){lastFallback=Date.now();emit(['resync']);}if(jobs.size)flush();},2000);
- return {start,stop,logout(){stop();person=null;jobs.clear();topics.clear();},watchGroup,update,emit,get connected(){return connected;}};
+ return {start,stop,logout(){stop();person=null;jobs.clear();topics.clear();},watchGroup,update,emit,safe,get connected(){return connected;}};
 })();
