@@ -5,6 +5,9 @@ create table if not exists app_auth.users(
  created_at timestamptz not null default now(),last_login_at timestamptz
 );
 create unique index if not exists auth_email on app_auth.users(lower(email));
+alter table app_auth.users
+  add column if not exists privacy_policy_version text,
+  add column if not exists privacy_acknowledged_at timestamptz;
 create table if not exists app_auth.sessions(
  token_hash text primary key,user_id text not null references app_auth.users(id) on delete cascade,
  expires_at timestamptz not null,persistent boolean not null,last_auth_at timestamptz not null default now(),created_at timestamptz not null default now()

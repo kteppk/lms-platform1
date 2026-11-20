@@ -4,11 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>LMS Platform - Вход</title>
-  <script src="connection.js?v=1.0.0&build=curator1" defer></script>
-  <script src="local-auth.js?v=1.0.0" defer></script>
+  <script src="connection.js?v=1.0.0&build=privacy1" defer></script>
+  <script src="local-auth.js?v=1.0.0&build=privacy1" defer></script>
   <script src="firebase-config.js?v=1.0.0&build=curator1" defer></script>
   <script src="action-menu.js?v=1.0.0" defer></script>
-  <script src="login.js?v=1.0.0&build=curator1" defer></script>
+  <script src="login.js?v=1.0.0&build=privacy1" defer></script>
   <link rel="stylesheet" href="portal.css?v=1.0.0">
   <link rel="stylesheet" href="mobile-nav.css?v=1.0.0">
   <link rel="stylesheet" href="theme.css?v=1.0.0">
@@ -59,8 +59,14 @@
         <label for="regPassword">Пароль (мин. 8 символов)</label>
         <div class="password-control"><input type="password" id="regPassword" required minlength="8" autocomplete="new-password"><button disabled data-auth-ready type="button" class="secondary" data-show-password="regPassword" aria-pressed="false">Показать</button></div>
       </div>
-      <label class="check-label"><input id="regRemember" type="checkbox" checked>Это моё личное устройство — запомнить вход</label><button disabled data-auth-ready type="submit" class="submit">Зарегистрироваться</button>
+      <label class="check-label"><input id="regRemember" type="checkbox" checked>Это моё личное устройство — запомнить вход</label>
+      <div class="form-group">
+        <p class="hint"><a href="privacy.html" target="_blank" rel="noopener">Открыть политику конфиденциальности</a></p>
+        <label class="check-label" for="regPrivacy"><input id="regPrivacy" type="checkbox" value="2026-11-20" required><span>Я ознакомился(-ась) с политикой конфиденциальности и принимаю её условия.</span></label>
+      </div>
+      <button disabled data-auth-ready type="submit" class="submit">Зарегистрироваться</button>
     </form>
+    <footer><a class="connection-link" href="privacy.html">Политика конфиденциальности</a></footer>
   </div>
 
 

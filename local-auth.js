@@ -12,7 +12,7 @@
  const initial=initialize();
  const instance={get currentUser(){return current;},onAuthStateChanged(callback){listeners.add(callback);initial.then(()=>{if(listeners.has(callback))callback(current);});return ()=>listeners.delete(callback);},setPersistence:async value=>{persistent=value==='local';},
   signInWithEmailAndPassword:async(email,password)=>{await initial;const r=apply(await request('login',{email,password,persistent}),true);event('login');return r;},
-  createUserWithEmailAndPassword:async(email,password)=>{await initial;const r=apply(await request('signup',{email,password,persistent}),true);event('login');return r;},
+  createUserWithEmailAndPassword:async(email,password,privacyPolicyVersion)=>{await initial;const r=apply(await request('signup',{email,password,persistent,privacyPolicyVersion}),true);event('login');return r;},
   signOut:async()=>{try{await request('logout');try{localStorage.removeItem(pending);}catch{}}catch(e){if(e.code==='auth/network-request-failed')try{localStorage.setItem(pending,'1');}catch{}else if(e.code!=='auth/requires-recent-login')throw e;}apply({user:null},true);event('logout');},
   sendPasswordResetEmail:async email=>{await request('recover',{email});}
  };

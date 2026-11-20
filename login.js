@@ -58,12 +58,14 @@ function handleLogin(event) {
 
 function handleRegister(event) {
   return handleAuthForm(event, async () => {
+    const privacy = document.getElementById('regPrivacy');
+    if (!privacy.checked) throw new Error('Подтвердите ознакомление с политикой конфиденциальности.');
     const names = (await nameFieldsReady).read('reg');
     const email = document.getElementById('regEmail').value.trim();
     const password = document.getElementById('regPassword').value;
     AppConnection.rememberDevice(document.getElementById('regRemember').checked);
     await auth.setPersistence(document.getElementById('regRemember').checked?'local':'session');
-    const { user } = await auth.createUserWithEmailAndPassword(email, password);
+    const { user } = await auth.createUserWithEmailAndPassword(email, password, privacy.value);
     const profile = await getProfile(user, names);
     await user.updateProfile({ displayName: profile.name }).catch(()=>{});
     location.replace(cabinetPage(profile.role));

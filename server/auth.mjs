@@ -1,5 +1,6 @@
 import {randomBytes,randomUUID,createHash} from 'node:crypto';import {SignJWT,jwtVerify} from 'jose';import {hashPassword,verifyPassword} from './passwords.mjs';
 const digest=v=>createHash('sha256').update(v).digest('hex');const cookieName='__Host-lms_session';
+const privacyPolicyVersion='2026-11-20';
 const publicUser=u=>({uid:u.id,email:u.email,displayName:u.display_name,emailVerified:u.email_verified});
 export function createAuth({pool,secret,publicURL,firebaseHashConfig}){
  const signingKey=Buffer.from(secret,'base64'),buckets=new Map();let checks=0;
@@ -29,8 +30,9 @@ export function createAuth({pool,secret,publicURL,firebaseHashConfig}){
     if(u.password.algorithm==='firebase-scrypt')await pool.query('update app_auth.users set password=$1 where id=$2',[await hashPassword(body.password),u.id]);return await start(u,body.persistent!==false);
    }
    if(action==='signup'){
+    if(body.privacyPolicyVersion!==privacyPolicyVersion)throw error('auth/privacy-required','Откройте актуальную форму регистрации и подтвердите ознакомление с политикой конфиденциальности.',409);
     rate('signup:'+ip,100,3600000);const address=email(body.email),pass=password(body.password),u={id:randomUUID(),email:address,display_name:'',email_verified:false,token_version:0};
-    try{await pool.query('insert into app_auth.users(id,email,password) values($1,$2,$3)',[u.id,address,await hashPassword(pass)]);}catch(e){if(e.code==='23505')throw error('auth/email-already-in-use','Этот аккаунт уже существует.');throw e;}return await start(u,body.persistent!==false);
+    try{await pool.query('insert into app_auth.users(id,email,password,privacy_policy_version,privacy_acknowledged_at) values($1,$2,$3,$4,now())',[u.id,address,await hashPassword(pass),privacyPolicyVersion]);}catch(e){if(e.code==='23505')throw error('auth/email-already-in-use','Этот аккаунт уже существует.');throw e;}return await start(u,body.persistent!==false);
    }
    if(action==='recover'){
     rate('recover-ip:'+ip,10,3600000);const address=email(body.email),u=(await pool.query('select id from app_auth.users where lower(email)=$1',[address])).rows[0];

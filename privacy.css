@@ -1,0 +1,30 @@
+.privacy-page {
+  display: block;
+  max-width: 860px;
+}
+
+.privacy-page .content {
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.privacy-page section {
+  margin-block: 1.75rem;
+}
+
+.privacy-page h3 {
+  margin-block-end: .5rem;
+}
+
+.privacy-page p {
+  margin-block: .65rem;
+}
+
+.privacy-purposes dt {
+  margin-block-start: .85rem;
+  font-weight: 650;
+}
+
+.privacy-purposes dd {
+  margin-inline-start: 0;
+}

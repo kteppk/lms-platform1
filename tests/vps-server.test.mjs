@@ -4,6 +4,7 @@ const require=createRequire(new URL('../server/package.json',import.meta.url));r
 let pg,pool,auth,db,api,files,temp,user,admin;const origin='https://lms.example.test';
 const googleConfig={algorithm:'SCRYPT',signerKey:'jxspr8Ki0RYycVU8zykbdLGjFQ3McFUH0uiiTvC8pVMXAn210wjLNmdZJzxUECKbm0QsEmYUSDzZvpjeJ9WmXA==',saltSeparator:'Bw==',rounds:8,memoryCost:14};
 const googlePassword={algorithm:'firebase-scrypt',hash:'lSrfV15cpx95/sZS2W9c9Kp6i/LVgQNDNC/qzrCnh1SAyZvqmZqAjTdn3aoItz+VHjoZilo78198JAdRuid5lQ==',salt:'42xEC+ixf3L2lw=='};
+const privacyPolicyVersion=(await fs.readFile('privacy.html','utf8')).match(/<time datetime="([^"]+)"/)[1];
 async function call(action,data={},session=null,requestOrigin=origin){const res=await auth.handle(new Request(origin+'/auth/'+action,{method:'POST',headers:{Origin:requestOrigin,'Content-Type':'application/json',...(session?{Cookie:session.cookie}:{})},body:JSON.stringify(data)}),'127.0.0.1');const body=await res.json();return {status:res.status,body,cookie:res.headers.get('set-cookie')?.split(';')[0]??session?.cookie};}
 async function rpc(session,action,data={}){const r=await api(new Request(origin+'/functions/v1/lms',{method:'POST',headers:{Authorization:'Bearer '+session.body.token,'Content-Type':'application/json'},body:JSON.stringify({action,data})}));return {status:r.status,body:await r.json()};}
 before(async()=>{
@@ -14,8 +15,16 @@ before(async()=>{
 });
 after(async()=>{await pg?.close();if(temp&&path.resolve(temp).startsWith(path.resolve(os.tmpdir())+path.sep)&&path.basename(temp).startsWith('lms-storage-test-'))await fs.rm(temp,{recursive:true,force:true});});
 test('Firebase password verification matches Google reference and wrong passwords fail',async()=>{assert.equal(await verifyPassword('user1password',googlePassword,googleConfig),true);assert.equal(await verifyPassword('wrong',googlePassword,googleConfig),false);});
-test('local registration, secure cookie, profile creation and SQL role scoping work together',async()=>{
- user=await call('signup',{email:'student@example.test',password:'StudentPassword123',persistent:true});assert.equal(user.status,200);assert.ok(user.cookie.startsWith('__Host-lms_session='));assert.equal((await auth.verify(user.body.token)).uid,user.body.user.uid);
+test('local registration requires the published policy version and records acknowledgement with the account',async()=>{
+ const form=await fs.readFile('index.html','utf8');assert.ok(form.includes(`id="regPrivacy" type="checkbox" value="${privacyPolicyVersion}" required`));
+ const data={email:'student@example.test',password:'StudentPassword123',persistent:true};
+ for(const version of [undefined,true,'2026-01-01']){
+  const denied=await call('signup',{...data,privacyPolicyVersion:version});assert.equal(denied.status,409);assert.equal(denied.body.code,'auth/privacy-required');
+ }
+ assert.equal((await pg.query('select id from app_auth.users where email=$1',[data.email])).rowCount,0);
+ user=await call('signup',{...data,privacyPolicyVersion});assert.equal(user.status,200);assert.ok(user.cookie.startsWith('__Host-lms_session='));assert.equal((await auth.verify(user.body.token)).uid,user.body.user.uid);
+ const stored=(await pg.query('select privacy_policy_version,privacy_acknowledged_at from app_auth.users where id=$1',[user.body.user.uid])).rows[0];
+ assert.equal(stored.privacy_policy_version,privacyPolicyVersion);assert.ok(stored.privacy_acknowledged_at instanceof Date);
  const p=await rpc(user,'profile',{nameFields:{firstNameRaw:'Иван',lastNameRaw:'Проверочный',patronymicRaw:'',patronymicStatus:'absent'}});assert.equal(p.status,200);assert.equal(p.body.data.role,'student');
  assert.equal((await rpc(user,'createScheduleGroup',{name:'Чужая группа',lessonsPerDay:6})).status,403);
  assert.equal((await call('login',{email:'student@example.test',password:'wrong'})).status,401);assert.equal((await call('login',{email:'student@example.test',password:'StudentPassword123'},null,'https://evil.test')).status,403);
@@ -23,6 +32,7 @@ test('local registration, secure cookie, profile creation and SQL role scoping w
 test('imported Firebase credentials keep UID and password and transparently upgrade to local scrypt',async()=>{
  await pg.query('insert into app_auth.users(id,email,password) values($1,$2,$3)',['old-firebase-id','imported@example.test',JSON.stringify(googlePassword)]);
  const login=await call('login',{email:'imported@example.test',password:'user1password'});assert.equal(login.status,200);assert.equal(login.body.user.uid,'old-firebase-id');assert.equal((await pg.query("select password->>'algorithm' algorithm from app_auth.users where id='old-firebase-id'")).rows[0].algorithm,'scrypt');
+ assert.deepEqual((await pg.query("select privacy_policy_version,privacy_acknowledged_at from app_auth.users where id='old-firebase-id'")).rows[0],{privacy_policy_version:null,privacy_acknowledged_at:null});
 });
 test('SQL adapter preserves arrays, JSON, optimistic revisions and parameterized searches',async()=>{
  const bound=[];const native=createDatabase({query:async(sql,values)=>{bound.push(values);return {rows:[{value:null}]};}},null);await native.rpc('read_notifications',{p_user_id:'student',p_ids:['notice']});assert.equal(bound[0][1],'["notice"]','RPC arrays are JSONB, not native PostgreSQL arrays');
@@ -39,7 +49,7 @@ test('signed uploads, file checksum metadata, byte ranges and HTML download rest
 });
 test('password changes revoke older access tokens and admin recovery is private and single-use',async()=>{
  const old=user.body.token;const reauth=await call('reauth',{email:'student@example.test',password:'StudentPassword123'},user);assert.equal(reauth.status,200);const changed=await call('password',{password:'ChangedPassword123'},user);assert.equal(changed.status,200);await assert.rejects(auth.verify(old));
- admin=await call('signup',{email:'admin@example.test',password:'AdminPassword123'});await rpc(admin,'profile',{name:'Администратор'});await pg.query("update account_roles set role='admin' where user_id=$1",[admin.body.user.uid]);
+ admin=await call('signup',{email:'admin@example.test',password:'AdminPassword123',privacyPolicyVersion});await rpc(admin,'profile',{name:'Администратор'});await pg.query("update account_roles set role='admin' where user_id=$1",[admin.body.user.uid]);
  assert.equal((await call('recover',{email:'student@example.test'})).status,200);await assert.rejects(auth.adminAction({uid:user.body.user.uid},'listRecoveryRequests',{}),e=>e.status===403);
  const list=await auth.adminAction({uid:admin.body.user.uid},'listRecoveryRequests',{});assert.equal(list.data.length,1);const issued=await auth.adminAction({uid:admin.body.user.uid},'createAccountRecovery',{userId:user.body.user.uid}),token=new URL(issued.data.url).searchParams.get('reset');
  assert.equal((await call('reset',{token,password:'RecoveredPassword123'})).status,200);assert.equal((await call('reset',{token,password:'DuplicatePassword123'})).status,400);assert.equal((await call('login',{email:'student@example.test',password:'RecoveredPassword123'})).status,200);
@@ -60,8 +70,8 @@ test('chat summary and read API use the current identity and reject ordinary acc
  assert.equal((await rpc(member,'getCuratorChatSummary')).status,403);
 });
 test('legacy direct subject join is denied, admin approval grants membership and full teacher profile is preserved',async()=>{
- const t=await call('signup',{email:'subject-owner@example.test',password:'TeacherPassword123'});await rpc(t,'profile',{name:'Преподаватель'});await pg.query('insert into teachers(user_id) values($1)',[t.body.user.uid]);
- const other=await call('signup',{email:'subject-requester@example.test',password:'TeacherPassword123'});await rpc(other,'profile',{name:'Другой преподаватель'});await pg.query('insert into teachers(user_id) values($1)',[other.body.user.uid]);
+ const t=await call('signup',{email:'subject-owner@example.test',password:'TeacherPassword123',privacyPolicyVersion});await rpc(t,'profile',{name:'Преподаватель'});await pg.query('insert into teachers(user_id) values($1)',[t.body.user.uid]);
+ const other=await call('signup',{email:'subject-requester@example.test',password:'TeacherPassword123',privacyPolicyVersion});await rpc(other,'profile',{name:'Другой преподаватель'});await pg.query('insert into teachers(user_id) values($1)',[other.body.user.uid]);
  const subject=await rpc(t,'saveSubject',{title:'Предмет по заявке',description:'Полное описание'});assert.equal(subject.status,200);
  assert.equal((await rpc(other,'joinSubject',{subjectId:subject.body.data.id})).status,403);
  const req=await rpc(other,'requestSubjectJoin',{subjectId:subject.body.data.id});assert.equal(req.status,200);

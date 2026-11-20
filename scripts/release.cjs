@@ -15,13 +15,14 @@ fs.writeFileSync(pkgFile,JSON.stringify(pkg,null,2)+'\n');
 const lockFile=path.join(root,'package-lock.json');
 if(fs.existsSync(lockFile)){const lock=JSON.parse(fs.readFileSync(lockFile,'utf8'));lock.version=release.version;lock.packages[''].version=release.version;fs.writeFileSync(lockFile,JSON.stringify(lock,null,2)+'\n');}
 fs.writeFileSync(path.join(root,'release.js'),'// Generated from release.json by scripts/release.cjs\nconst SiteRelease = Object.freeze('+JSON.stringify(release)+');\n');
-for(const html of ['index.html','student.html','teacher.html','admin.html','guest.html','offline.html']){
+const pages=['index.html','student.html','teacher.html','admin.html','guest.html','offline.html','privacy.html'];
+for(const html of pages){
   const p=path.join(root,html);let source=fs.readFileSync(p,'utf8').replace(/(data-site-version>)[^<]*/g,'$1Версия '+release.version);
   source=source.replace(/(src|href)="([^"?]+\.(?:js|css))(?:\?([^"]*))?"/g,(all,attribute,url,query)=>/^https?:/.test(url)?all:`${attribute}="${url}?v=${release.version}${query?.match(/&build=[^&]+/)?.[0]||''}"`);
   fs.writeFileSync(p,source);
 }
-const assets=new Set(['index.html','student.html','teacher.html','admin.html','guest.html','offline.html','manifest.webmanifest','favicon.ico','app-icon-192.png','app-icon-512.png','name-fields.mjs?v=identity1','supabase/functions/_shared/name-rules.mjs?v=identity1']);
-for(const html of ['index.html','student.html','teacher.html','admin.html','guest.html','offline.html'])for(const match of fs.readFileSync(path.join(root,html),'utf8').matchAll(/(?:src|href)="([^\"]+)"/g))if(!/^https?:/.test(match[1])&&/\.(js|css|mjs)(\?|$)/.test(match[1]))assets.add(match[1]);
+const assets=new Set([...pages,'manifest.webmanifest','favicon.ico','app-icon-192.png','app-icon-512.png','name-fields.mjs?v=identity1','supabase/functions/_shared/name-rules.mjs?v=identity1']);
+for(const html of pages)for(const match of fs.readFileSync(path.join(root,html),'utf8').matchAll(/(?:src|href)="([^\"]+)"/g))if(!/^https?:/.test(match[1])&&/\.(js|css|mjs)(\?|$)/.test(match[1]))assets.add(match[1]);
 fs.writeFileSync(path.join(root,'sw-manifest.js'),'// Generated static shell only.\nconst OFFLINE_ASSETS='+JSON.stringify([...assets])+';\n');
 const fingerprint=crypto.createHash('sha256');
 for(const asset of assets)fingerprint.update(asset).update(fs.readFileSync(path.join(root,asset.split('?')[0])));
