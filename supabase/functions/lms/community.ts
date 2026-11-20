@@ -198,6 +198,7 @@ export async function communityAction(db:SupabaseClient,actor:Actor,action:unkno
       if(!Array.isArray(input.ids)||input.ids.length>100)invalid('Некорректный список уведомлений.');
       data=await dataOf(db.rpc('read_notifications',{p_user_id:actor.uid,p_ids:input.ids.map(id)}));break;
     }
+    case 'readAllNotifications':data=await dataOf(db.rpc('read_all_notifications',{p_user_id:actor.uid}));break;
     case 'publishAnnouncement':{
       requireAdmin(actor);
       data=await dataOf(db.from('notifications').insert({actor_id:actor.uid,category:'announcement',title:text(input.title,200,'Заголовок'),body:text(input.body,2000,'Текст'),destination:'notifications',severity:input.important===true?'danger':'info'}).select('id').single());break;

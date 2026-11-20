@@ -137,3 +137,20 @@ test('unread migration is repeatable and never marks newer incoming messages as 
  assert.deepEqual(await rpc('curator_chat_summary',['curator']),before);
  await rpc('set_account_role',['admin','curator','student','curator']);await assert.rejects(rpc('read_curator_chat',['curator',before.latestId]),{code:'42501'});await assert.rejects(rpc('curator_chat_summary',['curator']),{code:'42501'});await rpc('set_account_role',['admin','curator','curator','student']);
 });
+
+test('opening notifications marks all accessible pages as read for this account only',async()=>{
+ await db.exec(`insert into notifications(id,recipient_id,category,title)
+  select 'bulk-personal-'||i,'student','personal','Личное' from generate_series(1,101) i;
+  insert into notifications(id,category,title) values('bulk-announcement','announcement','Общее');
+  insert into notifications(id,recipient_id,category,title) values('bulk-private','teacher','personal','Чужое');`);
+ const studentBefore=await rpc('notification_feed',['student',0]),teacherBefore=await rpc('notification_feed',['teacher',0]);
+ assert.ok(studentBefore.unreadCount>=102);assert.equal(studentBefore.rows.length,50);
+ const after=await rpc('read_all_notifications',['student']);assert.equal(after.unreadCount,0);
+ assert.equal(after.rows.length,50);assert.ok(after.rows.every(n=>n.read));
+ assert.equal((await rpc('notification_feed',['student',100])).rows.every(n=>n.read),true);
+ assert.equal((await rpc('notification_feed',['teacher',0])).unreadCount,teacherBefore.unreadCount);
+ assert.equal((await rpc('read_all_notifications',['student'])).unreadCount,0);
+ assert.equal((await db.query("select has_function_privilege('anon','public.read_all_notifications(text)','execute') allowed")).rows[0].allowed,false);
+ await db.exec("insert into notifications(id,recipient_id,category,title) values('bulk-next','student','personal','Новое')");
+ assert.equal((await rpc('notification_feed',['student',0])).unreadCount,1);
+});

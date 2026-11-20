@@ -4,6 +4,10 @@ const server=http.createServer((req,res)=>{const u=new URL(req.url,base),file=pa
 const picture=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j8ioAAAAASUVORK5CYII=','base64');
 const photoId='3e06f123-7b96-45bc-9f90-c8a043a64302';
 function fixture(role){let liked=false,messages=[],title='Новость для проверки',photos=[],education={specialty:'Право',course:1,groupId:'g',groupName:'9241',enrolledOn:'2024-09-01',birthDate:'2008-04-05',age:18,revision:0};const person={uid:role,name:'Проверочный Иван',role,email:role+'@example.test',canTeach:role==='teacher',nameConfirmed:true,noPatronymic:true,firstNameRaw:'Иван',lastNameRaw:'Проверочный'};
+ const notices=[];
+ const addNotice=(id,title)=>notices.unshift({id,title,body:'Текст уведомления',destination:'home',category:'personal',severity:'info',created_at:new Date().toISOString(),read:false});
+ const noticeFeed=(offset=0)=>({rows:notices.slice(offset,offset+50),unreadCount:notices.filter(n=>!n.read).length});
+ addNotice('first','Первое уведомление');
  return (action,data={})=>{switch(action){
  case 'profile':return person;
  case 'listNews':return {rows:[{id:'post',title,photos,body:'Текст публикации',channel:data.channel==='college'?'college':'site',kind:'news',published_at:'2026-11-16T09:00:00Z',revision:1,liked,like_count:liked?1:0,can_edit:['admin','curator'].includes(role)}],hasMore:false};
@@ -11,7 +15,10 @@ function fixture(role){let liked=false,messages=[],title='Новость для 
  case 'deleteNewsPost':assert.equal(data.id,'post');title='Новость для проверки';photos=[];return null;
  case 'getPortalSettings':return {feedbackUrl:null,revision:0};
  case 'setNewsLike':liked=data.liked;return {id:'post',liked,like_count:liked?1:0};
- case 'listNotifications':return {rows:[],unreadCount:0};
+ case 'listNotifications':return noticeFeed(data.offset);
+ case 'readAllNotifications':notices.forEach(n=>n.read=true);return noticeFeed();
+ case 'readNotifications':notices.forEach(n=>{if(data.ids.includes(n.id))n.read=true;});return null;
+ case 'addTestNotice':addNotice('next','Новое уведомление');return null;
  case 'listAccounts':return [{id:role,name:person.name,email:person.email,role}];
  case 'registrationStatistics':return {total:10,students:6,teachers:2,admins:1,last7:3,last30:5,months:[]};
  case 'getOnlineStats':{
@@ -125,7 +132,27 @@ async function checkChat(page,role,width){
    assert.equal(await page.locator('nav [data-tab="people"],nav [data-tab="notifications"],nav [data-mobile-tab="people"],nav [data-mobile-tab="notifications"]').count(),0);
    const profile=page.locator('header .profile-link'),url=page.url();await profile.click();assert.equal(page.url(),url);await page.locator('#profileMenu #userName').waitFor();
    await page.locator('#profileMenu [data-tab="help"]').click();await page.locator('#helpSearch').waitFor();assert.equal(await page.locator('#profileMenu').isHidden(),true);
-   await page.locator('#notificationButton').click();await page.locator('#notificationsDialog [data-notice-list]').waitFor();await page.locator('#notificationsDialog [data-action-menu-toggle]').click();await page.locator('[data-portal="notice-settings"]').click();
+   const bell=page.locator('#notificationButton'),popover=page.locator('#noticePopover'),counter=bell.locator('#notificationCount');
+   await counter.waitFor();await page.setViewportSize({width:320,height:844});
+   await bell.click();await popover.getByRole('button',{name:/Первое уведомление/}).waitFor();await counter.waitFor({state:'hidden'});
+   assert.equal(await bell.getAttribute('aria-expanded'),'true');assert.equal(page.url(),url);
+   const bounds=await popover.boundingBox(),bellBounds=await bell.boundingBox();
+   assert.ok(bounds.x>=0&&bounds.x+bounds.width<=320&&bounds.y>=bellBounds.y+bellBounds.height);
+   assert.equal(api('listNotifications').unreadCount,0);
+   api('addTestNotice');await page.evaluate(()=>document.dispatchEvent(new CustomEvent('lms-live-update',{detail:{topics:['notices']}})));
+   await counter.waitFor();assert.equal(await counter.textContent(),'1');await popover.getByRole('button',{name:/Новое уведомление/}).waitFor();
+   await bell.click();await popover.waitFor({state:'hidden'});
+   await bell.click();await popover.getByRole('button',{name:/Новое уведомление/}).waitFor();await counter.waitFor({state:'hidden'});
+   await page.mouse.click(4,Math.ceil(bounds.y+6));await popover.waitFor({state:'hidden'});
+   await page.setViewportSize({width:1280,height:900});
+   await bell.click();await popover.locator('[data-action-menu-toggle]').click();
+   await page.keyboard.press('Escape');await popover.locator('.action-menu-panel').waitFor({state:'hidden'});assert.equal(await popover.isVisible(),true);
+   await page.keyboard.press('Escape');await popover.waitFor({state:'hidden'});assert.equal(await bell.evaluate(n=>n===document.activeElement),true);
+   await bell.click();await popover.locator('[data-action-menu-toggle]').click();await popover.getByRole('button',{name:'Вся история'}).click();
+   const dialog=page.locator('#notificationsDialog');await dialog.locator('[data-notice-list]').waitFor();
+   assert.equal(await dialog.locator('.notice-card.unread').count(),0);
+   await dialog.locator('[data-portal="close-dialog"]').click();
+   await bell.click();await popover.locator('[data-action-menu-toggle]').click();await popover.locator('[data-portal="notice-settings"]').click();
    await page.locator('.push-settings summary').click();await page.locator('[data-push-save]').waitFor();assert.equal(await page.locator('[data-push-schedule]').isChecked(),true);assert.equal(await page.locator('[data-push-announcements]').isChecked(),false);
    assert.equal(await page.locator('[data-push-chat]').count(),canPublish?1:0);
    if(canPublish)assert.equal(await page.locator('[data-push-chat]').isChecked(),false);

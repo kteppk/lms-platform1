@@ -1,6 +1,6 @@
 const Portal = (() => {
   let profile, teachers=[], editingTeacher=null, accountRows=[], accountOffset=0, accountSearch='', pendingTeacher=null;
-  let noticeOffset=0, seen=new Set(), polling=false;
+  let noticeOffset=0, seen=new Set(), polling=false,pollAgain=false,noticeRevision=0,readingNotices=false;
   const noticeById=new Map();
   const roles={student:'Студент',curator:'Куратор-студент',teacher:'Преподаватель',admin:'Администратор'};
   const categories={diploma:'Диплом',award:'Грамота',certificate:'Сертификат',other:'Другой документ'};
@@ -20,6 +20,7 @@ const Portal = (() => {
     ActionMenu.closeAll();
     if(typeof MobileNavigation!=='undefined')MobileNavigation.closeMenu();
     closeProfileMenu();
+    closeNoticePopover();
     if(tab==='notifications'){openNotices().catch(error=>toast('Не удалось загрузить уведомления',error.message,'danger'));return;}
     document.getElementById('notificationsDialog')?.close();
     const target=document.querySelector(`.tabs [data-tab="${tab}"]`);
@@ -32,12 +33,41 @@ const Portal = (() => {
     menu.hidden=true;trigger.setAttribute('aria-expanded','false');
     if(restore)trigger.focus();
   }
+  function closeNoticePopover(restore=false){
+    const panel=document.getElementById('noticePopover'),bell=document.getElementById('notificationButton');
+    if(!panel||panel.hidden)return;
+    ActionMenu.closeAll();
+    panel.hidden=true;bell.setAttribute('aria-expanded','false');
+    if(restore)bell.focus({preventScroll:true});
+  }
+  async function readNoticePopover(){
+    if(readingNotices)return;
+    const list=document.getElementById('recentNotices');
+    readingNotices=true;++noticeRevision;
+    list.innerHTML='<p role="status">Загрузка уведомлений…</p>';
+    try{
+      const feed=await callFunction('readAllNotifications');
+      updateNoticeFeed(feed,true);
+      renderRecentNotices(feed.rows);
+    }catch{
+      list.innerHTML='<p role="status">Не удалось отметить уведомления прочитанными.</p>'+button('Повторить','retry-notices');
+    }finally{readingNotices=false;flushNoticePoll();}
+  }
   function setupHeader(){
     const info=document.querySelector('header .user-info'),trigger=info.querySelector('.profile-link');
-    const bell=document.createElement('button');bell.type='button';bell.id='notificationButton';bell.className='notification-button header-bell';bell.dataset.portal='open-notifications';
-    bell.setAttribute('aria-label','Уведомления');bell.setAttribute('aria-haspopup','dialog');bell.setAttribute('aria-controls','notificationsDialog');
-    bell.innerHTML='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-11 13h4"/></svg><span class="badge" id="notificationCount" aria-hidden="true">0</span>';
+    const bell=document.createElement('button');bell.type='button';bell.id='notificationButton';bell.className='notification-button header-bell';
+    bell.setAttribute('aria-label','Уведомления');bell.setAttribute('aria-expanded','false');bell.setAttribute('aria-controls','noticePopover');
+    bell.innerHTML='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-11 13h4"/></svg><span class="badge" id="notificationCount" aria-hidden="true" hidden></span>';
     info.prepend(bell);
+    const notices=document.createElement('section');notices.id='noticePopover';notices.className='notice-popover';notices.hidden=true;notices.setAttribute('aria-labelledby','noticePopoverTitle');
+    notices.innerHTML=`<div class="notice-popover-heading"><h2 id="noticePopoverTitle">Уведомления</h2>${ActionMenu.render(button('Вся история','open-notifications')+button('Мои подписки','subscriptions')+button('Настройки уведомлений','notice-settings'),'Действия с уведомлениями')}</div><div id="recentNotices" class="notice-popover-list"></div>`;
+    bell.after(notices);
+    bell.addEventListener('click',()=>{
+      if(!notices.hidden){closeNoticePopover();return;}
+      closeProfileMenu();ActionMenu.closeAll();
+      notices.hidden=false;bell.setAttribute('aria-expanded','true');
+      readNoticePopover();
+    });
     const teaching=location.pathname.endsWith('/teacher.html');
     const cabinet=profile.role==='admin'&&profile.canTeach&&!teaching?'<a href="teacher.html">Учебный кабинет</a>':button('Учебный кабинет','navigate','data-tab="home"','profile-menu-item');
     const admin=profile.role==='admin'&&teaching?'<a href="admin.html?tab=accounts">Админ панель</a>':'';
@@ -46,13 +76,23 @@ const Portal = (() => {
     panel.insertAdjacentHTML('beforeend',cabinet+admin+button('Выйти','account-logout','','profile-menu-item profile-menu-logout')+button('Справочник','navigate','data-tab="help"','profile-menu-item'));
     info.append(panel);
     trigger.setAttribute('aria-expanded','false');trigger.setAttribute('aria-controls','profileMenu');
-    trigger.addEventListener('click',()=>{if(!panel.hidden){closeProfileMenu();return;}ActionMenu.closeAll();panel.hidden=false;trigger.setAttribute('aria-expanded','true');});
-    document.addEventListener('click',event=>{if(!panel.contains(event.target)&&!trigger.contains(event.target))closeProfileMenu();});
-    info.addEventListener('focusout',event=>{if(!info.contains(event.relatedTarget))closeProfileMenu();});
-    document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!panel.hidden){event.preventDefault();closeProfileMenu(true);}});
+    trigger.addEventListener('click',()=>{if(!panel.hidden){closeProfileMenu();return;}closeNoticePopover();ActionMenu.closeAll();panel.hidden=false;trigger.setAttribute('aria-expanded','true');});
+    document.addEventListener('click',event=>{
+      if(!panel.contains(event.target)&&!trigger.contains(event.target))closeProfileMenu();
+      if(!notices.contains(event.target)&&!bell.contains(event.target))closeNoticePopover();
+    });
+    info.addEventListener('focusout',event=>{
+      if(event.relatedTarget&&!info.contains(event.relatedTarget)){closeProfileMenu();closeNoticePopover();}
+    });
+    document.addEventListener('keydown',event=>{
+      if(event.key!=='Escape'||event.defaultPrevented)return;
+      if(!notices.hidden){event.preventDefault();closeNoticePopover(true);}
+      else if(!panel.hidden){event.preventDefault();closeProfileMenu(true);}
+    });
   }
   async function openNotices(view='history',reset=true){
     closeProfileMenu();
+    closeNoticePopover();
     const dialog=document.getElementById('notificationsDialog'),target=dialog.querySelector('#popupNotices');
     const changed=target.dataset.noticeView!==view;
     target.dataset.noticeView=view;
@@ -85,17 +125,28 @@ const Portal = (() => {
     badge.textContent=count>99?'99+':String(count);badge.hidden=!count;
     document.getElementById('notificationButton').setAttribute('aria-label',count?`Уведомления: непрочитанных ${count}`:'Уведомления');
   }
+  function updateNoticeFeed(feed,initial){
+    const fresh=feed.rows.filter(n=>n.category!=='chat'&&!n.read&&!seen.has(n.id));
+    feed.rows.forEach(n=>seen.add(n.id));
+    setUnread(feed.unreadCount);
+    if(!initial&&fresh.length===1){const n=fresh[0],preview=n.category==='schedule'?n.body.split('\n')[0]:n.body.length>240?n.body.slice(0,240)+'…':n.body;toast(n.title,preview,n.severity,n.destination);}
+    else if(!initial&&fresh.length>1)toast('Новые уведомления',`Новых событий: ${fresh.length}. Откройте историю изменений.`,fresh.some(n=>n.severity==='danger')?'danger':'info','notifications');
+  }
+  function flushNoticePoll(){
+    if(pollAgain&&!polling&&!readingNotices){pollAgain=false;void poll();}
+  }
   async function poll(initial=false){
-    if(polling||document.hidden||!AppConnection.online())return;polling=true;
+    if(document.hidden||!AppConnection.online())return;
+    if(polling||readingNotices){pollAgain=true;return;}
+    polling=true;
+    const revision=noticeRevision;
     try{
       const feed=await callFunction('listNotifications');
-      const fresh=feed.rows.filter(n=>n.category!=='chat'&&!n.read&&!seen.has(n.id));
-      feed.rows.forEach(n=>seen.add(n.id));
-      setUnread(feed.unreadCount);
-      if(!initial&&fresh.length===1){const n=fresh[0],preview=n.category==='schedule'?n.body.split('\n')[0]:n.body.length>240?n.body.slice(0,240)+'…':n.body;toast(n.title,preview,n.severity,n.destination);}
-      else if(!initial&&fresh.length>1)toast('Новые уведомления',`Новых событий: ${fresh.length}. Откройте историю изменений.`,fresh.some(n=>n.severity==='danger')?'danger':'info','notifications');
+      if(revision!==noticeRevision)return;
+      updateNoticeFeed(feed,initial);
+      if(!document.getElementById('noticePopover').hidden)renderRecentNotices(feed.rows);
     }catch{ /* A failed background refresh never interrupts a test or form. */ }
-    finally{polling=false;}
+    finally{polling=false;flushNoticePoll();}
   }
   async function init(person){
     profile=person;
@@ -109,6 +160,7 @@ const Portal = (() => {
       const root=document.createElement('div');root.id='toastRegion';root.setAttribute('role','status');root.setAttribute('aria-live','polite');document.body.append(root);
       const dialog=document.createElement('dialog');dialog.id='notificationsDialog';dialog.className='notification-dialog';dialog.setAttribute('aria-labelledby','notificationDialogTitle');
       dialog.innerHTML=`<div class="dialog-heading"><h2 id="notificationDialogTitle">Уведомления</h2><div class="dialog-actions">${ActionMenu.render(button('Мои подписки','subscriptions')+button('Настройки уведомлений','notice-settings')+button('Прочитать эту страницу','notices-read-page','disabled')+button('Вся история','open-notifications'),'Действия с уведомлениями')}${ActionMenu.icon('close','Закрыть уведомления','data-portal="close-dialog" autofocus','ui-icon-button icon-close')}</div></div><div id="popupNotices"></div>`;document.body.append(dialog);
+      dialog.addEventListener('close',()=>{if(document.activeElement===document.body)document.getElementById('notificationButton').focus({preventScroll:true});});
       setupHeader();
       const connection=navigator.connection;const slow=connection?.saveData||['slow-2g','2g'].includes(connection?.effectiveType);
       setInterval(()=>poll(),slow?300000:120000);
@@ -188,12 +240,19 @@ const Portal = (() => {
     if(!result.ok)throw new Error('Хранилище не приняло файл.');return grant.path;
   }
   async function renderSchedule(container){ return Schedule.render(container,profile); }
+  function renderRecentNotices(rows){
+    const list=document.getElementById('recentNotices');
+    const recent=rows.slice(0,5);
+    recent.forEach(n=>noticeById.set(n.id,n));
+    const cards=recent.map(n=>`<button type="button" class="notice-preview${n.read?'':' unread'}${n.severity==='danger'?' danger':''}" data-portal="notice-open" data-id="${e(n.id)}" data-tab="${e(n.destination)}"><strong>${e(n.title)}</strong><span class="notice-preview-body">${e(n.body)}</span></button>`).join('')||empty('Уведомлений пока нет.');
+    if(list.innerHTML!==cards)list.innerHTML=cards;
+  }
   function noticeCards(rows){
     return rows.map(n=>`<article class="item notice-card ${n.read?'':'unread'} ${n.severity==='danger'?'danger':''}"><span class="notice-category">${n.category==='schedule'?'По подписке':n.category==='announcement'?'Объявление':n.category==='chat'?'Чат кураторов':'Личное'}</span><span class="meta">${e(new Date(n.created_at).toLocaleString('ru-RU'))}${n.read?'':' · Новое'}</span><h3>${e(n.title)}</h3><p>${e(n.body)}</p><div class="actions notice-actions">${button('Открыть','notice-open',`data-id="${e(n.id)}" data-tab="${e(n.destination)}"`)}${n.read?'':ActionMenu.render(button('Прочитано','notice-read',`data-id="${e(n.id)}"`),'Действия с уведомлением')}</div></article>`).join('')||empty('Уведомлений пока нет.');
   }
   async function renderNotices(container){
-    const offset=noticeOffset,feed=await callFunction('listNotifications',{offset});
-    if(!container?.isConnected||container.dataset.noticeView!=='history'||noticeOffset!==offset)return;
+    const offset=noticeOffset,revision=noticeRevision,feed=await callFunction('listNotifications',{offset});
+    if(!container?.isConnected||container.dataset.noticeView!=='history'||noticeOffset!==offset||revision!==noticeRevision)return;
     feed.rows.forEach(n=>noticeById.set(n.id,n));
     document.querySelector('#notificationsDialog [data-portal="notices-read-page"]').disabled=!feed.rows.some(n=>!n.read);
     container.innerHTML=`<div data-notice-list>${noticeCards(feed.rows)}</div>${offset||feed.rows.length===50?`<div class="actions pagination-actions">${button('Назад','notices-prev',offset?'':'disabled')}${button('Далее','notices-next',feed.rows.length===50?'':'disabled')}</div>`:''}`;
@@ -234,6 +293,7 @@ const Portal = (() => {
     if(name==='close-toast')return node.closest('.toast').remove();
     if(name==='close-dialog')return document.getElementById('notificationsDialog').close();
     if(name==='open-notifications')return openNotices();
+    if(name==='retry-notices')return readNoticePopover();
     if(name==='view-teacher'){if(!container){navigate('teachers');await new Promise(r=>setTimeout(r,0));}return viewTeacher(node.dataset.id);}
     if(name==='teacher-subjects')return viewTeacher(node.dataset.id,container,true);
     if(name==='teacher-subject-open'){
@@ -260,8 +320,9 @@ const Portal = (() => {
     if(['notice-read','notice-open','notices-read-page'].includes(name)){
       const noticeRoot=document.getElementById('popupNotices');
       const ids=name==='notices-read-page'?[...noticeRoot.querySelectorAll('[data-portal="notice-open"]')].map(n=>n.dataset.id):[node.dataset.id];
-      await callFunction('readNotifications',{ids});await poll();
-      if(name==='notice-open'){const notice=noticeById.get(node.dataset.id);if(notice?.context?.groupId)Schedule.selectGroup(notice.context.groupId);return navigate(node.dataset.tab);}
+      const notice=noticeById.get(node.dataset.id);
+      if(name!=='notice-open'||!notice?.read){await callFunction('readNotifications',{ids});await poll();}
+      if(name==='notice-open'){if(notice?.context?.groupId)Schedule.selectGroup(notice.context.groupId);return navigate(node.dataset.tab);}
       return renderNotices(noticeRoot);
     }
   }

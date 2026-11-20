@@ -13,16 +13,41 @@ header .user-info .profile-link:hover, header .user-info .header-bell:hover { bo
 .profile-link .mobile-initials { display: inline; font-weight: 700; font-size: .9rem; }
 header .profile-link .account-header-avatar { border-radius: 50%; width: 42px; height: 42px; }
 .header-bell .badge { position: absolute; top: -4px; inset-inline-end: -5px; margin: 0; min-width: 19px; border-radius: 999px; background: var(--accent); color: white; }
-.profile-menu {
+.profile-menu, .notice-popover {
   position: absolute; z-index: 45; inset-inline-end: 0; top: calc(100% + 10px); box-sizing: border-box;
-  width: min(260px, calc(100vw - 28px)); border: 1px solid var(--line); background: var(--paper);
+  border: 1px solid var(--line); background: var(--paper);
   padding: 8px; box-shadow: 0 10px 28px #25313924;
+}
+.profile-menu { width: min(260px, calc(100vw - 28px)); }
+.notice-popover {
+  width: min(380px, calc(100vw - 28px));
+  max-height: min(500px, calc(100dvh - 140px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)));
+}
+.notice-popover:not([hidden]) { display: flex; flex-direction: column; }
+.notice-popover-heading {
+  display: flex; gap: 8px; align-items: center; justify-content: space-between;
+  padding: 2px 4px 8px; border-bottom: 1px solid var(--line);
+}
+.notice-popover-heading h2 { margin: 0; font-size: 1.35rem; }
+.notice-popover-list { overflow-y: auto; min-height: 0; padding: 8px 4px 2px; overscroll-behavior: contain; }
+.notice-popover-list > p { padding: 8px 2px; margin: 0; color: var(--muted); }
+.notice-popover .notice-preview {
+  display: block; width: 100%; min-height: 44px; margin-block-end: 6px;
+  padding: 9px 10px; text-align: start; border: 1px solid #566970;
+  background: #29373f; color: #fff8ed; overflow-wrap: anywhere;
+}
+.notice-popover .notice-preview.unread { border-inline-start: 3px solid #dfa784; }
+.notice-popover .notice-preview.danger { border-color: #bb8073; background: #422f34; }
+.notice-popover .notice-preview:hover { background: #40535a; }
+.notice-preview-body {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  overflow: hidden; margin-top: 3px; font-size: .875rem; color: #eee9df;
 }
 .profile-menu #userName { display: block; padding: 10px 10px 12px; border-bottom: 1px solid var(--line); margin-bottom: 4px; font-weight: 650; overflow-wrap: anywhere; }
 header .profile-menu > :is(a, button) { display: block; width: 100%; text-align: start; box-sizing: border-box; padding: 10px; min-height: 44px; color: var(--ink); background: transparent; border: 0; text-decoration: none; }
 header .profile-menu > :is(a, button):hover { background: var(--lavender); }
 header .profile-menu > .profile-menu-logout { color: var(--danger); }
-@media (min-width:1025px) { body > header:has(.profile-menu:not([hidden])) { position: relative; z-index: 25; } }
+@media (min-width:1025px) { body > header:has(:is(.profile-menu, .notice-popover):not([hidden])) { position: relative; z-index: 25; } }
 .news-masthead { padding-block: 18px 20px; }
 .news-masthead .page-heading { flex-wrap: wrap; gap: 8px 12px; }
 .news-heading-actions { display: flex; align-items: center; gap: 8px; margin-inline-start: auto; }

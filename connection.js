@@ -32,7 +32,7 @@ const AppConnection=(()=>{
     if(!online()){if(cached)return clone(cached,true);throw networkError();}
     if(cached&&!options.fresh&&!cached.refresh&&Date.now()-cached.savedAt<policies[action])return clone(cached,false);
     const id=uid+':'+key(action,data);let task=reads.has(action)?pending.get(id):null;
-    if(!task){task=send().then(value=>{if(policies[action])store(action,data,value,uid,generation);else if(!reads.has(action)&&!['saveStudentDraft','submitStudentTest','readNotifications','markCuratorChatRead','addNotificationSubscription','removeNotificationSubscription'].includes(action))invalidate();return value;});if(reads.has(action)){pending.set(id,task);task.finally(()=>{if(pending.get(id)===task)pending.delete(id);}).catch(()=>{});}}
+    if(!task){task=send().then(value=>{if(policies[action])store(action,data,value,uid,generation);else if(!reads.has(action)&&!['saveStudentDraft','submitStudentTest','readNotifications','readAllNotifications','markCuratorChatRead','addNotificationSubscription','removeNotificationSubscription'].includes(action))invalidate();return value;});if(reads.has(action)){pending.set(id,task);task.finally(()=>{if(pending.get(id)===task)pending.delete(id);}).catch(()=>{});}}
     if(!cached)return task;
     if(options.fresh)return task.catch(error=>{if(recoverable(error))return clone(cached,true);throw error;});
     let usedCache=false,timer;
