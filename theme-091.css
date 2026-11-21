@@ -15,7 +15,7 @@
     box-shadow: 0 12px 32px #2531392e;
   }
   @supports (backdrop-filter: blur(16px)) {
-    .desktop-nav-panel:not([hidden]) { background: #fcfaf3e8; backdrop-filter: blur(16px) saturate(120%); }
+    .desktop-nav-panel:not([hidden]) { background: #fcfaf3cc; backdrop-filter: blur(16px) saturate(120%); }
   }
   .desktop-nav-scroll { display: flex; flex-direction: column; gap: 2px; overflow-y: auto; min-height: 0; overscroll-behavior: contain; }
   .desktop-nav-footer { display: flex; flex-direction: column; border-top: 1px solid var(--line); padding-top: 4px; }

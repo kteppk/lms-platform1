@@ -232,6 +232,7 @@ body.auth-page { display:grid; grid-template-columns:minmax(0,1fr) minmax(340px,
 
 /* Distinct ink panels give every news item and notification clear boundaries. */
 .news-feed .news-article,.news-management .news-article,.notice-card,.notice-card.unread,.toast{background:#29373f;border:1px solid #566970;border-top:3px solid #b87f63;color:#f5f0e5;padding:22px;margin:0 0 20px;border-radius:2px}
+.news-feed .news-article,.news-management .news-article{border-radius:12px}
 .news-article h3,.notice-card h3,.toast strong{color:#fff8ed}.news-article .news-body,.notice-card p,.toast p{color:#eee9df}.news-article .news-meta,.news-article time,.notice-card .meta{color:#c5d0ce}.news-article .news-meta>span:not(.news-tag),.notice-card .notice-category{color:#efd1b4}
 .news-article .news-tag{background:#e5cdb1;color:#29373f!important;border-color:#e5cdb1}.news-article .news-tag[data-news-channel="college"]{background:#d7e1ce;border-color:#d7e1ce}.news-article .news-full summary,.news-article .commit-link{color:#f1c9a3}
 .news-article .action-menu-toggle,.notice-card .action-menu-toggle,.notice-card .notice-actions>button{color:#f5f0e5;border-color:#879c9e;background:transparent}.news-article .action-menu-toggle:hover,.notice-card .action-menu-toggle:hover,.notice-card .notice-actions>button:hover{background:#40535a}
