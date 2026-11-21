@@ -1,12 +1,13 @@
 const Schedule = (() => {
   const days=['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье'];
+  const phone=matchMedia('(max-width: 760px)');
+  const localDate=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Krasnoyarsk',year:'numeric',month:'2-digit',day:'2-digit'});
   const e=value=>escapeHtml(value??'');
   let generation=0,current=null,pendingGroup=null;
   const key=actor=>'lms-schedule-group:'+actor.uid;
   function readGroup(actor){try{return AppConnection.draftStorage()?.getItem(key(actor))||'';}catch{return '';}}
   function remember(actor,id){try{AppConnection.draftStorage()?.setItem(key(actor),id);}catch{ /* Selection still works without storage. */ }}
-  function week(){
-    const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Krasnoyarsk',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+  function week(today){
     const date=new Date(today+'T12:00:00Z');date.setUTCDate(date.getUTCDate()-(date.getUTCDay()+6)%7);
     return Array.from({length:7},(_,i)=>new Date(date.getTime()+i*86400000).toISOString().slice(0,10));
   }
@@ -18,13 +19,46 @@ const Schedule = (() => {
     if(cell.status==='free')return '<span class="schedule-free">Нет пары</span><span class="schedule-room">—</span>';
     return `<span class="schedule-lesson"><strong>${e(cell.title)}</strong>${cell.teacher_label?`<span class="schedule-teacher">${e(cell.teacher_label)}</span>`:''}${cell.starts_at?`<small>${e(ScheduleExport.timeLabel(cell.starts_at,cell.ends_at))}</small>`:''}${cell.note?`<small>${e(cell.note)}</small>`:''}</span><span class="schedule-room">${e(cell.room||'—')}</span>`;
   }
-  function dayTable(day,ctx){
+  function dayTable(day,ctx,sundayVariant=''){
     const {group,cells,dates,actor}=ctx,admin=actor.role==='admin'&&!ctx.readOnly;
-    return `<section class="schedule-day-table" id="schedule-day-${day}" aria-labelledby="schedule-day-title-${day}"><header><h3 id="schedule-day-title-${day}">${days[day-1]}</h3><span>${dateLabel(dates[day-1])}</span></header><table><caption class="schedule-sr-only">${days[day-1]}, группа ${e(group.name)}</caption><thead><tr><th scope="col">№</th><th scope="col" colspan="2"><span class="schedule-columns"><span>Предмет · преподаватель</span><span>Каб.</span></span></th></tr></thead><tbody>${Array.from({length:group.lessons_per_day},(_,i)=>{
+    const suffix=sundayVariant==='desktop'?'-desktop':'';
+    const header=`<section class="schedule-day-table${sundayVariant==='mobile'?' schedule-mobile-sunday':''}" id="schedule-day-${day}${suffix}" aria-labelledby="schedule-day-title-${day}${suffix}"><header><h3 id="schedule-day-title-${day}${suffix}">${days[day-1]}</h3><span>${dateLabel(dates[day-1])}</span></header>`;
+    if(sundayVariant==='mobile'&&!admin)return header+'<p class="schedule-day-empty">Занятий нет.</p></section>';
+    return header+`<table><caption class="schedule-sr-only">${days[day-1]}, группа ${e(group.name)}</caption><thead><tr><th scope="col">№</th><th scope="col" colspan="2"><span class="schedule-columns"><span>Предмет · преподаватель</span><span>Каб.</span></span></th></tr></thead><tbody>${Array.from({length:group.lessons_per_day},(_,i)=>{
       const number=i+1,cell=cells.find(c=>c.weekday===day&&c.lesson_number===number);
       const label=`${days[day-1]}, ${number} пара: ${cell?(cell.status==='free'?'Нет пары':cell.title):'Не заполнено'}`;
       return `<tr><th scope="row">${number}</th><td colspan="2">${admin?`<button class="schedule-cell" type="button" data-schedule="cell" data-day="${day}" data-number="${number}" aria-label="Изменить: ${e(label)}">${content(cell,true)}</button>`:`<div class="schedule-cell">${content(cell,false)}</div>`}</td></tr>`;
     }).join('')}</tbody></table></section>`;
+  }
+  function scheduleGallery(ctx){
+    const grid=ctx.root.querySelector('.schedule-week-grid'),slides=[...grid.children];
+    const controls=ctx.root.querySelector('.schedule-gallery-controls');
+    const [prev,next]=controls.querySelectorAll('button'),label=controls.querySelector('output');
+    const select=index=>{
+      ctx.root.dataset.scheduleDate=ctx.dates[index];
+      label.value=days[index]+' · '+dateLabel(ctx.dates[index]);
+      prev.disabled=index===0;next.disabled=index===slides.length-1;
+      slides.forEach((slide,i)=>{slide.inert=phone.matches&&i!==index;});
+    };
+    const align=()=>{
+      const index=Math.max(0,ctx.dates.indexOf(ctx.root.dataset.scheduleDate));
+      if(phone.matches)grid.scrollLeft=slides[index].offsetLeft;
+      select(index);
+    };
+    const step=direction=>{
+      const index=ctx.dates.indexOf(ctx.root.dataset.scheduleDate)+direction;
+      if(index>=0&&index<slides.length){
+        grid.scrollLeft=slides[index].offsetLeft;
+        select(index);
+      }
+    };
+    prev.onclick=()=>step(-1);next.onclick=()=>step(1);
+    grid.addEventListener('scroll',()=>{
+      if(!phone.matches||!grid.clientWidth||current!==ctx)return;
+      const index=Math.min(slides.length-1,Math.max(0,Math.round(grid.scrollLeft/slides[1].offsetLeft)));
+      if(ctx.root.dataset.scheduleDate!==ctx.dates[index])select(index);
+    },{passive:true});
+    ctx.alignGallery=align;align();
   }
   async function render(root,actor,selected,fresh=false){
     const token=++generation;
@@ -35,7 +69,8 @@ const Schedule = (() => {
     const requested=pendingGroup??(selected===undefined?readGroup(actor):selected);pendingGroup=null;
     const groupId=groups.some(g=>g.id===requested)?requested:'';
     if(typeof Realtime!=='undefined')Realtime.watchGroup(groupId);
-    const dates=week();
+    const today=localDate.format(new Date()),dates=week(today);
+    if(!dates.includes(root.dataset.scheduleDate))root.dataset.scheduleDate=today;
     const ctx={root,actor,groups,groupId,dates,cells:[],staff:[],subjects:[]};current=ctx;
     root.innerHTML=`<div class="schedule-heading"><div><h2>Расписание</h2><p class="section-lead">Выберите свою группу.</p></div>${ActionMenu.render(button('Скачать расписание группы · Excel','export-one',groupId?'':'disabled')+button('Скачать все группы · Excel','export-all')+(actor.role==='admin'?button('+ Добавить группу','add-group')+(groupId?button('Время пар группы','clocks','disabled')+button('Удалить группу','delete-group','disabled','danger-button'):''):''),'Действия с расписанием')}</div><div class="schedule-toolbar"><label for="scheduleGroupSelect">Группа<select id="scheduleGroupSelect"><option value="">Выберите группу</option>${groups.map(g=>`<option value="${e(g.id)}" ${g.id===groupId?'selected':''}>${e(g.name)}${g.course?' · '+e(g.course)+' курс':''}</option>`).join('')}</select></label><p>Неделя: <strong>${dateLabel(dates[0])} — ${dateLabel(dates[5])}</strong></p>${ActionMenu.icon('refresh','Обновить расписание','data-schedule="refresh"')}</div><p class="lite-links">Слабый интернет? <a href="lite/${groupId?'?group='+encodeURIComponent(groupId):''}" target="_blank" rel="noopener">Лёгкая версия ↗</a></p><div id="scheduleWeekBody" aria-live="polite">${groupId?'<p role="status">Загрузка расписания…</p>':'<p class="empty-state">Выберите группу, чтобы увидеть только её занятия.'+(groups.length?'':' Администратор может добавить первую группу.')+'</p>'}</div>`;
     if(!groupId)return;
@@ -48,7 +83,9 @@ const Schedule = (() => {
     const remove=root.querySelector('[data-schedule="delete-group"]');if(remove)remove.disabled=ctx.readOnly;const clocks=root.querySelector('[data-schedule="clocks"]');if(clocks)clocks.disabled=ctx.readOnly;
     const body=root.querySelector('#scheduleWeekBody');
     const sunday=data.cells.some(c=>c.weekday===7);
-    body.innerHTML=`${AppConnection.note(groups,data,legacy)}${legacy.failed?'<p class="cache-note stale">Дополнительные занятия на эту неделю не удалось проверить. Повторите обновление при работающем интернете.</p>':''}<div class="schedule-group-heading"><div><h3>Группа ${e(data.group.name)}${data.group.course?' · '+e(data.group.course)+' курс':''}</h3>${data.group.program?`<p>${e(data.group.program)}</p>`:''}</div></div>${actor.role==='admin'?'<p class="schedule-tip">Нажмите на ячейку: укажите предмет или выберите «Нет пары». Изменения действуют каждую неделю и появляются в уведомлениях.</p>':''}<div class="schedule-subscriptions"></div><div class="schedule-week-grid">${Array.from({length:sunday?7:6},(_,i)=>dayTable(i+1,ctx)).join('')}</div>${actor.role==='admin'&&!sunday?`<details class="schedule-sunday"><summary>Воскресенье (при необходимости)</summary>${dayTable(7,ctx)}</details>`:''}<p class="schedule-legend">«Нет пары» — занятие не проводится. «Не заполнено» — расписание ещё не указано.</p>${legacy.rows.length?`<section class="schedule-legacy"><h3>Дополнительные занятия на эту неделю</h3><p>Ранее добавленные занятия с конкретной датой.</p>${legacy.rows.map(row=>`<article class="item"><strong>${e(row.title)}</strong><p>${dateLabel(row.lesson_date)} · ${e(row.starts_at.slice(0,5))}–${e(row.ends_at.slice(0,5))}${row.room?' · Каб. '+e(row.room):''}</p>${row.note?`<p>${e(row.note)}</p>`:''}</article>`).join('')}${legacy.hasMore?'<p>Показаны первые 500 занятий.</p>':''}</section>`:''}`;
+    const controls='<div class="schedule-gallery-controls" role="group" aria-label="Дни недели"><button type="button" class="ui-icon-button" aria-label="Предыдущий день">‹</button><output aria-live="polite"></output><button type="button" class="ui-icon-button" aria-label="Следующий день">›</button></div>';
+    body.innerHTML=`${AppConnection.note(groups,data,legacy)}${legacy.failed?'<p class="cache-note stale">Дополнительные занятия на эту неделю не удалось проверить. Повторите обновление при работающем интернете.</p>':''}<div class="schedule-group-heading"><div><h3>Группа ${e(data.group.name)}${data.group.course?' · '+e(data.group.course)+' курс':''}</h3>${data.group.program?`<p>${e(data.group.program)}</p>`:''}</div></div>${actor.role==='admin'?'<p class="schedule-tip">Нажмите на ячейку: укажите предмет или выберите «Нет пары». Изменения действуют каждую неделю и появляются в уведомлениях.</p>':''}<div class="schedule-subscriptions"></div>${controls}<div class="schedule-week-grid schedule-gallery">${days.map((_,i)=>dayTable(i+1,ctx,i===6&&!sunday?'mobile':'')).join('')}</div>${actor.role==='admin'&&!sunday?`<details class="schedule-sunday"><summary>Воскресенье (при необходимости)</summary>${dayTable(7,ctx,'desktop')}</details>`:''}<p class="schedule-legend">«Нет пары» — занятие не проводится. «Не заполнено» — расписание ещё не указано.</p>${legacy.rows.length?`<section class="schedule-legacy"><h3>Дополнительные занятия на эту неделю</h3><p>Ранее добавленные занятия с конкретной датой.</p>${legacy.rows.map(row=>`<article class="item"><strong>${e(row.title)}</strong><p>${dateLabel(row.lesson_date)} · ${e(row.starts_at.slice(0,5))}–${e(row.ends_at.slice(0,5))}${row.room?' · Каб. '+e(row.room):''}</p>${row.note?`<p>${e(row.note)}</p>`:''}</article>`).join('')}${legacy.hasMore?'<p>Показаны первые 500 занятий.</p>':''}</section>`:''}`;
+    scheduleGallery(ctx);
     await Subscriptions.groupPanel(body.querySelector('.schedule-subscriptions'),data.group,data.cells);if(actor.role!=='guest'){const host=document.createElement('div');body.querySelector('.schedule-subscriptions').after(host);await LessonReminders.panel(host,data.group);}
   }
   function dialog(ctx,title,body){
@@ -147,5 +184,7 @@ const Schedule = (() => {
   document.addEventListener('lms-live-update',event=>{const ctx=current;if(!ctx?.root.isConnected||!ctx.root.querySelector('#scheduleGroupSelect'))return;
     if(event.detail.topics.some(t=>['resync','groups','schedule','subscriptions','people','content'].includes(t)))Realtime.update('schedule',ctx.root,()=>render(ctx.root,ctx.actor,ctx.groupId,true));
   });
+  phone.addEventListener('change',()=>{if(current?.root.isConnected)current.alignGallery?.();});
+  window.addEventListener('resize',()=>{if(phone.matches&&current?.root.isConnected)current.alignGallery?.();},{passive:true});
   return {render,selectGroup:id=>{pendingGroup=id;}};
 })();

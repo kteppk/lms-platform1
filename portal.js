@@ -19,6 +19,7 @@ const Portal = (() => {
     if(tab==='announcements')tab='home';
     ActionMenu.closeAll();
     if(typeof MobileNavigation!=='undefined')MobileNavigation.closeMenu();
+    DesktopNavigation.close();
     closeProfileMenu();
     closeNoticePopover();
     if(tab==='notifications'){openNotices().catch(error=>toast('Не удалось загрузить уведомления',error.message,'danger'));return;}
@@ -191,7 +192,10 @@ const Portal = (() => {
     delete container.dataset.teacherScreen;
     container.innerHTML='<h2>Преподаватели</h2><p>Загрузка профилей…</p>';
     teachers=await callFunction('listTeachers');if(!container.isConnected)return;
-    container.innerHTML=`<h2>Преподаватели</h2><p class="section-lead">Образование, опыт и достижения преподавателей техникума.</p><div class="teacher-grid">${teachers.map(t=>`<article class="item teacher-card">${avatar(t)}<h3>${e(t.name)}</h3><p class="meta">${e(t.position||'Преподаватель')}</p><span class="badge mint">Предметов: ${t.subjectIds.length}</span><div class="actions">${button('Открыть профиль','view-teacher',`data-id="${e(t.id)}"`,'primary')}</div></article>`).join('')||empty('Профили преподавателей пока не добавлены.')}</div>`;
+    container.innerHTML=`<h2>Преподаватели</h2><div class="teacher-grid">${teachers.map(t=>{
+      const titles=t.subjectTitles?.join(', ');
+      return `<article class="item teacher-card">${avatar(t)}<div class="teacher-card-details"><h3>${e(t.name)}</h3><p>${e(t.position||'Преподаватель')}</p><p class="teacher-card-subjects">Предметов: ${t.subjectIds.length}${titles?' · '+e(titles):''}</p>${button('Открыть профиль','view-teacher',`data-id="${e(t.id)}"`,'secondary')}</div></article>`;
+    }).join('')||empty('Профили преподавателей пока не добавлены.')}</div>`;
   }
   function teacherDetails(p){return `<div class="teacher-profile-overview"><span>${e(p.position||'Преподаватель')}</span>${p.experience_years!=null?`<span>Педагогический стаж: ${e(p.experience_years)} лет</span>`:''}<span>Документов: ${(p.documents||[]).length}</span></div>${[['Образование',p.education],['Квалификация и повышение квалификации',p.qualification],...(p.bio?[['Дополнительная информация',p.bio]]:[])].map(([title,body])=>`<section class="profile-block"><h3>${title}</h3><p class="teacher-profile-text">${e(body||'Информация пока не заполнена.')}</p></section>`).join('')}
       <section class="profile-block"><h3>Дипломы, грамоты и сертификаты</h3><p class="hint">Документы, которые преподаватель добавил в свой профиль.</p><div class="document-list">${p.documents.map(d=>{
@@ -209,7 +213,7 @@ const Portal = (() => {
       SubjectSearch.update();
       return;
     }
-    container.innerHTML=`${button('← Все преподаватели','teacher-list')}<div class="profile-heading">${avatar(p)}<div><h2>${e(p.name)}</h2><p>${e(p.position||'Преподаватель')}</p>${button('Посмотреть предметы','teacher-subjects',`data-id="${e(uid)}"`)}</div></div>
+    container.innerHTML=`${button('← Все преподаватели','teacher-list')}<div class="profile-heading">${avatar(p)}<div><h2>${e(p.name)}</h2><p>${e(p.position||'Преподаватель')}</p><div class="actions">${button('Посмотреть предметы','teacher-subjects',`data-id="${e(uid)}"`)}${button('Поделиться профилем','share-teacher',`data-id="${e(uid)}" data-name="${e(p.name)}"`)}</div></div></div>
       ${p.canEdit?button('Редактировать профиль','edit-teacher',`data-id="${e(p.id)}"`,'primary'):''}
       ${teacherDetails(p)}`;
   }
@@ -296,6 +300,17 @@ const Portal = (() => {
     if(name==='retry-notices')return readNoticePopover();
     if(name==='view-teacher'){if(!container){navigate('teachers');await new Promise(r=>setTimeout(r,0));}return viewTeacher(node.dataset.id);}
     if(name==='teacher-subjects')return viewTeacher(node.dataset.id,container,true);
+    if(name==='share-teacher'){
+      const url=new URL('index.html',location.href);
+      url.searchParams.set('teacher',node.dataset.id);
+      if(navigator.share){
+        try{await navigator.share({title:node.dataset.name,url:url.href});return;}
+        catch(error){if(error.name==='AbortError')return;}
+      }
+      try{await navigator.clipboard.writeText(url.href);toast('Ссылка на профиль скопирована');}
+      catch{prompt('Ссылка на профиль преподавателя',url.href);}
+      return;
+    }
     if(name==='teacher-subject-open'){
       const {id,teacher}=node.dataset;
       if(typeof openInstructorSubject==='function')return openInstructorSubject(id,teacher);

@@ -22,7 +22,7 @@ function showError(msg) {
 
 async function openCabinet(account, name) {
   const profile = await getProfile(account, name);
-  location.replace(cabinetPage(profile.role));
+  location.replace(cabinetPage(profile.role,teacherProfileLinkId()));
 }
 
 async function handleAuthForm(event, action) {
@@ -68,7 +68,7 @@ function handleRegister(event) {
     const { user } = await auth.createUserWithEmailAndPassword(email, password, privacy.value);
     const profile = await getProfile(user, names);
     await user.updateProfile({ displayName: profile.name }).catch(()=>{});
-    location.replace(cabinetPage(profile.role));
+    location.replace(cabinetPage(profile.role,teacherProfileLinkId()));
   });
 }
 

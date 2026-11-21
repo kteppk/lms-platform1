@@ -40,7 +40,7 @@ function fixture(role){let liked=false,messages=[],title='Новость для 
  case 'getGroupLessonTimes':return [{lesson_number:1,starts_at:'08:00:00',ends_at:'09:35:00'}];
  case 'exportSchedule':return {week:'2026-11-16',generatedAt:new Date().toISOString(),groups:[{group:{id:'g',name:'9241',course:'4',program:'Программирование',lessons_per_day:6},cells:[{weekday:1,lesson_number:1,status:'lesson',title:'Математика',teacher_label:'ФИО',room:'20',starts_at:'08:00:00',ends_at:'09:35:00'}]}]};
  case 'listActiveAttempts':return [];
- case 'listTeachers':return [{id:'instructor',name:'Проверочный Преподаватель',subjectIds:['math','law']}];
+ case 'listTeachers':return [{id:'instructor',name:'Проверочный Преподаватель',subjectIds:['math','law'],subjectTitles:['Математика','Право']}];
  case 'getTeacherProfile':return {id:'instructor',name:'Проверочный Преподаватель',documents:[],subjects:[{id:'math',title:'Математика',description:'Программа курса'},{id:'law',title:'Право'}]};
  case 'getSubjectContent':assert.equal(data.teacherId,'instructor');assert.equal(data.subjectId,'math');return {
   subject:{title:'Математика',description:'Программа курса'},teacher:{id:'instructor',name:'Проверочный Преподаватель'},lectures:[],books:[],tests:[]};
@@ -50,6 +50,13 @@ function fixture(role){let liked=false,messages=[],title='Новость для 
  case 'sendCuratorMessage':messages.push({id:String(messages.length+1),body:data.body,author_id:role,author_name:person.name,created_at:new Date().toISOString()});return {id:String(messages.length)};
  default:throw Error('Unexpected fixture action '+action);
  }};
+}
+async function goTab(page,tab){
+ const toggle=page.locator('.desktop-nav-toggle');
+ if(await toggle.isVisible()){
+  if(await toggle.getAttribute('aria-expanded')==='false')await toggle.click();
+  await page.locator(`.tabs [data-tab="${tab}"]`).click();
+ }else await page.evaluate(value=>Portal.navigate(value),tab);
 }
 async function checkChat(page,role,width){
  if(!['curator','admin'].includes(role))return;
@@ -76,6 +83,7 @@ async function checkChat(page,role,width){
   await page.route('**/functions/v1/lms*',async route=>{const r=route.request(),headers={'access-control-allow-origin':'*','access-control-allow-headers':'authorization,content-type','access-control-allow-methods':'GET,POST,OPTIONS'};if(r.method()==='OPTIONS')return route.fulfill({status:204,headers,body:''});const u=new URL(r.url()),body=r.method()==='GET'?{action:u.searchParams.get('action'),data:JSON.parse(u.searchParams.get('data')||'{}')}:r.postDataJSON();try{await route.fulfill({headers,json:{data:api(body.action,body.data)}});}catch(e){errors.push(e.message);await route.fulfill({status:500,headers,json:{error:e.message}});}});
   await page.route('**/storage/v1/news-photo/*',route=>route.fulfill({contentType:'image/png',body:picture}));
   await page.goto(base+(role==='curator'?'student':role)+'.html');await page.locator('.news-article').waitFor();
+  assert.equal(await page.getByRole('heading',{name:'Новости',exact:true}).count(),1);
   assert.equal(await page.locator('.tabs [data-tab="home"]').textContent(),'Новости');
   assert.equal(await page.locator('.tabs [data-tab="announcements"]').count(),0);
   assert.equal(await page.locator('.tabs [data-tab="students"]').count(),0);
@@ -94,7 +102,20 @@ async function checkChat(page,role,width){
   await page.setViewportSize({width:1280,height:900});
   await menu.click();await page.getByRole('button',{name:'Обновить новости',exact:true}).waitFor();await page.keyboard.press('Escape');
   if(['teacher','student'].includes(role)){
-   await page.locator('.tabs [data-tab="teachers"]').click();await page.getByRole('button',{name:'Открыть профиль'}).click();
+   await goTab(page,'teachers');await page.locator('.teacher-card').getByText('Предметов: 2 · Математика, Право',{exact:true}).waitFor();
+   await page.getByRole('button',{name:'Открыть профиль'}).click();
+   if(role==='student'){
+    await page.evaluate(()=>{
+     Object.defineProperty(navigator,'share',{value:undefined});
+     Object.defineProperty(navigator,'clipboard',{value:{writeText:async url=>window.sharedTeacher=url}});
+    });
+    await page.getByRole('button',{name:'Поделиться профилем'}).click();
+    await page.waitForFunction(()=>window.sharedTeacher);
+    const link=await page.evaluate(()=>window.sharedTeacher);
+    assert.equal(link,base+'index.html?teacher=instructor');
+    await page.goto(link);await page.waitForURL('**/student.html?teacher=instructor');
+    await page.locator('.profile-heading').getByRole('heading',{name:'Проверочный Преподаватель'}).waitFor();
+   }
    await page.locator('.profile-heading').getByRole('button',{name:'Посмотреть предметы'}).click();
    const subjects=page.locator('.subjects-grid .subject-card');
    await subjects.first().waitFor();assert.deepEqual(await subjects.locator('h3').allTextContents(),['Математика','Право']);
@@ -102,23 +123,34 @@ async function checkChat(page,role,width){
    await page.getByText('Программа курса',{exact:true}).waitFor();assert.equal(await page.getByRole('heading',{name:'Математика',exact:true}).count(),1);
    await page.getByRole('button',{name:'К предметам преподавателя'}).click();
    await page.getByRole('heading',{name:'Предметы преподавателя'}).waitFor();
-   await page.locator('.tabs [data-tab="home"]').click();await page.locator('.news-article').waitFor();
+   await goTab(page,'home');await page.locator('.news-article').waitFor();
   }
   if(role!=='guest'){
-   await page.setViewportSize({width:1280,height:580});await page.evaluate(()=>window.scrollTo(0,0));await page.waitForTimeout(100);const profile=await page.locator('.tabs [data-tab="profile"]').boundingBox();assert.ok(profile.y>=0&&profile.y+profile.height<=580,role+' profile stays on screen');await page.evaluate(()=>window.scrollTo(0,1300));await page.waitForTimeout(100);const moved=await page.locator('.tabs [data-tab="profile"]').boundingBox();assert.ok(moved.y>=0&&moved.y+moved.height<=580,role+' sticky profile');await page.setViewportSize({width:1280,height:900});
+   await page.setViewportSize({width:1280,height:580});await page.evaluate(()=>window.scrollTo(0,0));
+   const toggle=page.locator('.desktop-nav-toggle'),panel=page.locator('#desktopNavigation');
+   assert.equal(await toggle.getAttribute('aria-expanded'),'false');
+   await toggle.hover();await panel.waitFor();
+   await page.keyboard.press('Escape');await panel.waitFor({state:'hidden'});
+   await toggle.click();await panel.waitFor();
+   const profileLink=panel.locator('[data-tab="profile"]'),profileBox=await profileLink.boundingBox();
+   assert.ok(profileBox.y>=0&&profileBox.y+profileBox.height<=580,role+' profile stays on screen');
+   await page.keyboard.press('Escape');await page.evaluate(()=>window.scrollTo(0,1300));
+   const moved=await toggle.boundingBox();assert.ok(moved.y>=0&&moved.y+moved.height<=580,role+' sticky menu');
+   await page.mouse.move(1000,200);await panel.waitFor({state:'hidden'});
+   await page.setViewportSize({width:1280,height:900});
   }
   await page.locator('#newsTag').selectOption('college');await page.locator('.news-tag[data-news-channel="college"]').waitFor();await page.locator('#newsOrder').selectOption('oldest');
   if(role!=='guest'){await page.locator('.news-like').click();await page.locator('.news-like[aria-pressed="true"]').waitFor();await page.locator('.news-like').click();await page.locator('.news-like[aria-pressed="false"]').waitFor();}
   assert.equal(await page.locator('.tabs [data-tab="curator-chat"]').count(),['admin','curator'].includes(role)?1:0);
-  if(['admin','curator'].includes(role)){await page.locator('.tabs [data-tab="curator-chat"]').click();await page.locator('#chatBody').fill('<script>проверка</script>');await page.locator('[data-chat-form] button').click();await page.locator('.curator-message p').waitFor();assert.equal(await page.locator('.curator-message p').textContent(),'<script>проверка</script>');assert.equal(await page.locator('.curator-message script').count(),0);}
-  if(role==='admin'){await page.locator('.tabs [data-tab="accounts"]').click();await page.locator('.online-stat-grid').waitFor();assert.equal(await page.locator('.online-total strong').textContent(),'2');await page.getByText('Новых заявок нет.',{exact:true}).waitFor();
+  if(['admin','curator'].includes(role)){await goTab(page,'curator-chat');await page.locator('#chatBody').fill('<script>проверка</script>');await page.locator('[data-chat-form] button').click();await page.locator('.curator-message p').waitFor();assert.equal(await page.locator('.curator-message p').textContent(),'<script>проверка</script>');assert.equal(await page.locator('.curator-message script').count(),0);}
+  if(role==='admin'){await goTab(page,'accounts');await page.locator('.online-stat-grid').waitFor();assert.equal(await page.locator('.online-total strong').textContent(),'2');await page.getByText('Новых заявок нет.',{exact:true}).waitFor();
    await page.locator('[data-history-plot] svg').waitFor();for(const range of ['7h','24h','3d','7d','60m']){await page.locator('[data-history-range]').selectOption(range);await page.locator('[data-history-plot] svg').waitFor();await page.locator('[data-history-status]').filter({hasText:'Обновлено'}).waitFor();}
    await page.locator('[data-history-plot] svg').focus();await page.keyboard.press('ArrowLeft');assert.match(await page.locator('[data-history-tooltip]').textContent(),/Аккаунты|нет измерений/);
    for(const width of [320,390]){await page.setViewportSize({width,height:844});await page.locator('[data-history-range]').selectOption('7d');await page.locator('[data-history-plot] svg').waitFor();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'activity chart fits '+width);await page.locator('[data-history-plot]').screenshot({path:path.join(root,'.qa-output',`activity-${width}.png`)});}
    await page.setViewportSize({width:1280,height:900});
   }
   if(['admin','curator'].includes(role)){
-   await page.locator('.tabs [data-tab="home"]').click();await page.locator('[data-news-action="compose"]').click();await page.locator('#newsTitle').fill('Новая публикация');await page.locator('#newsBody').fill('Текст новости');assert.equal(await page.locator('#newsNotify').count(),role==='admin'?1:0);
+   await goTab(page,'home');await page.locator('[data-news-action="compose"]').click();await page.locator('#newsTitle').fill('Новая публикация');await page.locator('#newsBody').fill('Текст новости');assert.equal(await page.locator('#newsNotify').count(),role==='admin'?1:0);
    const encoded=await page.evaluate(()=>{const canvas=document.createElement('canvas');canvas.width=64;canvas.height=64;canvas.getContext('2d').fillRect(0,0,64,64);return canvas.toDataURL('image/png').split(',')[1];});
    await page.locator('#newsPhotos').setInputFiles({name:'photo.png',mimeType:'image/png',buffer:Buffer.from(encoded,'base64')});
    await page.locator('.news-photo-editor img').waitFor().catch(async error=>{throw new Error(await page.locator('.news-photo-error').textContent()||error.message);});
@@ -127,7 +159,7 @@ async function checkChat(page,role,width){
    const newsMenu=()=>page.locator('.news-article [data-action-menu-toggle]').click();await newsMenu();await page.locator('[data-news-action="edit"]').click();await page.locator('[data-remove-photo]').click();await page.locator('#newsTitle').fill('Изменённая публикация');await page.locator('[data-news-form] [type="submit"]').click();await page.getByRole('heading',{name:'Изменённая публикация',exact:true}).waitFor();assert.equal(await page.locator('.news-photos').count(),0);
    await newsMenu();page.once('dialog',dialog=>dialog.accept());await page.locator('[data-news-action="delete"]').click();await page.getByRole('heading',{name:'Новость для проверки',exact:true}).waitFor();
   }
-  if(['student','curator'].includes(role)){await page.locator('.tabs [data-tab="profile"]').click();await page.locator('#educationBirth').waitFor();await page.locator('#educationSpecialty').fill('Информационные системы');await page.getByRole('button',{name:'Сохранить учебные данные',exact:true}).click();await page.getByText('Учебные данные сохранены.',{exact:true}).waitFor();assert.match(await page.locator('[data-own-age]').textContent(),/18 лет/);}
+  if(['student','curator'].includes(role)){await goTab(page,'profile');await page.locator('#educationBirth').waitFor();await page.locator('#educationSpecialty').fill('Информационные системы');await page.getByRole('button',{name:'Сохранить учебные данные',exact:true}).click();await page.getByText('Учебные данные сохранены.',{exact:true}).waitFor();assert.match(await page.locator('[data-own-age]').textContent(),/18 лет/);}
   if(role!=='guest'){
    assert.equal(await page.locator('nav [data-tab="people"],nav [data-tab="notifications"],nav [data-mobile-tab="people"],nav [data-mobile-tab="notifications"]').count(),0);
    const profile=page.locator('header .profile-link'),url=page.url();await profile.click();assert.equal(page.url(),url);await page.locator('#profileMenu #userName').waitFor();
@@ -173,7 +205,32 @@ async function checkChat(page,role,width){
     else assert.equal(await page.locator('.chat-composer').count(),0);
    }
   }
-  await page.locator('.tabs [data-tab="home"]').click();await page.locator('.news-article').waitFor();await page.screenshot({path:path.join(root,'.qa-output',role+'-desktop.png'),fullPage:true});
+  await goTab(page,'home');await page.locator('.news-article').waitFor();await page.screenshot({path:path.join(root,'.qa-output',role+'-desktop.png'),fullPage:true});
+  if(role==='student'){
+   await page.clock.setFixedTime(new Date('2026-11-19T10:00:00Z'));
+   await page.setViewportSize({width:390,height:844});
+   assert.equal(await page.locator('.desktop-nav-toggle').isVisible(),false);
+   await page.locator('#mobileNavigation [data-mobile-tab="schedule"]').click();
+   await page.locator('#scheduleGroupSelect').selectOption('g');
+   const label=page.locator('.schedule-gallery-controls output');
+   await label.filter({hasText:'Четверг'}).waitFor();
+   assert.equal(await page.locator('.schedule-gallery').evaluate(n=>Math.round(n.scrollLeft/n.children[1].offsetLeft)),3);
+   await page.getByRole('button',{name:'Предыдущий день'}).click();await label.filter({hasText:'Среда'}).waitFor();
+   await page.getByRole('button',{name:'Следующий день'}).click();await label.filter({hasText:'Четверг'}).waitFor();
+   const gallery=page.locator('.schedule-gallery');
+   await gallery.evaluate(n=>n.scrollIntoView({block:'start'}));
+   const box=await gallery.boundingBox(),y=Math.max(150,box.y+45);
+   const touch=await context.newCDPSession(page);
+   await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:box.x+box.width-40,y}]});
+   for(const offset of [75,120,175,230,275]){
+    await touch.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:box.x+box.width-40-offset,y}]});
+    await page.waitForTimeout(30);
+   }
+   await touch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+   await label.filter({hasText:'Пятница'}).waitFor();
+   await page.evaluate(()=>document.dispatchEvent(new CustomEvent('lms-live-update',{detail:{topics:['schedule']}})));
+   await label.filter({hasText:'Пятница'}).waitFor();
+  }
   for(const width of [320,390]){await page.setViewportSize({width,height:844});await page.locator('#mobileNavigation [data-mobile-tab="schedule"]').click();await page.locator('#scheduleGroupSelect').selectOption('g');await page.locator('.schedule-week-grid').waitFor();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,role+' schedule '+width);if(role!=='guest'){await page.locator('[data-reminder-toggle]').click();await page.locator('#lessonReminderDialog').waitFor();assert.equal(await page.locator('#lessonReminderDialog [type="submit"]').isDisabled(),true);await page.locator('[data-reminder-consent]').check();assert.equal(await page.locator('#lessonReminderDialog [type="submit"]').isEnabled(),true);await page.locator('[data-reminder-close]').click();}await page.locator('#mobileNavigation [data-mobile-tab="home"]').click();await page.locator('.news-article').waitFor();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,role+' news '+width);await checkChat(page,role,width);}
   await page.screenshot({path:path.join(root,'.qa-output',role+'-mobile.png'),fullPage:true});assert.deepEqual(errors,[]);await context.close();console.log('PASS '+role+': news, filters, hearts, chat visibility, push settings, 320/390px');
  }}finally{await browser.close();await new Promise(r=>server.close(r));}

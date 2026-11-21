@@ -31,16 +31,19 @@ async function canEditTeacher(db:SupabaseClient,actor:Actor,value:unknown) {
   return uid;
 }
 async function teacherCatalog(db:SupabaseClient) {
-  const [people,instructors]=await Promise.all([
+  const [people,instructors,subjects]=await Promise.all([
     dataOf(db.from('teacher_directory').select('id,name,position,avatar_path').order('name')),
     dataOf(db.from('subject_instructors').select('subject_id,teacher_id')),
+    dataOf(db.from('subjects').select('id,title').is('archived_at',null).order('title')),
   ]);
   const avatars=(people??[]).flatMap(p=>p.avatar_path?[p.avatar_path]:[]);
   const signed=avatars.length?await dataOf(db.storage.from(profileBucket).createSignedUrls(avatars,3600)):[];
   const links=new Map((signed??[]).filter(f=>f.path&&!f.error).map(f=>[f.path,f.signedUrl]));
+  const subjectsById=new Map((subjects??[]).map(subject=>[subject.id,subject.title]));
   return (people??[]).map(p=>{
-    return {id:p.id,name:p.name,position:p.position??'',avatarUrl:links.get(p.avatar_path)??null,
-      subjectIds:(instructors??[]).filter(i=>i.teacher_id===p.id).map(i=>i.subject_id)};
+    const subjectIds=(instructors??[]).filter(i=>i.teacher_id===p.id).map(i=>i.subject_id);
+    const subjectTitles=subjectIds.map(subjectId=>subjectsById.get(subjectId)).filter(Boolean).sort((a,b)=>a.localeCompare(b,'ru'));
+    return {id:p.id,name:p.name,position:p.position??'',avatarUrl:links.get(p.avatar_path)??null,subjectIds,subjectTitles};
   });
 }
 export async function teacherProfile(db:SupabaseClient,actor:Actor,input:Input) {

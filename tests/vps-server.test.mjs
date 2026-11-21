@@ -82,4 +82,7 @@ test('legacy direct subject join is denied, admin approval grants membership and
  const profile=(await rpc(t,'getTeacherProfile')).body.data;const saved=await rpc(t,'saveTeacherProfile',{position:'Преподаватель',education:'Высшее\nобразование',qualification:'Высшая категория',experienceYears:12,revision:profile.revision});assert.equal(saved.status,200);
  const student=await call('login',{email:'student@example.test',password:'RecoveredPassword123'});
  const person=(await rpc(student,'getPerson',{userId:t.body.user.uid})).body.data;assert.equal(person.professional.bio,'Ранее опубликованная информация');assert.equal(person.professional.education,'Высшее\nобразование');assert.equal(person.professional.subjects[0].title,'Предмет по заявке');
+ const card=(await rpc(student,'listTeachers')).body.data.find(teacher=>teacher.id===t.body.user.uid);
+ assert.deepEqual(card.subjectIds,[subject.body.data.id]);
+ assert.deepEqual(card.subjectTitles,['Предмет по заявке']);
 });

@@ -89,8 +89,14 @@ async function uploadAttachment(kind, file, context = {}) {
   return grant.path;
 }
 
-function cabinetPage(role) {
-  return role === 'admin' ? 'admin.html' : role === 'teacher' ? 'teacher.html' : 'student.html';
+function teacherProfileLinkId(){
+  const uid=new URLSearchParams(location.search).get('teacher')||'';
+  return /^[A-Za-z0-9_-]{1,128}$/.test(uid)?uid:'';
+}
+
+function cabinetPage(role,teacherId='') {
+  const page=role === 'admin' ? 'admin.html' : role === 'teacher' ? 'teacher.html' : 'student.html';
+  return teacherId?page+'?teacher='+encodeURIComponent(teacherId):page;
 }
 
 function showStatus(message) {
@@ -102,14 +108,15 @@ function showStatus(message) {
 function watchCabinet(role, onReady) {
   auth.onAuthStateChanged(async (account) => {
     if (!account) {
-      location.replace('index.html');
+      const teacher=teacherProfileLinkId();
+      location.replace(teacher?'index.html?teacher='+encodeURIComponent(teacher):'index.html');
       return;
     }
     try {
       const profile = await getProfile(account);
       if (auth.currentUser?.uid !== account.uid) return;
       if (profile.role !== role && !(role === 'student' && profile.role === 'curator') && !(role === 'teacher' && profile.role === 'admin' && profile.canTeach)) {
-        location.replace(cabinetPage(profile.role));
+        location.replace(cabinetPage(profile.role,teacherProfileLinkId()));
         return;
       }
       // Cabinet navigation is deferred; even a fast Auth response must wait
@@ -123,6 +130,8 @@ function watchCabinet(role, onReady) {
       await onReady();
       const target=sessionStorage.getItem('lms-open-section');sessionStorage.removeItem('lms-open-section');const group=sessionStorage.getItem('lms-open-group');sessionStorage.removeItem('lms-open-group');if(target==='schedule'&&group&&/^[A-Za-z0-9_-]{1,128}$/.test(group))Schedule.selectGroup(group);
       if(['home','schedule'].includes(target)||target==='curator-chat'&&['admin','curator'].includes(profile.role))Portal.navigate(target);
+      const teacher=teacherProfileLinkId();
+      if(teacher)Portal.openTeacher(teacher);
     } catch (error) {
       showStatus('Не удалось открыть кабинет. ' + error.message);
       if(typeof AppConnection!=='undefined')AppConnection.recovery(error);

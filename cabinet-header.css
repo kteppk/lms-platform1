@@ -15,7 +15,7 @@ header .profile-link .account-header-avatar { border-radius: 50%; width: 42px; h
 .header-bell .badge { position: absolute; top: -4px; inset-inline-end: -5px; margin: 0; min-width: 19px; border-radius: 999px; background: var(--accent); color: white; }
 .profile-menu, .notice-popover {
   position: absolute; z-index: 45; inset-inline-end: 0; top: calc(100% + 10px); box-sizing: border-box;
-  border: 1px solid var(--line); background: var(--paper);
+  border: 1px solid var(--line); border-radius: 12px; background: var(--paper);
   padding: 8px; box-shadow: 0 10px 28px #25313924;
 }
 .profile-menu { width: min(260px, calc(100vw - 28px)); }
@@ -53,6 +53,21 @@ header .profile-menu > .profile-menu-logout { color: var(--danger); }
 .news-heading-actions { display: flex; align-items: center; gap: 8px; margin-inline-start: auto; }
 .news-heading-actions .news-composer-button { width: auto; min-height: 44px; }
 .profile-heading > div { min-width: 0; }
+.teacher-grid .teacher-card {
+  display: grid; grid-template-columns: 54px minmax(0, 1fr); gap: 12px;
+  padding: 14px; align-items: start; text-align: start;
+}
+.teacher-card > .avatar, .profile-heading > .avatar {
+  border-radius: 50%; object-fit: cover; margin: 0;
+}
+.teacher-card > .avatar { width: 54px; height: 54px; font-size: 1rem; }
+.teacher-card-details h3 { margin: 0 0 5px; }
+.teacher-card-details p { margin: 0 0 5px; }
+.teacher-card-subjects {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  overflow: hidden; overflow-wrap: anywhere; color: var(--muted); font-size: .875rem;
+}
+.teacher-card-details button { min-height: 44px; margin: 3px 0 0; }
 .news-photos, .news-photo-editor-list { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; margin: 16px 0; }
 .news-photos a:only-child { grid-column: 1/-1; }
 .news-photos a { display: block; background: var(--paper); overflow: hidden; }
