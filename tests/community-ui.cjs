@@ -75,12 +75,16 @@ async function checkChat(page,role,width){
 (async()=>{
  fs.mkdirSync(path.join(root,'.qa-output'),{recursive:true});await new Promise(r=>server.listen(54321,'127.0.0.1',r));const browser=await chromium.launch({channel:'chrome',headless:true});
  try{for(const role of (process.env.LMS_TEST_ROLE?[process.env.LMS_TEST_ROLE]:['guest','student','teacher','curator','admin'])){
-  const context=await browser.newContext({serviceWorkers:'block',viewport:{width:1280,height:900}}),page=await context.newPage(),errors=[],api=fixture(role);page.setDefaultTimeout(15000);page.on('pageerror',e=>errors.push(e.message));
+  const reduced=role==='curator';
+  const context=await browser.newContext({serviceWorkers:'block',reducedMotion:reduced?'reduce':'no-preference',viewport:{width:1280,height:900}}),page=await context.newPage(),errors=[],api=fixture(role);page.setDefaultTimeout(15000);page.on('pageerror',e=>errors.push(e.message));
   if(role!=='guest'){
    await page.addInitScript(({role})=>{const user={uid:role,email:role+'@example.test',getIdToken:async()=>'fixture'};window.firebase={initializeApp(){},auth:()=>({currentUser:user,onAuthStateChanged:cb=>{queueMicrotask(()=>cb(user));return ()=>{};}})};},{role});
    await page.route('**/vendor/firebase/**/*.js*',r=>r.fulfill({contentType:'text/javascript',body:''}));
   }
-  await page.route('**/functions/v1/lms*',async route=>{const r=route.request(),headers={'access-control-allow-origin':'*','access-control-allow-headers':'authorization,content-type','access-control-allow-methods':'GET,POST,OPTIONS'};if(r.method()==='OPTIONS')return route.fulfill({status:204,headers,body:''});const u=new URL(r.url()),body=r.method()==='GET'?{action:u.searchParams.get('action'),data:JSON.parse(u.searchParams.get('data')||'{}')}:r.postDataJSON();try{await route.fulfill({headers,json:{data:api(body.action,body.data)}});}catch(e){errors.push(e.message);await route.fulfill({status:500,headers,json:{error:e.message}});}});
+  await page.route('**/functions/v1/lms*',async route=>{const r=route.request(),headers={'access-control-allow-origin':'*','access-control-allow-headers':'authorization,content-type','access-control-allow-methods':'GET,POST,OPTIONS'};if(r.method()==='OPTIONS')return route.fulfill({status:204,headers,body:''});const u=new URL(r.url()),body=r.method()==='GET'?{action:u.searchParams.get('action'),data:JSON.parse(u.searchParams.get('data')||'{}')}:r.postDataJSON();try{
+   if(body.action==='saveMyEducation')await new Promise(resolve=>setTimeout(resolve,250));
+   await route.fulfill({headers,json:{data:api(body.action,body.data)}});
+  }catch(e){errors.push(e.message);await route.fulfill({status:500,headers,json:{error:e.message}});}});
   await page.route('**/storage/v1/news-photo/*',route=>route.fulfill({contentType:'image/png',body:picture}));
   await page.goto(base+(role==='curator'?'student':role)+'.html');await page.locator('.news-article').waitFor();
   assert.equal(await page.getByRole('heading',{name:'Новости',exact:true}).count(),1);
@@ -130,6 +134,7 @@ async function checkChat(page,role,width){
    const toggle=page.locator('.desktop-nav-toggle'),panel=page.locator('#desktopNavigation');
    assert.equal(await toggle.getAttribute('aria-expanded'),'false');
    await toggle.hover();await panel.waitFor();
+   assert.equal(await panel.evaluate(node=>getComputedStyle(node).animationName),reduced?'none':'panel-appear');
    await page.keyboard.press('Escape');await panel.waitFor({state:'hidden'});
    await toggle.click();await panel.waitFor();
    const profileLink=panel.locator('[data-tab="profile"]'),profileBox=await profileLink.boundingBox();
@@ -140,7 +145,12 @@ async function checkChat(page,role,width){
    await page.setViewportSize({width:1280,height:900});
   }
   await page.locator('#newsTag').selectOption('college');await page.locator('.news-tag[data-news-channel="college"]').waitFor();await page.locator('#newsOrder').selectOption('oldest');
-  if(role!=='guest'){await page.locator('.news-like').click();await page.locator('.news-like[aria-pressed="true"]').waitFor();await page.locator('.news-like').click();await page.locator('.news-like[aria-pressed="false"]').waitFor();}
+  if(role!=='guest'){
+   await page.locator('.news-like').click();await page.locator('.news-like[aria-pressed="true"]').waitFor();
+   assert.equal(await page.locator('.news-like svg').evaluate(node=>getComputedStyle(node).animationName),reduced?'none':'heart-pop');
+   await page.locator('.news-like').click();await page.locator('.news-like[aria-pressed="false"]').waitFor();
+   assert.equal(await page.locator('.news-like svg').evaluate(node=>getComputedStyle(node).animationName),'none');
+  }
   assert.equal(await page.locator('.tabs [data-tab="curator-chat"]').count(),['admin','curator'].includes(role)?1:0);
   if(['admin','curator'].includes(role)){await goTab(page,'curator-chat');await page.locator('#chatBody').fill('<script>проверка</script>');await page.locator('[data-chat-form] button').click();await page.locator('.curator-message p').waitFor();assert.equal(await page.locator('.curator-message p').textContent(),'<script>проверка</script>');assert.equal(await page.locator('.curator-message script').count(),0);}
   if(role==='admin'){await goTab(page,'accounts');await page.locator('.online-stat-grid').waitFor();assert.equal(await page.locator('.online-total strong').textContent(),'2');await page.getByText('Новых заявок нет.',{exact:true}).waitFor();
@@ -159,14 +169,23 @@ async function checkChat(page,role,width){
    const newsMenu=()=>page.locator('.news-article [data-action-menu-toggle]').click();await newsMenu();await page.locator('[data-news-action="edit"]').click();await page.locator('[data-remove-photo]').click();await page.locator('#newsTitle').fill('Изменённая публикация');await page.locator('[data-news-form] [type="submit"]').click();await page.getByRole('heading',{name:'Изменённая публикация',exact:true}).waitFor();assert.equal(await page.locator('.news-photos').count(),0);
    await newsMenu();page.once('dialog',dialog=>dialog.accept());await page.locator('[data-news-action="delete"]').click();await page.getByRole('heading',{name:'Новость для проверки',exact:true}).waitFor();
   }
-  if(['student','curator'].includes(role)){await goTab(page,'profile');await page.locator('#educationBirth').waitFor();await page.locator('#educationSpecialty').fill('Информационные системы');await page.getByRole('button',{name:'Сохранить учебные данные',exact:true}).click();await page.getByText('Учебные данные сохранены.',{exact:true}).waitFor();assert.match(await page.locator('[data-own-age]').textContent(),/18 лет/);}
+  if(['student','curator'].includes(role)){
+   await goTab(page,'profile');await page.locator('#educationBirth').waitFor();await page.locator('#educationSpecialty').fill('Информационные системы');
+   const save=page.getByRole('button',{name:'Сохранить учебные данные',exact:true}),before=await save.boundingBox();
+   await save.click();await page.locator('[data-education-form] [data-save-feedback="pending"][aria-busy="true"]').waitFor();
+   await page.locator('[data-education-form] [data-save-feedback="saved"]').waitFor();
+   assert.ok(Math.abs((await save.boundingBox()).width-before.width)<1);
+   await page.getByText('Учебные данные сохранены.',{exact:true}).waitFor();assert.match(await page.locator('[data-own-age]').textContent(),/18 лет/);
+  }
   if(role!=='guest'){
    assert.equal(await page.locator('nav [data-tab="people"],nav [data-tab="notifications"],nav [data-mobile-tab="people"],nav [data-mobile-tab="notifications"]').count(),0);
    const profile=page.locator('header .profile-link'),url=page.url();await profile.click();assert.equal(page.url(),url);await page.locator('#profileMenu #userName').waitFor();
+   assert.equal(await page.locator('#profileMenu').evaluate(node=>getComputedStyle(node).animationName),reduced?'none':'panel-appear');
    await page.locator('#profileMenu [data-tab="help"]').click();await page.locator('#helpSearch').waitFor();assert.equal(await page.locator('#profileMenu').isHidden(),true);
    const bell=page.locator('#notificationButton'),popover=page.locator('#noticePopover'),counter=bell.locator('#notificationCount');
    await counter.waitFor();await page.setViewportSize({width:320,height:844});
    await bell.click();await popover.getByRole('button',{name:/Первое уведомление/}).waitFor();await counter.waitFor({state:'hidden'});
+   assert.equal(await popover.evaluate(node=>getComputedStyle(node).animationName),reduced?'none':'panel-appear');
    assert.equal(await bell.getAttribute('aria-expanded'),'true');assert.equal(page.url(),url);
    const bounds=await popover.boundingBox(),bellBounds=await bell.boundingBox();
    assert.ok(bounds.x>=0&&bounds.x+bounds.width<=320&&bounds.y>=bellBounds.y+bellBounds.height);

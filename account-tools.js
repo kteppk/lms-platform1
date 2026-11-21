@@ -79,12 +79,14 @@ const AccountTools=(()=>{
  });
  document.addEventListener('submit',async event=>{
   const form=event.target.closest('[data-account-form]');if(!form)return;event.preventDefault();if(form.dataset.busy)return;form.dataset.busy='true';const submit=form.querySelector('[type="submit"]');submit.disabled=true;
+  const complete=Portal.saveButton(submit);
   const kind=form.dataset.accountForm,status=form.querySelector('[data-password-status],[data-photo-status],[data-settings-status]');if(status)status.textContent='';
   try{
    if(kind==='avatar'){const file=form.querySelector('#accountPhoto').files[0];if(!file)throw new Error('Выберите фотографию.');const path=await uploadPhoto(file);try{await savePhoto(form,path);}catch(error){await callFunction('removeAvatarUpload',{path}).catch(()=>{});throw error;}}
    if(kind==='password')await password(form);
    if(kind==='settings'){if(!settings)throw new Error('Откройте справочник заново, чтобы загрузить настройки.');settings=await callFunction('savePortalSettings',{feedbackUrl:form.querySelector('#feedbackUrl').value,revision:settings.revision});form.querySelector('#feedbackUrl').value=settings.feedbackUrl||'';document.getElementById('feedbackLink').innerHTML=feedbackLink();status.textContent='Ссылка сохранена.';}
-  }catch(error){if(status)status.textContent=error.message;else Portal.toast('Не удалось загрузить данные',error.message,'danger');}
+   complete(true);
+  }catch(error){complete(false);if(status)status.textContent=error.message;else Portal.toast('Не удалось загрузить данные',error.message,'danger');}
   finally{delete form.dataset.busy;submit.disabled=false;}
  });
  return {init,profileSections,syncHeader,render:(_tab,root)=>help(root)};

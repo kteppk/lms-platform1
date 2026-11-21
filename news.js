@@ -112,7 +112,17 @@ const News = (()=>{
       if(button.dataset.newsAction==='like'){
         if(currentPerson?.role==='guest'){location.href='index.html';return;}
         const result=await callFunction('setNewsLike',{id:post.id,liked:!post.liked});Object.assign(post,result);
-        document.querySelectorAll('.news-like').forEach(node=>{if(node.dataset.id===post.id)node.outerHTML=like(post);});return;
+        for(const node of document.querySelectorAll('.news-like')){
+          if(node.dataset.id!==post.id)continue;
+          const icon=node.querySelector('svg');
+          node.classList.toggle('is-liked',post.liked);
+          node.setAttribute('aria-pressed',String(post.liked));
+          node.setAttribute('aria-label',post.liked?'Убрать лайк':'Нравится');
+          icon.setAttribute('fill',post.liked?'currentColor':'none');
+          icon.classList.toggle('news-heart-pop',post.liked);
+          node.querySelector('span').textContent=Number(post.like_count)||0;
+        }
+        return;
       }
       if(button.dataset.newsAction==='refresh-home'){return await Promise.allSettled([...button.closest('#portalPage').querySelectorAll('[data-news-feed]')].map(node=>feed(node,node.dataset.newsFeed,false,!!button.closest('[data-news-manager]'),true)));}
       if(button.dataset.newsAction==='more'||button.dataset.newsAction==='retry')return await feed(list,list.dataset.newsFeed,button.dataset.newsAction==='more',!!root);

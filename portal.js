@@ -1,7 +1,9 @@
 const Portal = (() => {
   let profile, teachers=[], editingTeacher=null, accountRows=[], accountOffset=0, accountSearch='', pendingTeacher=null;
   let noticeOffset=0, seen=new Set(), polling=false,pollAgain=false,noticeRevision=0,readingNotices=false;
+  let unreadCount=null,badgeMotion=null;
   const noticeById=new Map();
+  const saveTimers=new WeakMap();
   const roles={student:'Студент',curator:'Куратор-студент',teacher:'Преподаватель',admin:'Администратор'};
   const categories={diploma:'Диплом',award:'Грамота',certificate:'Сертификат',other:'Другой документ'};
   const e=value=>escapeHtml(value);
@@ -125,6 +127,25 @@ const Portal = (() => {
     const badge=document.getElementById('notificationCount');
     badge.textContent=count>99?'99+':String(count);badge.hidden=!count;
     document.getElementById('notificationButton').setAttribute('aria-label',count?`Уведомления: непрочитанных ${count}`:'Уведомления');
+    if(count===unreadCount)return;
+    badgeMotion?.cancel();
+    if(unreadCount!==null&&count>unreadCount&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
+      badgeMotion=badge.animate?.([
+        {scale:'1'},{scale:'1.24',offset:.48},{scale:'1'}
+      ],{duration:240,easing:'ease-out'});
+    }
+    unreadCount=count;
+  }
+  function saveButton(button){
+    clearTimeout(saveTimers.get(button));
+    button.dataset.saveFeedback='pending';
+    button.setAttribute('aria-busy','true');
+    return saved=>{
+      button.removeAttribute('aria-busy');
+      if(!saved||!button.isConnected){delete button.dataset.saveFeedback;return;}
+      button.dataset.saveFeedback='saved';
+      saveTimers.set(button,setTimeout(()=>delete button.dataset.saveFeedback,1000));
+    };
   }
   function updateNoticeFeed(feed,initial){
     const fresh=feed.rows.filter(n=>n.category!=='chat'&&!n.read&&!seen.has(n.id));
@@ -379,7 +400,10 @@ const Portal = (() => {
   document.addEventListener('submit',async event=>{
     const form=event.target.closest('[data-portal-form]');if(!form)return;event.preventDefault();
     const submit=form.querySelector('[type="submit"]');if(submit.disabled)return;submit.disabled=true;showStatus('');
-    try{await formAction(form.dataset.portalForm);}catch(error){showStatus(error.message);toast('Изменения не сохранены',error.message,'danger');}finally{submit.disabled=false;}
+    const kind=form.dataset.portalForm,complete=kind==='accounts-search'?null:saveButton(submit);
+    try{await formAction(kind);complete?.(true);}
+    catch(error){complete?.(false);showStatus(error.message);toast('Изменения не сохранены',error.message,'danger');}
+    finally{submit.disabled=false;}
   });
   function openTeacher(uid,showSubjects=false){pendingTeacher={uid,showSubjects};navigate('teachers');}
   function openSubscriptions(){return openNotices('subscriptions');}
@@ -405,5 +429,5 @@ const Portal = (() => {
       return AccountTools.render(tab,root);
     });
   });
-  return {teacherDetails,init,render,navigate,toast,openTeacher,openSubscriptions};
+  return {teacherDetails,init,render,navigate,toast,openTeacher,openSubscriptions,saveButton};
 })();

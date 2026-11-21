@@ -16,9 +16,9 @@ const DesktopNavigation=(()=>{
   }
   panel.append(links,footer);nav.append(toggle,panel);
   document.body.classList.add('has-desktop-navigation');
-  let pinned=false,timer;
+  let pinned=false,timer,hoverTimer;
   close=(restore=false)=>{
-   clearTimeout(timer);pinned=false;
+   clearTimeout(timer);clearTimeout(hoverTimer);hoverTimer=null;pinned=false;
    if(panel.hidden)return;
    panel.hidden=true;toggle.setAttribute('aria-expanded','false');
    if(restore)toggle.focus({preventScroll:true});
@@ -28,11 +28,14 @@ const DesktopNavigation=(()=>{
   };
   const show=()=>{
    if(!desktop.matches)return;
-   clearTimeout(timer);
+   clearTimeout(timer);clearTimeout(hoverTimer);hoverTimer=null;
    panel.hidden=false;toggle.setAttribute('aria-expanded','true');
    fit();
   };
-  toggle.addEventListener('pointermove',event=>{if(event.pointerType==='mouse'&&panel.hidden)show();});
+  toggle.addEventListener('pointermove',event=>{
+   if(event.pointerType==='mouse'&&panel.hidden&&hoverTimer==null)hoverTimer=setTimeout(show,110);
+  });
+  toggle.addEventListener('pointerleave',()=>{clearTimeout(hoverTimer);hoverTimer=null;});
   nav.addEventListener('pointerenter',()=>clearTimeout(timer));
   nav.addEventListener('pointerleave',()=>{
    if(!pinned&&!panel.contains(document.activeElement))timer=setTimeout(()=>close(),180);
